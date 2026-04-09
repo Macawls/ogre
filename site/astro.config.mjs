@@ -5,13 +5,6 @@ import rehypeExternalLinks from 'rehype-external-links';
 
 export default defineConfig({
 	site: 'https://ogre.macawls.dev',
-	prefetch: {
-		prefetchAll: true,
-		defaultStrategy: 'viewport',
-	},
-	experimental: {
-		clientPrerender: true,
-	},
 	markdown: {
 		rehypePlugins: [
 			[rehypeExternalLinks, { target: '_blank', rel: ['noopener'] }],
@@ -24,7 +17,6 @@ export default defineConfig({
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/macawls/ogre' }],
 			components: {
 				Header: './src/components/Header.astro',
-				Head: './src/components/Head.astro',
 			},
 			expressiveCode: {
 				themes: ['one-dark-pro', 'one-light'],
