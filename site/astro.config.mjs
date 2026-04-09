@@ -1,9 +1,15 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import rehypeExternalLinks from 'rehype-external-links';
 
 export default defineConfig({
 	site: 'https://ogre.macawls.dev',
+	markdown: {
+		rehypePlugins: [
+			[rehypeExternalLinks, { target: '_blank', rel: ['noopener'] }],
+		],
+	},
 	integrations: [
 		starlight({
 			title: 'Ogre',
@@ -11,6 +17,7 @@ export default defineConfig({
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/macawls/ogre' }],
 			components: {
 				Header: './src/components/Header.astro',
+				Head: './src/components/Head.astro',
 			},
 			expressiveCode: {
 				themes: ['one-dark-pro', 'one-light'],
