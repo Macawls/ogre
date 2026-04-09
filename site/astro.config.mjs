@@ -5,6 +5,13 @@ import rehypeExternalLinks from 'rehype-external-links';
 
 export default defineConfig({
 	site: 'https://ogre.macawls.dev',
+	prefetch: {
+		prefetchAll: true,
+		defaultStrategy: 'viewport',
+	},
+	experimental: {
+		clientPrerender: true,
+	},
 	markdown: {
 		rehypePlugins: [
 			[rehypeExternalLinks, { target: '_blank', rel: ['noopener'] }],
