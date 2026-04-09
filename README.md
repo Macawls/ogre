@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="mascot.png" width="180" alt="Ogre">
+  <img src="mascot.png" width="200" alt="Ogre">
 </p>
 
 <h1 align="center">Ogre</h1>
