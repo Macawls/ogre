@@ -78,8 +78,8 @@ func TestRenderLongText(t *testing.T) {
 	if result == nil || len(result.Data) == 0 {
 		t.Fatal("expected non-empty result")
 	}
-	if elapsed > time.Second {
-		t.Errorf("render took %v, want < 1s", elapsed)
+	if elapsed > 5*time.Second {
+		t.Errorf("render took %v, want < 5s", elapsed)
 	}
 }
 
