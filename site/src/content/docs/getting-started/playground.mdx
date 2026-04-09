@@ -13,7 +13,9 @@ import Playground from '../../../components/Playground.astro';
 
 ## About this playground
 
-This playground exists to preview templates before using them with the Go library, CLI, or HTTP server. It compiles Ogre to WebAssembly so the full render pipeline runs in your browser.
+This playground previews templates before using them with the Go library, CLI, or HTTP server. It compiles Ogre to WebAssembly so the full render pipeline runs in your browser.
+
+The output **hot reloads** as you type — edit the HTML or change styles and the preview updates automatically (400ms debounce). Select a template from the sidebar to start from a preset.
 
 Ogre is designed as a **server-side tool**. If you need client-side image generation in the browser, use a purpose-built library like [Satori](https://github.com/vercel/satori) or the browser's native Canvas API. The WASM binary is ~17 MB — acceptable for a docs playground, not for shipping to users.
 
