@@ -1,6 +1,13 @@
-# Ogre
+<p align="center">
+  <img src="mascot.png" width="180" alt="Ogre">
+</p>
 
-Pure Go HTML/CSS to SVG/PNG/JPEG renderer for OpenGraph images. Vercel Satori alternative. No CGo.
+<h1 align="center">Ogre</h1>
+
+<p align="center">
+  Pure Go HTML/CSS to SVG/PNG/JPEG renderer for OpenGraph images.<br>
+  Vercel Satori alternative. No CGo.
+</p>
 
 ## Features
 

@@ -17,10 +17,10 @@ test/satori-reference/node_modules/
 test/satori-reference/bun.lock
 
 # Docs site
-website/docs/node_modules/
-website/docs/dist/
-website/docs/.astro/
-website/docs/public/playground/ogre.wasm
+site/node_modules/
+site/dist/
+site/.astro/
+site/public/playground/ogre.wasm
 
 # Environment
 .env
