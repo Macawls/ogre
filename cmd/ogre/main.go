@@ -36,9 +36,12 @@ func main() {
 }
 
 func runServer(port int) {
-	addr := fmt.Sprintf(":%d", port)
-	srv := server.New(server.Config{Addr: addr})
-	fmt.Fprintf(os.Stderr, "listening on %s\n", addr)
+	cfg := server.ConfigFromEnv()
+	if port != 3000 {
+		cfg.Addr = fmt.Sprintf(":%d", port)
+	}
+	srv := server.New(cfg)
+	fmt.Fprintf(os.Stderr, "listening on %s\n", cfg.Addr)
 	if err := srv.Start(); err != nil {
 		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 		os.Exit(1)

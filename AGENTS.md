@@ -49,13 +49,7 @@ server/          # HTTP server, caching, templates, rate limiting
 
 ## Docs site
 
-The docs site is at `site/` (Astro Starlight). The WASM playground binary is gitignored and must be built before deploying:
-
-```bash
-GOOS=js GOARCH=wasm go build -ldflags="-s -w" \
-  -o site/public/playground/ogre.wasm \
-  ./cmd/playground/
-```
+The docs site is at `site/` (Astro Starlight).
 
 ## What not to do
 

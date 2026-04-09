@@ -122,14 +122,23 @@ Creates a server with routes registered.
 
 ```go
 type Config struct {
-    Addr          string        // Listen address. Default: ":8080".
+    Addr          string        // Listen address. Default: ":3000".
     CacheBytes    int64         // LRU cache size in bytes. Default: 64 MB.
     Fonts         []ogre.FontSource // Pre-loaded fonts for all renders.
     RateLimit     float64       // Requests per second per IP. 0 = no limit.
     RenderTimeout time.Duration // Per-render timeout. Default: 10s.
     MaxElements   int           // Max HTML elements per render. Default: 1000.
+    CORSOrigin    string        // Allowed CORS origin. Default: "*".
 }
 ```
+
+### server.ConfigFromEnv
+
+```go
+func ConfigFromEnv() Config
+```
+
+Creates a Config from environment variables with sane defaults. See [HTTP Server guide](/guides/server/) for the full list.
 
 ### Server methods
 

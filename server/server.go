@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -49,6 +50,47 @@ type Config struct {
 	RateLimit     float64
 	RenderTimeout time.Duration
 	MaxElements   int
+	CORSOrigin    string
+}
+
+// ConfigFromEnv creates a Config populated from environment variables.
+// Unset variables use defaults.
+//
+//	ADDR          listen address (default ":3000")
+//	CORS_ORIGIN   allowed CORS origin (default "*")
+//	CACHE_MB      LRU cache size in MB (default 64)
+//	RATE_LIMIT    requests per second per IP, 0 = unlimited (default 0)
+//	TIMEOUT       render timeout in seconds (default 10)
+//	MAX_ELEMENTS  max HTML elements per render (default 1000)
+func ConfigFromEnv() Config {
+	cfg := Config{
+		Addr:          envOr("ADDR", ":3000"),
+		CORSOrigin:    envOr("CORS_ORIGIN", "*"),
+		CacheBytes:    int64(envInt("CACHE_MB", 64)) << 20,
+		RateLimit:     float64(envInt("RATE_LIMIT", 0)),
+		RenderTimeout: time.Duration(envInt("TIMEOUT", 10)) * time.Second,
+		MaxElements:   envInt("MAX_ELEMENTS", 1000),
+	}
+	return cfg
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+func envInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return n
 }
 
 type rateLimiter struct {
@@ -178,7 +220,11 @@ func New(cfg Config) *Server {
 
 // Handler returns the server's HTTP handler with CORS middleware.
 func (s *Server) Handler() http.Handler {
-	return corsMiddleware(s.mux)
+	origin := s.cfg.CORSOrigin
+	if origin == "" {
+		origin = "*"
+	}
+	return corsMiddleware(s.mux, origin)
 }
 
 // Start listens on the configured address and serves until interrupted.
@@ -212,9 +258,9 @@ func (s *Server) Start() error {
 	}
 }
 
-func corsMiddleware(next http.Handler) http.Handler {
+func corsMiddleware(next http.Handler, origin string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == http.MethodOptions {
