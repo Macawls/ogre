@@ -1,0 +1,440 @@
+---
+---
+
+<div class="not-content pg-root">
+  <div class="pg-vscode">
+    <!-- Activity bar -->
+    <div class="pg-activity">
+      <div class="pg-activity-icon pg-activity-active" title="Explorer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+      </div>
+      <div class="pg-activity-icon" title="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="pg-sidebar">
+      <div class="pg-sidebar-title">TEMPLATES</div>
+      <button class="pg-file pg-file-active" data-preset="blog">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+        blog-post.html
+      </button>
+      <button class="pg-file" data-preset="event">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+        conference.html
+      </button>
+      <button class="pg-file" data-preset="product">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+        product.html
+      </button>
+      <button class="pg-file" data-preset="repo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+        repo-card.html
+      </button>
+      <button class="pg-file" data-preset="emoji">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+        emoji.html
+      </button>
+    </div>
+
+    <!-- Main area -->
+    <div class="pg-main">
+      <!-- Editor tabs -->
+      <div class="pg-tabs">
+        <div class="pg-tab pg-tab-active" id="pg-tab-editor">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+          <span id="pg-tab-name">blog-post.html</span>
+        </div>
+        <div class="pg-tab" id="pg-tab-output">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#61afef"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          output.svg
+        </div>
+        <div class="pg-tabs-spacer"></div>
+        <button id="pg-render" class="pg-run-btn" disabled>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>
+          Run
+        </button>
+        <span id="pg-status" class="pg-status-badge">Loading...</span>
+      </div>
+
+      <!-- Editor + Preview split -->
+      <div class="pg-content">
+        <div id="pg-editor-wrap" class="pg-editor-wrap">
+          <div id="pg-editor-mount" class="pg-editor-mount"></div>
+        </div>
+        <div id="pg-output" class="pg-preview">
+          <div class="pg-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span>Ctrl+Enter to render</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="pg-statusbar">
+        <span>HTML</span>
+        <span>UTF-8</span>
+        <span>Ogre WASM</span>
+        <span id="pg-render-time"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline src="/playground/wasm_exec.js"></script>
+<script is:inline>
+const PRESETS = {
+  blog: { name: 'blog-post.html', code: `<div class="flex flex-col w-full h-full bg-slate-950 p-16 justify-between">\n  <div class="flex gap-3">\n    <div class="bg-rose-500 text-white text-sm px-3 py-1 rounded-md font-semibold">Engineering</div>\n    <div class="bg-slate-800 text-slate-300 text-sm px-3 py-1 rounded-md">12 min read</div>\n  </div>\n  <div class="flex flex-col mt-6">\n    <div class="text-6xl font-extrabold text-white">Why We Migrated to Postgres</div>\n    <div class="text-2xl text-slate-400 mt-4">Lessons from moving 2TB of data with zero downtime</div>\n  </div>\n  <div class="flex items-center gap-4 mt-auto">\n    <div class="w-12 h-12 rounded-full bg-rose-600"></div>\n    <div class="flex flex-col">\n      <div class="text-white font-semibold">Sarah Chen</div>\n      <div class="text-slate-500 text-sm">March 15, 2026</div>\n    </div>\n  </div>\n</div>` },
+  event: { name: 'conference.html', code: `<div style="display:flex;flex-direction:column;width:100%;height:100%;padding:64px;justify-content:space-between;background-image:linear-gradient(135deg,#0c0a1a 0%,#1a0533 40%,#2d0a4e 100%)">\n  <div style="display:flex;flex-direction:column">\n    <div style="color:#c084fc;font-size:14px;font-weight:700;letter-spacing:4px">JUNE 12–14, 2026 · BERLIN</div>\n    <div style="color:white;font-size:68px;font-weight:800;margin-top:24px">Systems Conf Europe</div>\n    <div style="color:#a78bfa;font-size:24px;margin-top:12px">Infrastructure, distributed systems, and platform engineering</div>\n  </div>\n  <div style="display:flex;align-items:center;gap:16px">\n    <div style="background-color:#c084fc;color:#0c0a1a;font-size:16px;font-weight:700;padding:10px 24px;border-radius:8px">Get Tickets</div>\n    <div style="color:#a78bfa;font-size:16px">Early bird pricing ends May 1</div>\n  </div>\n</div>` },
+  product: { name: 'product.html', code: `<div style="display:flex;flex-direction:column;width:100%;height:100%;background-color:#fafafa;padding:64px;justify-content:space-between">\n  <div style="display:flex;align-items:center;gap:12px">\n    <div style="width:44px;height:44px;border-radius:10px;background-image:linear-gradient(135deg,#3b82f6,#8b5cf6)"></div>\n    <div style="font-size:22px;font-weight:700;color:#111827">Acme Analytics</div>\n  </div>\n  <div style="display:flex;flex-direction:column;margin-top:32px">\n    <div style="font-size:52px;font-weight:800;color:#111827">Real-time dashboards for your entire team</div>\n    <div style="font-size:22px;color:#6b7280;margin-top:16px">Track metrics, set alerts, and share insights. No SQL required.</div>\n  </div>\n  <div style="display:flex;align-items:center;gap:16px;margin-top:auto">\n    <div style="background-color:#3b82f6;color:white;font-size:16px;font-weight:600;padding:10px 24px;border-radius:8px">Start Free Trial</div>\n    <div style="color:#6b7280;font-size:16px">No credit card required</div>\n  </div>\n</div>` },
+  repo: { name: 'repo-card.html', code: `<div style="display:flex;flex-direction:column;width:100%;height:100%;background-color:#0d1117;padding:64px;justify-content:space-between">\n  <div style="display:flex;align-items:center;gap:14px">\n    <div style="width:48px;height:48px;border-radius:24px;background-color:#238636"></div>\n    <div style="font-size:24px;font-weight:600;color:#f0f6fc">vercel / next.js</div>\n  </div>\n  <div style="display:flex;flex-direction:column;margin-top:32px">\n    <div style="font-size:48px;font-weight:700;color:#f0f6fc">The React Framework for the Web</div>\n    <div style="font-size:20px;color:#8b949e;margin-top:16px;line-height:1.5">Used by some of the world's largest companies, Next.js enables you to create full-stack web applications.</div>\n  </div>\n  <div style="display:flex;align-items:center;gap:24px;margin-top:auto">\n    <div style="color:#8b949e;font-size:15px">TypeScript</div>\n    <div style="color:#8b949e;font-size:15px">MIT License</div>\n    <div style="color:#f0f6fc;font-size:15px;font-weight:600">★ 128k</div>\n  </div>\n</div>` },
+  emoji: { name: 'emoji.html', code: `<div style="display:flex;flex-direction:column;width:100%;height:100%;background-color:#18181b;padding:64px;justify-content:center">\n  <div style="color:white;font-size:52px;font-weight:800">Ship faster 🚀</div>\n  <div style="color:#a1a1aa;font-size:24px;margin-top:16px">Deploy with confidence ✨ Monitor in real-time 📊 Scale automatically ⚡</div>\n</div>` }
+};
+
+let wasmReady = false;
+let editor = null;
+let currentPreset = 'blog';
+
+async function loadMonaco() {
+  return new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js';
+    s.onload = () => {
+      require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs' }});
+      window.MonacoEnvironment = {
+        getWorkerUrl: () => `data:text/javascript;charset=utf-8,${encodeURIComponent('self.MonacoEnvironment={baseUrl:"https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/"};importScripts("https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/base/worker/workerMain.js");')}`
+      };
+      require(['vs/editor/editor.main'], function() {
+        monaco.editor.defineTheme('ogre-dark', {
+          base: 'vs-dark', inherit: true,
+          rules: [
+            { token: 'tag', foreground: 'e06c75' },
+            { token: 'attribute.name', foreground: 'd19a66' },
+            { token: 'attribute.value', foreground: '98c379' },
+            { token: 'delimiter', foreground: 'abb2bf' },
+            { token: 'string', foreground: '98c379' },
+          ],
+          colors: {
+            'editor.background': '#1e1e1e',
+            'editor.foreground': '#d4d4d4',
+            'editor.lineHighlightBackground': '#2a2d2e',
+            'editorCursor.foreground': '#aeafad',
+            'editor.selectionBackground': '#264f78',
+            'editorLineNumber.foreground': '#858585',
+            'editorLineNumber.activeForeground': '#c6c6c6',
+            'editorGutter.background': '#1e1e1e',
+            'editorWidget.background': '#252526',
+            'tab.activeBackground': '#1e1e1e',
+            'tab.inactiveBackground': '#2d2d2d',
+          }
+        });
+        editor = monaco.editor.create(document.getElementById('pg-editor-mount'), {
+          value: PRESETS.blog.code,
+          language: 'html',
+          theme: 'ogre-dark',
+          fontSize: 13,
+          fontFamily: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
+          fontLigatures: true,
+          lineHeight: 20,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          renderLineHighlight: 'line',
+          padding: { top: 8, bottom: 8 },
+          overviewRulerLanes: 0,
+          hideCursorInOverviewRuler: true,
+          scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 },
+          wordWrap: 'on',
+          tabSize: 2,
+          automaticLayout: true,
+          bracketPairColorization: { enabled: true },
+          guides: { bracketPairs: true },
+        });
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, doRender);
+        resolve();
+      });
+    };
+    document.head.appendChild(s);
+  });
+}
+
+async function loadWasm() {
+  const status = document.getElementById('pg-status');
+  const btn = document.getElementById('pg-render');
+  try {
+    status.textContent = 'Loading WASM...';
+    const go = new Go();
+    const result = await WebAssembly.instantiateStreaming(fetch('/playground/ogre.wasm'), go.importObject);
+    go.run(result.instance);
+    wasmReady = true;
+    btn.disabled = false;
+    status.textContent = 'Ready';
+    status.classList.add('ready');
+  } catch (err) {
+    status.textContent = 'Failed';
+    status.classList.add('error');
+  }
+}
+
+function doRender() {
+  if (!wasmReady || !editor) return;
+  const output = document.getElementById('pg-output');
+  const timeEl = document.getElementById('pg-render-time');
+  const start = performance.now();
+  const result = ogreRender(editor.getValue(), 1200, 630);
+  const elapsed = (performance.now() - start).toFixed(1);
+  if (result.error) {
+    output.innerHTML = `<div class="pg-error">${result.error}</div>`;
+    timeEl.textContent = '';
+  } else {
+    output.innerHTML = result.svg;
+    timeEl.textContent = `${elapsed}ms`;
+  }
+}
+
+let renderTimeout = null;
+
+function scheduleRender() {
+  if (!wasmReady) return;
+  clearTimeout(renderTimeout);
+  renderTimeout = setTimeout(doRender, 400);
+}
+
+function selectPreset(key) {
+  if (!PRESETS[key] || !editor) return;
+  currentPreset = key;
+  editor.setValue(PRESETS[key].code);
+  document.getElementById('pg-tab-name').textContent = PRESETS[key].name;
+  document.querySelectorAll('.pg-file').forEach(f => f.classList.remove('pg-file-active'));
+  document.querySelector(`[data-preset="${key}"]`)?.classList.add('pg-file-active');
+  if (wasmReady) doRender();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([loadMonaco(), loadWasm()]);
+  document.getElementById('pg-render').addEventListener('click', doRender);
+  document.querySelectorAll('.pg-file').forEach(f => {
+    f.addEventListener('click', () => selectPreset(f.dataset.preset));
+  });
+  if (editor) {
+    editor.onDidChangeModelContent(() => scheduleRender());
+  }
+  doRender();
+});
+</script>
+
+<style>
+  .pg-root {
+    max-width: 100%;
+    margin-top: -1rem;
+  }
+  .pg-root * { box-sizing: border-box; }
+  .pg-root button { all: unset; display: revert; box-sizing: border-box; cursor: pointer; }
+  .pg-root select { all: unset; display: revert; box-sizing: border-box; }
+
+  .pg-vscode {
+    display: grid;
+    grid-template-columns: 48px 180px 1fr;
+    height: 600px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e1e1e;
+  }
+
+  /* Activity bar */
+  .pg-activity {
+    background: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 8px;
+    gap: 2px;
+  }
+  .pg-activity-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #858585;
+    cursor: pointer;
+  }
+  .pg-activity-icon:hover { color: #d4d4d4; }
+  .pg-activity-active {
+    color: #d4d4d4;
+    border-left: 2px solid #d4d4d4;
+  }
+
+  /* Sidebar */
+  .pg-sidebar {
+    background: #252526;
+    border-right: 1px solid #333;
+    overflow-y: auto;
+    padding-top: 4px;
+  }
+  .pg-sidebar-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #bbb;
+    padding: 8px 16px 6px;
+    letter-spacing: 0.8px;
+    font-family: 'Geist', system-ui, sans-serif;
+  }
+  .pg-file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 3px 16px;
+    font-size: 0.75rem;
+    color: #ccc;
+    font-family: 'Geist', system-ui, sans-serif;
+    border: none;
+    background: none;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .pg-file:hover { background: rgba(255,255,255,0.05); }
+  .pg-file-active { background: rgba(255,255,255,0.08); color: #fff; }
+
+  /* Main area */
+  .pg-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /* Tabs */
+  .pg-tabs {
+    display: flex;
+    align-items: center;
+    background: #252526;
+    height: 35px;
+    flex-shrink: 0;
+  }
+  .pg-tab {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 14px;
+    height: 100%;
+    font-size: 0.75rem;
+    color: #969696;
+    background: #2d2d2d;
+    border-right: 1px solid #252526;
+    cursor: pointer;
+    font-family: 'Geist', system-ui, sans-serif;
+    white-space: nowrap;
+  }
+  .pg-tab-active {
+    background: #1e1e1e;
+    color: #fff;
+    border-bottom: 1px solid #1e1e1e;
+  }
+  .pg-tabs-spacer { flex: 1; }
+
+  .pg-run-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    margin-right: 8px;
+    background: rgba(75,175,80,0.15);
+    border: 1px solid rgba(75,175,80,0.3);
+    border-radius: 4px;
+    color: #4caf50;
+    font-weight: 500;
+    font-family: 'Geist', system-ui, sans-serif;
+    transition: background 0.15s;
+  }
+  .pg-run-btn:hover:not(:disabled) { background: rgba(75,175,80,0.25); }
+  .pg-run-btn:disabled { opacity: 0.4; cursor: wait; }
+
+  .pg-status-badge {
+    font-size: 0.62rem;
+    color: #858585;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 8px;
+    margin-right: 10px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.05);
+  }
+  .pg-status-badge.ready { color: #4caf50; }
+  .pg-status-badge.error { color: #f44336; }
+
+  /* Content split */
+  .pg-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 0;
+  }
+  .pg-editor-wrap {
+    border-right: 1px solid #333;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .pg-editor-mount {
+    width: 100%;
+    height: 100%;
+  }
+
+  .pg-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+    overflow: auto;
+    padding: 16px;
+    min-height: 0;
+  }
+  .pg-preview :global(svg) {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+  }
+  .pg-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #555;
+    font-size: 0.75rem;
+    font-family: 'Geist', system-ui, sans-serif;
+  }
+  .pg-error {
+    color: #f44336;
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 16px;
+    white-space: pre-wrap;
+  }
+
+  /* Status bar */
+  .pg-statusbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 12px;
+    height: 22px;
+    background: #007acc;
+    font-size: 0.65rem;
+    color: #fff;
+    font-family: 'Geist', system-ui, sans-serif;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 900px) {
+    .pg-vscode {
+      grid-template-columns: 1fr;
+      height: auto;
+    }
+    .pg-activity, .pg-sidebar { display: none; }
+    .pg-content { grid-template-columns: 1fr; }
+    .pg-editor-mount { min-height: 300px; }
+    .pg-preview { min-height: 250px; }
+  }
+</style>

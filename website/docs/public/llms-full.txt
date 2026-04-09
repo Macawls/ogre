@@ -1,0 +1,181 @@
+# Ogre — Full Documentation for LLMs
+
+> Pure Go HTML/CSS to SVG/PNG/JPEG renderer. Open-source Vercel Satori alternative.
+
+## What is Ogre?
+
+Ogre converts HTML and CSS to images (SVG, PNG, JPEG) in pure Go. It is designed for generating OpenGraph images, social cards, and dynamic image content from templates. It is a drop-in alternative to Vercel's Satori that runs natively in Go with no JavaScript runtime required.
+
+## Installation
+
+```bash
+# CLI
+go install github.com/macawls/ogre/cmd/ogre@latest
+
+# Library
+go get github.com/macawls/ogre
+```
+
+## Go Library API
+
+### One-shot render
+
+```go
+result, err := ogre.Render(`
+    <div class="flex w-full h-full bg-slate-900 p-16 items-center justify-center">
+        <div class="text-5xl font-bold text-white">Hello World</div>
+    </div>
+`, ogre.Options{Width: 1200, Height: 630})
+```
+
+### Shared renderer (recommended for servers)
+
+```go
+r := ogre.NewRenderer()
+result, err := r.Render(html, ogre.Options{Width: 1200, Height: 630, Format: ogre.FormatPNG})
+```
+
+### HTTP handler
+
+```go
+r := ogre.NewRenderer()
+mux := http.NewServeMux()
+mux.Handle("POST /og", r.Handler(ogre.HandlerConfig{
+    Width:  1200,
+    Height: 630,
+    Format: ogre.FormatPNG,
+}))
+log.Fatal(http.ListenAndServe(":8080", mux))
+```
+
+### JSX-style builder
+
+```go
+card := ogre.Div(ogre.Props{Class: "flex flex-col w-full h-full bg-slate-950 p-16"},
+    ogre.Div(ogre.Props{Class: "text-6xl font-extrabold text-white"}, "Hello World"),
+    ogre.P(ogre.Props{Class: "text-2xl text-slate-400 mt-4"}, "Built with Ogre"),
+)
+result, _ := card.Render(ogre.Options{Width: 1200, Height: 630})
+```
+
+### Types
+
+```go
+type Options struct {
+    Width         int          // Default: 1200
+    Height        int          // Default: 630
+    Format        Format       // "svg" (default), "png", or "jpeg"
+    Quality       int          // JPEG quality 1-100 (default 90)
+    Fonts         []FontSource // Custom fonts
+    EmojiProvider string       // "twemoji" (default) or "none"
+    MaxElements   int          // Max HTML elements (0 = unlimited)
+}
+
+type FontSource struct {
+    Name   string // Font family name
+    Weight int    // 100-900
+    Style  string // "normal" or "italic"
+    Data   []byte // Raw font bytes (TTF/OTF/WOFF)
+    URL    string // URL to fetch font (alternative to Data)
+}
+
+type Result struct {
+    Data        []byte // Rendered image bytes
+    ContentType string // MIME type
+    Width       int
+    Height      int
+}
+```
+
+## CLI
+
+```bash
+ogre --render template.html --output og.svg
+ogre --render template.html --output og.png --format png
+ogre --html '<div class="flex w-full h-full bg-blue-500"><div class="text-white text-4xl">Hi</div></div>' --output hi.png --format png
+ogre --serve --port 3000
+```
+
+Flags: --render, --html, --output, --width (1200), --height (630), --format (svg/png/jpeg), --serve, --port (3000).
+
+## HTTP API
+
+### POST /render
+
+```json
+{
+  "html": "<div class=\"flex w-full h-full bg-blue-500\">Hello</div>",
+  "width": 1200,
+  "height": 630,
+  "format": "png",
+  "quality": 90
+}
+```
+
+Returns image bytes with Content-Type header.
+
+### POST /render/template
+
+```json
+{
+  "template": "<div class=\"text-4xl\">{{.Title}}</div>",
+  "data": {"Title": "Hello"},
+  "format": "png"
+}
+```
+
+### GET /health
+
+Returns `{"status":"ok"}`.
+
+### GET /metrics
+
+Returns render stats (total, errors, cache hits/misses, duration).
+
+## Supported CSS Properties
+
+Layout: display (flex, none, block), position (static, relative, absolute), width, height, min/max width/height, aspect-ratio, overflow, box-sizing.
+
+Flexbox: flex-direction, flex-wrap, flex-grow, flex-shrink, flex-basis, align-items, align-self, align-content, justify-content, gap.
+
+Box model: margin, padding, border (width, style, color), border-radius.
+
+Typography: font-family, font-size, font-weight, font-style, color, line-height, letter-spacing, text-align, text-transform, text-decoration, text-shadow, white-space, word-break, text-overflow, -webkit-line-clamp.
+
+Background: background-color, background-image (linear-gradient, radial-gradient, url()), background-size, background-position.
+
+Visual: opacity, box-shadow, transform, transform-origin, filter (blur, grayscale, brightness), object-fit.
+
+Note: <div> defaults to display: flex (matching Satori behavior, not browser behavior).
+
+## Tailwind v3 Support
+
+Ogre resolves Tailwind CSS v3 utility classes at render time with no build step. Supported: layout, alignment, spacing, sizing, typography, colors (all palettes + shades), borders, shadows, opacity, position, filters (blur, brightness, grayscale), transforms (rotate, scale, translate, skew). Arbitrary values with bracket notation: `text-[32px] bg-[#ff5500]`.
+
+## Font Support
+
+- Built-in Go fonts (zero config)
+- Google Fonts auto-resolution
+- Custom fonts from file data (TTF/OTF/WOFF)
+- Custom fonts from URL (auto-cached)
+- WOFF2 not supported (convert to TTF/OTF)
+
+## Architecture
+
+Pipeline: HTML → Parse → Style → Layout → Render
+
+1. Parse: HTML string to node tree (golang.org/x/net/html)
+2. Style: Tailwind resolution, shorthand expansion, inheritance
+3. Layout: Custom W3C flexbox engine
+4. Render: SVG (with font glyph paths) or PNG/JPEG rasterization
+
+Dependencies: only stdlib + golang.org/x/*. No third-party imports. No CGo.
+
+## Docker
+
+```bash
+docker build -t ogre .
+docker run -p 3000:3000 ogre
+```
+
+Distroless base image, ~10 MB.

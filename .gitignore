@@ -1,0 +1,45 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+ogre
+
+# Build
+dist/
+*.o
+*.a
+
+# Test artifacts
+test/output/
+test/satori-reference/node_modules/
+test/satori-reference/bun.lock
+
+# Docs site
+website/docs/node_modules/
+website/docs/dist/
+website/docs/.astro/
+website/docs/public/playground/ogre.wasm
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+*.tmp
+*.log
+
+# Internal
+tickets.json

@@ -1,0 +1,20 @@
+{
+  "name": "satori-reference",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "@takumi-rs/core": "^0.73.1",
+    "@takumi-rs/image-response": "^0.73.1",
+    "satori": "^0.26.0",
+    "satori-html": "^0.3.2",
+    "takumi-js": "^0.0.0"
+  }
+}

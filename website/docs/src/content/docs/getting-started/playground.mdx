@@ -1,0 +1,24 @@
+---
+title: Playground
+description: Try Ogre in your browser. Edit HTML, see the rendered SVG output live. Runs entirely via WebAssembly.
+tableOfContents: false
+head:
+  - tag: style
+    content: '.main-pane { --sl-content-width: 100%; } .content-panel h1[data-page-title] { display: none; }'
+---
+
+import Playground from '../../../components/Playground.astro';
+
+<Playground />
+
+## About this playground
+
+This playground exists to preview templates before using them with the Go library, CLI, or HTTP server. It compiles Ogre to WebAssembly so the full render pipeline runs in your browser.
+
+Ogre is designed as a **server-side tool**. If you need client-side image generation in the browser, use a purpose-built library like [Satori](https://github.com/vercel/satori) or the browser's native Canvas API. The WASM binary is ~17 MB — acceptable for a docs playground, not for shipping to users.
+
+### Limitations
+
+- SVG output only (PNG/JPEG encoding too heavy for WASM)
+- Built-in Go fonts only (no Google Fonts auto-fetch in WASM)
+- No emoji rendering (no network access from Go WASM runtime)

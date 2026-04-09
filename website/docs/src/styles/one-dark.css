@@ -1,0 +1,86 @@
+/* One Dark Pro theme for Starlight */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+	--sl-color-accent-low: #2c313a;
+	--sl-color-accent: #61afef;
+	--sl-color-accent-high: #abb2bf;
+	--sl-color-white: #d7dae0;
+	--sl-color-gray-1: #abb2bf;
+	--sl-color-gray-2: #828997;
+	--sl-color-gray-3: #5c6370;
+	--sl-color-gray-4: #3e4451;
+	--sl-color-gray-5: #2c313a;
+	--sl-color-gray-6: #21252b;
+	--sl-color-black: #1e2127;
+	--sl-color-bg-nav: #21252b;
+	--sl-color-bg-sidebar: #21252b;
+	--sl-color-hairline-light: #2c313a;
+	--sl-color-hairline-shade: #181a1f;
+
+	--sl-color-text: #abb2bf;
+	--sl-color-text-accent: #61afef;
+
+	--sl-font-system: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	--sl-font-system-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+:root[data-theme='dark'] {
+	--astro-code-color-text: #abb2bf;
+	--astro-code-color-background: #282c34;
+	--astro-code-token-constant: #d19a66;
+	--astro-code-token-string: #98c379;
+	--astro-code-token-comment: #5c6370;
+	--astro-code-token-keyword: #c678dd;
+	--astro-code-token-parameter: #e06c75;
+	--astro-code-token-function: #61afef;
+	--astro-code-token-string-expression: #98c379;
+	--astro-code-token-punctuation: #abb2bf;
+	--astro-code-token-link: #61afef;
+}
+
+/* One Light theme */
+:root[data-theme='light'] {
+	--sl-color-accent-low: #e8eaed;
+	--sl-color-accent: #4078f2;
+	--sl-color-accent-high: #383a42;
+	--sl-color-white: #383a42;
+	--sl-color-gray-1: #383a42;
+	--sl-color-gray-2: #696c77;
+	--sl-color-gray-3: #a0a1a7;
+	--sl-color-gray-4: #d4d4d4;
+	--sl-color-gray-5: #e5e5e6;
+	--sl-color-gray-6: #f0f0f1;
+	--sl-color-black: #fafafa;
+	--sl-color-bg-nav: #fafafa;
+	--sl-color-bg-sidebar: #fafafa;
+	--sl-color-hairline-light: #e5e5e6;
+	--sl-color-hairline-shade: #d4d4d4;
+	--sl-color-text: #383a42;
+	--sl-color-text-accent: #4078f2;
+}
+
+:root[data-theme='light'] {
+	--astro-code-color-text: #383a42;
+	--astro-code-color-background: #fafafa;
+	--astro-code-token-constant: #986801;
+	--astro-code-token-string: #50a14f;
+	--astro-code-token-comment: #a0a1a7;
+	--astro-code-token-keyword: #a626a4;
+	--astro-code-token-parameter: #e45649;
+	--astro-code-token-function: #4078f2;
+	--astro-code-token-string-expression: #50a14f;
+	--astro-code-token-punctuation: #383a42;
+	--astro-code-token-link: #4078f2;
+}
+
+/* Bigger code blocks */
+.expressive-code pre {
+	font-size: 0.9rem !important;
+	line-height: 1.7 !important;
+}
+.expressive-code .frame {
+	font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+}
+

@@ -1,0 +1,15 @@
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+  disable:
+    - godot
+
+issues:
+  exclude-dirs:
+    - test/satori-reference
+    - examples
