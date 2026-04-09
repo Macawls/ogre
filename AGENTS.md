@@ -44,6 +44,7 @@ server/          # HTTP server, caching, templates, rate limiting
 ## Commits
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `perf:`, `docs:`, `test:`, `ci:`, `chore:`.
+- Commits that only change docs site content must use `docs(site):` scope.
 - GoReleaser generates changelogs from these prefixes on release.
 
 ## Docs site

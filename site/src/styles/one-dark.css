@@ -42,9 +42,9 @@
 
 /* One Light theme */
 :root[data-theme='light'] {
-	--sl-color-accent-low: #e8eaed;
+	--sl-color-accent-low: #dce6fb;
 	--sl-color-accent: #4078f2;
-	--sl-color-accent-high: #383a42;
+	--sl-color-accent-high: #2b5bbd;
 	--sl-color-white: #383a42;
 	--sl-color-gray-1: #383a42;
 	--sl-color-gray-2: #696c77;
