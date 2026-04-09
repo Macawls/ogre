@@ -448,14 +448,6 @@ func fillRect(img *image.RGBA, x, y, w, h int, c color.Color) {
 	draw.Draw(img, rect, image.NewUniform(c), image.Point{}, draw.Over)
 }
 
-func drawHLine(img *image.RGBA, x1, x2, y int, c color.Color) {
-	fillRect(img, x1, y, x2-x1, 1, c)
-}
-
-func drawVLine(img *image.RGBA, x, y1, y2 int, c color.Color) {
-	fillRect(img, x, y1, 1, y2-y1, c)
-}
-
 func blendOver(sr, sg, sb, sa, dr, dg, db, da uint8) (uint8, uint8, uint8, uint8) {
 	if sa == 255 {
 		return sr, sg, sb, 255

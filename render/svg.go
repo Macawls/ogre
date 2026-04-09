@@ -233,23 +233,6 @@ func renderNodeAt(b *strings.Builder, node *layout.Node, pn *parse.Node, cs *sty
 	}
 }
 
-func renderBackground(b *strings.Builder, l layout.Layout, cs *style.ComputedStyle) {
-	rx := maxRadius(cs.BorderTopLeftRadius, cs.BorderBottomLeftRadius)
-	ry := maxRadius(cs.BorderTopRightRadius, cs.BorderBottomRightRadius)
-
-	fmt.Fprintf(b, `<rect x="%.4g" y="%.4g" width="%.4g" height="%.4g" fill="%s"`,
-		l.X, l.Y, l.Width, l.Height, colorToCSS(cs.BackgroundColor))
-
-	if rx > 0 {
-		fmt.Fprintf(b, ` rx="%.4g"`, rx)
-	}
-	if ry > 0 {
-		fmt.Fprintf(b, ` ry="%.4g"`, ry)
-	}
-
-	b.WriteString("/>")
-}
-
 func renderTextAt(b *strings.Builder, l layout.Layout, pn *parse.Node, cs *style.ComputedStyle, fontMgr *font.Manager) {
 	family := cs.FontFamily
 	if family == "" {

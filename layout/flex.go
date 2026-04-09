@@ -14,7 +14,6 @@ type flexItem struct {
 
 type flexLine struct {
 	items       []*flexItem
-	mainSize    float64
 	crossSize   float64
 	crossOffset float64
 }
