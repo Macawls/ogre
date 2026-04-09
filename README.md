@@ -9,6 +9,14 @@
   Vercel Satori alternative. No CGo.
 </p>
 
+<p align="center">
+  <a href="https://github.com/Macawls/ogre/actions/workflows/test.yml"><img src="https://github.com/Macawls/ogre/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/Macawls/ogre/releases"><img src="https://img.shields.io/github/v/release/Macawls/ogre" alt="Release"></a>
+  <a href="https://pkg.go.dev/github.com/macawls/ogre"><img src="https://pkg.go.dev/badge/github.com/macawls/ogre.svg" alt="Go Reference"></a>
+  <a href="https://github.com/Macawls/ogre/pkgs/container/ogre"><img src="https://img.shields.io/badge/ghcr.io-ogre-blue" alt="GHCR"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Macawls/ogre" alt="License"></a>
+</p>
+
 ## Features
 
 - HTML + inline CSS to SVG, PNG, or JPEG
