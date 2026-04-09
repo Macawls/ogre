@@ -22,7 +22,7 @@ Ogre is a pure Go alternative to [Vercel's Satori](https://github.com/vercel/sat
 
 When you share a link on Twitter, Slack, Discord, or LinkedIn, a preview image appears. That image is an OpenGraph (OG) image. Instead of designing a static image for every page, you can generate them from an HTML template.
 
-Ogre handles this. Write HTML with inline styles or Tailwind classes, pass it to Ogre, get an image back. Use it as a Go library, a standalone CLI, or a self-hosted HTTP server — no Go knowledge required for the latter two. Blog post cards, documentation pages, event banners, repo cards, or any dynamic image your application needs.
+Ogre handles this. Write HTML with inline styles or Tailwind classes, pass it to Ogre, get an image back. Use it as a Go library, a standalone CLI, or a self-hosted HTTP server. Blog post cards, documentation pages, event banners, repo cards, or any dynamic image your application needs.
 
 ```bash
 go install github.com/macawls/ogre/cmd/ogre@latest
