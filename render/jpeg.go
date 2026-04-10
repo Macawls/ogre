@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"image/jpeg"
 
 	fontpkg "github.com/macawls/ogre/font"
 	"github.com/macawls/ogre/layout"
@@ -48,7 +47,7 @@ func RenderJPEG(tree *layout.LayoutTree, styles map[*parse.Node]*style.ComputedS
 	}
 
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality}); err != nil {
+	if err := encodeJPEG444(&buf, img, quality); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
