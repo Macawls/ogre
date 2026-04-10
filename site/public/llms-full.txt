@@ -4,7 +4,7 @@
 
 ## What is Ogre?
 
-Ogre converts HTML and CSS to images (SVG, PNG, JPEG) in pure Go. It is designed for generating OpenGraph images, social cards, and dynamic image content from templates. It is a drop-in alternative to Vercel's Satori that runs natively in Go with no JavaScript runtime required.
+Ogre converts HTML and CSS to images (SVG, PNG, JPEG) in pure Go. It is designed for generating OpenGraph images, social cards, and dynamic image content from templates. It is a drop-in alternative to Vercel's Satori that runs natively in Go with no JavaScript runtime required. No CGo, no external binaries — compiles to a single static binary with `CGO_ENABLED=0`.
 
 ## Installation
 
@@ -67,6 +67,7 @@ type Options struct {
     Format        Format       // "svg" (default), "png", or "jpeg"
     Quality       int          // JPEG quality 1-100 (default 90)
     Fonts         []FontSource // Custom fonts
+    Debug         bool         // Enable debug logging
     EmojiProvider string       // "twemoji" (default) or "none"
     MaxElements   int          // Max HTML elements (0 = unlimited)
 }
@@ -85,6 +86,13 @@ type Result struct {
     Width       int
     Height      int
 }
+
+type HandlerConfig struct {
+    Width   int    // Default canvas width. Default: 1200.
+    Height  int    // Default canvas height. Default: 630.
+    Format  Format // Default output format. Default: FormatPNG.
+    Quality int    // Default JPEG quality 1-100. Default: 90.
+}
 ```
 
 ## CLI
@@ -98,7 +106,47 @@ ogre --serve --port 3000
 
 Flags: --render, --html, --output, --width (1200), --height (630), --format (svg/png/jpeg), --serve, --port (3000).
 
-## HTTP API
+## HTTP Server
+
+### Standalone server
+
+```go
+srv := server.New(server.Config{
+    Addr:          ":3000",
+    CacheBytes:    64 << 20,
+    RateLimit:     10,
+    RenderTimeout: 10 * time.Second,
+    MaxElements:   1000,
+    CORSOrigin:    "https://*.example.com,http://localhost:*",
+})
+srv.Start()
+```
+
+### Configuration from environment variables
+
+```go
+cfg := server.ConfigFromEnv()
+srv := server.New(cfg)
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| ADDR | :3000 | Listen address |
+| CORS_ORIGIN | * | Allowed CORS origin(s), comma-separated, supports wildcards |
+| CACHE_MB | 64 | LRU cache size in MB |
+| RATE_LIMIT | 0 | Requests per second per IP (0 = unlimited) |
+| TIMEOUT | 10 | Render timeout in seconds |
+| MAX_ELEMENTS | 1000 | Max HTML elements per render |
+
+### CORS wildcard support
+
+CORS_ORIGIN supports comma-separated values with wildcard patterns:
+
+```bash
+CORS_ORIGIN="https://*.example.com,http://localhost:*" ogre --serve
+```
+
+## HTTP API Endpoints
 
 ### POST /render
 
@@ -108,11 +156,24 @@ Flags: --render, --html, --output, --width (1200), --height (630), --format (svg
   "width": 1200,
   "height": 630,
   "format": "png",
-  "quality": 90
+  "quality": 90,
+  "fonts": [
+    {
+      "name": "Inter",
+      "weight": 400,
+      "style": "normal",
+      "url": "https://example.com/Inter-Regular.ttf"
+    }
+  ]
 }
 ```
 
-Returns image bytes with Content-Type header.
+Returns image bytes with appropriate Content-Type header.
+
+Response headers:
+- ETag: SHA-256 hash of input
+- X-Cache: HIT or MISS
+- Cache-Control: public, max-age=86400 (hits) or max-age=3600 (misses)
 
 ### POST /render/template
 
@@ -124,13 +185,34 @@ Returns image bytes with Content-Type header.
 }
 ```
 
+Uses Go html/template syntax.
+
 ### GET /health
 
 Returns `{"status":"ok"}`.
 
 ### GET /metrics
 
-Returns render stats (total, errors, cache hits/misses, duration).
+Returns render statistics:
+
+```json
+{
+  "render_total": 150,
+  "render_errors": 2,
+  "cache_hits": 98,
+  "cache_misses": 52,
+  "total_duration_ms": 4200
+}
+```
+
+### Limits
+
+- Max request body: 10 MB
+- Max fonts per request: 5
+- Max font size: 5 MB
+- Default cache: 64 MB
+- Default render timeout: 10 seconds
+- Default max elements: 1000
 
 ## Supported CSS Properties
 
@@ -150,32 +232,84 @@ Note: <div> defaults to display: flex (matching Satori behavior, not browser beh
 
 ## Tailwind v3 Support
 
-Ogre resolves Tailwind CSS v3 utility classes at render time with no build step. Supported: layout, alignment, spacing, sizing, typography, colors (all palettes + shades), borders, shadows, opacity, position, filters (blur, brightness, grayscale), transforms (rotate, scale, translate, skew). Arbitrary values with bracket notation: `text-[32px] bg-[#ff5500]`.
+Ogre resolves Tailwind CSS v3 utility classes at render time with no build step. Supported categories: layout, alignment, spacing, sizing, typography, colors (all palettes + shades), borders, shadows, opacity, position, filters (blur, brightness, grayscale), transforms (rotate, scale, translate, skew). Arbitrary values with bracket notation: `text-[32px] bg-[#ff5500]`.
 
 ## Font Support
 
 - Built-in Go fonts (zero config)
-- Google Fonts auto-resolution
+- Google Fonts auto-resolution (CSS2 API, any font family)
 - Custom fonts from file data (TTF/OTF/WOFF)
-- Custom fonts from URL (auto-cached)
-- WOFF2 not supported (convert to TTF/OTF)
+- Custom fonts from URL (auto-cached on disk)
+- WOFF2 not supported (convert to TTF/OTF first)
+
+## Emoji Support
+
+Ogre supports emoji rendering with multiple providers:
+
+- Twemoji (default) — Twitter's emoji set
+- OpenMoji — open-source emoji
+- Noto — Google's Noto emoji
+
+SVG output embeds emoji as image references. PNG/JPEG output composites emoji bitmaps.
+
+## RTL / Bidirectional Text
+
+Arabic, Hebrew, and other RTL scripts are supported via:
+
+- go-text/typesetting for HarfBuzz text shaping (ligatures, contextual forms)
+- golang.org/x/text/unicode/bidi for bidirectional reordering
+
+Complex scripts (Arabic, Hebrew, Devanagari, Thai) are automatically detected and shaped.
 
 ## Architecture
 
 Pipeline: HTML → Parse → Style → Layout → Render
 
 1. Parse: HTML string to node tree (golang.org/x/net/html)
-2. Style: Tailwind resolution, shorthand expansion, inheritance
+2. Style: Tailwind resolution, shorthand expansion, CSS inheritance
 3. Layout: Custom W3C flexbox engine
-4. Render: SVG (with font glyph paths) or PNG/JPEG rasterization
+4. Render: SVG (with font glyph paths embedded as path data) or PNG/JPEG rasterization
 
-Dependencies: only stdlib + golang.org/x/*. No third-party imports. No CGo.
+## Package Structure
+
+```
+ogre.go          # Public API: Render(), NewRenderer()
+handler.go       # HTTP handler: Renderer.Handler()
+jsx.go           # JSX-style builder: Div(), Span(), etc.
+cmd/ogre/        # CLI entry point
+parse/           # HTML parsing → node tree
+style/           # CSS properties, Tailwind resolver, inheritance
+layout/          # Flexbox layout engine (W3C spec)
+font/            # Font loading, text measurement, glyph paths, shaping, emoji
+render/          # SVG generation, PNG/JPEG rasterization
+server/          # HTTP server, caching, templates, rate limiting
+```
+
+## Dependencies
+
+- golang.org/x/net/html — HTML parsing
+- golang.org/x/image/font — font interfaces, OpenType parsing
+- golang.org/x/text/unicode/bidi — bidirectional text
+- github.com/go-text/typesetting — HarfBuzz text shaping for complex scripts (Arabic, Hebrew, etc.)
+
+No other third-party imports. No CGo.
 
 ## Docker
 
 ```bash
 docker build -t ogre .
-docker run -p 3000:3000 ogre
+docker run -p 3000:3000 ghcr.io/macawls/ogre:latest
 ```
 
-Distroless base image, ~10 MB.
+Multi-stage build, distroless base image.
+
+## Public API
+
+A public instance is available at `https://ogre-api.macawls.dev` running the latest `ghcr.io/macawls/ogre` image. An interactive playground is available at `https://ogre.macawls.dev/getting-started/playground/`.
+
+## Links
+
+- Docs: https://ogre.macawls.dev
+- Playground: https://ogre.macawls.dev/getting-started/playground/
+- GitHub: https://github.com/macawls/ogre
+- Docker: https://github.com/macawls/ogre/pkgs/container/ogre

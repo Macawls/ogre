@@ -211,6 +211,7 @@ func New(cfg Config) *Server {
 		cfg:      cfg,
 	}
 
+	s.mux.HandleFunc("GET /{$}", handleIndex)
 	s.mux.HandleFunc("POST /render", s.withRateLimit(s.handleRender))
 	s.mux.HandleFunc("GET /health", s.handleHealth)
 	s.mux.HandleFunc("POST /render/template", s.withRateLimit(s.handleRenderTemplate))
@@ -291,6 +292,32 @@ func corsMiddleware(next http.Handler, allowedOrigin string) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func handleIndex(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	io.WriteString(w, `
+    ╔═══════════════════════════════════════╗
+    ║                                       ║
+    ║    ██████   ██████  ██████  ███████   ║
+    ║   ██    ██ ██       ██   ██ ██        ║
+    ║   ██    ██ ██   ███ ██████  █████     ║
+    ║   ██    ██ ██    ██ ██   ██ ██        ║
+    ║    ██████   ██████  ██   ██ ███████   ║
+    ║                                       ║
+    ║   HTML/CSS → SVG / PNG / JPEG         ║
+    ║   github.com/macawls/ogre             ║
+    ║                                       ║
+    ╠═══════════════════════════════════════╣
+    ║                                       ║
+    ║   POST /render          render html   ║
+    ║   POST /render/template render tmpl   ║
+    ║   GET  /health          health check  ║
+    ║   GET  /metrics         render stats  ║
+    ║                                       ║
+    ╚═══════════════════════════════════════╝
+
+`)
 }
 
 func matchOrigin(origin, pattern string) bool {

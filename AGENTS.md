@@ -51,6 +51,10 @@ server/          # HTTP server, caching, templates, rate limiting
 
 The docs site is at `site/` (Astro Starlight).
 
+## Rendering bugs
+
+When rendering issues are reported (e.g. PNG/JPEG output looks different from SVG), investigate and fix the rendering pipeline first. Do not work around rendering bugs by changing the HTML/CSS markup of templates or examples.
+
 ## What not to do
 
 - Don't add features without a concrete use case.

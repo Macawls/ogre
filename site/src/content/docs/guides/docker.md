@@ -11,7 +11,7 @@ docker build -t ogre .
 
 The Dockerfile uses a multi-stage build:
 1. Build stage compiles the Go binary with CGO disabled
-2. Final stage uses Google's distroless image — just the binary, nothing else
+2. Final stage uses Google's distroless image
 
 ## Running
 
@@ -36,6 +36,15 @@ docker run -p 8080:8080 -e ADDR=:8080 ghcr.io/macawls/ogre:latest
 ```
 
 ## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ADDR` | `:3000` | Listen address |
+| `CORS_ORIGIN` | `*` | Allowed CORS origin(s), comma-separated, supports wildcards |
+| `CACHE_MB` | `64` | LRU cache size in MB |
+| `RATE_LIMIT` | `0` | Requests per second per IP (0 = unlimited) |
+| `TIMEOUT` | `10` | Render timeout in seconds |
+| `MAX_ELEMENTS` | `1000` | Max HTML elements per render |
 
 ```bash
 docker run -p 3000:3000 \
