@@ -398,7 +398,8 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 	cs.BackgroundRepeat = getOr(props, "background-repeat", "")
 
 	if v, ok := props["font-family"]; ok {
-		cs.FontFamily = strings.Trim(v, "\"'")
+		first, _, _ := strings.Cut(v, ",")
+		cs.FontFamily = strings.Trim(strings.TrimSpace(first), "\"'")
 	}
 	if v, ok := props["font-weight"]; ok {
 		cs.FontWeight = parseFontWeight(v)

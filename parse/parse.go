@@ -75,6 +75,25 @@ func convertNode(n *html.Node) *Node {
 			}
 		}
 
+		if w, ok := node.Attrs["width"]; ok {
+			if _, exists := node.Style["width"]; !exists {
+				if !strings.ContainsAny(w, "%") {
+					node.Style["width"] = w + "px"
+				} else {
+					node.Style["width"] = w
+				}
+			}
+		}
+		if h, ok := node.Attrs["height"]; ok {
+			if _, exists := node.Style["height"]; !exists {
+				if !strings.ContainsAny(h, "%") {
+					node.Style["height"] = h + "px"
+				} else {
+					node.Style["height"] = h
+				}
+			}
+		}
+
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			if child := convertNode(c); child != nil {
 				node.Children = append(node.Children, child)

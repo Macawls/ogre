@@ -207,6 +207,8 @@ func renderNodeAt(b *strings.Builder, node *layout.Node, pn *parse.Node, cs *sty
 			if src := pn.Attrs["src"]; src != "" {
 				b.WriteString(RenderImage(src, cs, absX, absY, l.Width, l.Height))
 			}
+		} else if pn != nil && pn.Tag == "svg" {
+			b.WriteString(RenderInlineSVG(pn, absX, absY, l.Width, l.Height))
 		} else {
 			for _, child := range node.Children {
 				cpn := ctx.reverse[child]

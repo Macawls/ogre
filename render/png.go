@@ -2,15 +2,19 @@ package render
 
 import (
 	"bytes"
+	"encoding/base64"
 	"image"
 	"image/color"
 	"image/draw"
+	"image/jpeg"
 	"image/png"
 	"math"
+	"strings"
 
 	xdraw "golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
+	"golang.org/x/image/vector"
 
 	fontpkg "github.com/macawls/ogre/font"
 	"github.com/macawls/ogre/layout"
@@ -129,6 +133,18 @@ func (r *PNGRenderer) renderNodeContent(node *layout.Node, pn *parse.Node, cs *s
 		return
 	}
 
+	if pn != nil && pn.Tag == "img" {
+		if src := pn.Attrs["src"]; src != "" {
+			r.renderImage(src, cs, absX, absY, l.Width, l.Height)
+		}
+		return
+	}
+
+	if pn != nil && pn.Tag == "svg" {
+		r.renderInlineSVG(pn, cs, absX, absY, l.Width, l.Height)
+		return
+	}
+
 	r.renderBoxShadows(l, cs, absX, absY, false)
 
 	hasRadius := cs.BorderTopLeftRadius > 0 || cs.BorderTopRightRadius > 0 ||
@@ -150,9 +166,9 @@ func (r *PNGRenderer) renderNodeContent(node *layout.Node, pn *parse.Node, cs *s
 		rect := image.Rect(int(absX), int(absY), int(absX+l.Width), int(absY+l.Height)).Intersect(r.img.Bounds())
 		if hasRadius {
 			mask := roundedMask(int(l.Width), int(l.Height), cs.BorderTopLeftRadius, cs.BorderTopRightRadius, cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
-			draw.DrawMask(r.img, rect, image.NewUniform(c), image.Point{}, mask, image.Point{}, draw.Over)
+			draw.DrawMask(r.img, rect, uniformSrc(c), image.Point{}, mask, image.Point{}, draw.Over)
 		} else {
-			draw.Draw(r.img, rect, image.NewUniform(c), image.Point{}, draw.Over)
+			draw.Draw(r.img, rect, uniformSrc(c), image.Point{}, draw.Over)
 		}
 	}
 
@@ -194,6 +210,43 @@ func (r *PNGRenderer) renderBorders(absX, absY, w, h float64, cs *style.Computed
 	y := int(absY)
 	wi := int(w)
 	hi := int(h)
+
+	hasBorder := (cs.BorderTopWidth > 0 && cs.BorderTopStyle != style.BorderStyleNone) ||
+		(cs.BorderBottomWidth > 0 && cs.BorderBottomStyle != style.BorderStyleNone) ||
+		(cs.BorderLeftWidth > 0 && cs.BorderLeftStyle != style.BorderStyleNone) ||
+		(cs.BorderRightWidth > 0 && cs.BorderRightStyle != style.BorderStyleNone)
+	if !hasBorder {
+		return
+	}
+
+	hasRadius := cs.BorderTopLeftRadius > 0 || cs.BorderTopRightRadius > 0 ||
+		cs.BorderBottomLeftRadius > 0 || cs.BorderBottomRightRadius > 0
+
+	if hasRadius {
+		tmp := image.NewRGBA(r.img.Bounds())
+		if cs.BorderTopWidth > 0 && cs.BorderTopStyle != style.BorderStyleNone {
+			c := styleToColor(cs.BorderTopColor)
+			fillRect(tmp, x, y, wi, int(math.Max(1, cs.BorderTopWidth)), c)
+		}
+		if cs.BorderBottomWidth > 0 && cs.BorderBottomStyle != style.BorderStyleNone {
+			c := styleToColor(cs.BorderBottomColor)
+			by := y + hi - int(math.Max(1, cs.BorderBottomWidth))
+			fillRect(tmp, x, by, wi, int(math.Max(1, cs.BorderBottomWidth)), c)
+		}
+		if cs.BorderLeftWidth > 0 && cs.BorderLeftStyle != style.BorderStyleNone {
+			c := styleToColor(cs.BorderLeftColor)
+			fillRect(tmp, x, y, int(math.Max(1, cs.BorderLeftWidth)), hi, c)
+		}
+		if cs.BorderRightWidth > 0 && cs.BorderRightStyle != style.BorderStyleNone {
+			c := styleToColor(cs.BorderRightColor)
+			bx := x + wi - int(math.Max(1, cs.BorderRightWidth))
+			fillRect(tmp, bx, y, int(math.Max(1, cs.BorderRightWidth)), hi, c)
+		}
+		rect := image.Rect(x, y, x+wi, y+hi).Intersect(r.img.Bounds())
+		mask := roundedMask(wi, hi, cs.BorderTopLeftRadius, cs.BorderTopRightRadius, cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
+		draw.DrawMask(r.img, rect, tmp, rect.Min, mask, image.Point{}, draw.Over)
+		return
+	}
 
 	if cs.BorderTopWidth > 0 && cs.BorderTopStyle != style.BorderStyleNone {
 		c := styleToColor(cs.BorderTopColor)
@@ -271,13 +324,86 @@ func (r *PNGRenderer) renderTextNode(l layout.Layout, pn *parse.Node, cs *style.
 	r.drawTextWithEmoji(pn.Text, absX, absY+ascent, ascent, size, tc, ff, cs)
 }
 
+func (r *PNGRenderer) drawShapedText(text string, x, y, size float64, tc color.RGBA, cs *style.ComputedStyle) bool {
+	if r.fonts == nil {
+		return false
+	}
+	family := cs.FontFamily
+	if family == "" {
+		family = "default"
+	}
+	fstyle := cs.FontStyle
+	if fstyle == "" {
+		fstyle = "normal"
+	}
+	rtl := cs.Direction == "rtl"
+	if !rtl && !needsShaping(text) {
+		return false
+	}
+	pathD, _ := fontpkg.ShapedTextToPath(r.fonts, text, family, cs.FontWeight, fstyle, size, rtl)
+	if pathD == "" {
+		return false
+	}
+	rast := vector.NewRasterizer(r.img.Bounds().Dx(), r.img.Bounds().Dy())
+	cmds := parseSVGPath(pathD)
+	var cx, cy, startX, startY, lastCPX, lastCPY float64
+	var lastCmd byte
+	for _, cmd := range cmds {
+		switch cmd.cmd {
+		case 'M':
+			for i := 0; i < len(cmd.args)-1; i += 2 {
+				cx, cy = cmd.args[i]+x, cmd.args[i+1]+y
+				if i == 0 {
+					startX, startY = cx, cy
+					rast.MoveTo(float32(cx), float32(cy))
+				} else {
+					rast.LineTo(float32(cx), float32(cy))
+				}
+			}
+		case 'L':
+			for i := 0; i < len(cmd.args)-1; i += 2 {
+				cx, cy = cmd.args[i]+x, cmd.args[i+1]+y
+				rast.LineTo(float32(cx), float32(cy))
+			}
+		case 'Q':
+			for i := 0; i < len(cmd.args)-3; i += 4 {
+				x1, y1 := cmd.args[i]+x, cmd.args[i+1]+y
+				cx, cy = cmd.args[i+2]+x, cmd.args[i+3]+y
+				rast.QuadTo(float32(x1), float32(y1), float32(cx), float32(cy))
+			}
+		case 'C':
+			for i := 0; i < len(cmd.args)-5; i += 6 {
+				x1, y1 := cmd.args[i]+x, cmd.args[i+1]+y
+				x2, y2 := cmd.args[i+2]+x, cmd.args[i+3]+y
+				cx, cy = cmd.args[i+4]+x, cmd.args[i+5]+y
+				lastCPX, lastCPY = x2, y2
+				rast.CubeTo(float32(x1), float32(y1), float32(x2), float32(y2), float32(cx), float32(cy))
+			}
+		case 'Z', 'z':
+			rast.ClosePath()
+			cx, cy = startX, startY
+		}
+		lastCmd = cmd.cmd
+	}
+	_, _ = lastCPX, lastCPY
+	_ = lastCmd
+	if lastCmd != 'Z' && lastCmd != 'z' && lastCmd != 0 {
+		rast.ClosePath()
+	}
+	rast.Draw(r.img, r.img.Bounds(), image.NewUniform(tc), image.Point{})
+	return true
+}
+
 func (r *PNGRenderer) drawTextWithEmoji(text string, x, y, ascent, size float64, tc color.RGBA, ff font.Face, cs *style.ComputedStyle) {
 	if r.emojiProvider == nil || !containsEmoji(text) {
+		if r.drawShapedText(text, x, y, size, tc, cs) {
+			return
+		}
 		drawer := &font.Drawer{
 			Dst:  r.img,
 			Src:  image.NewUniform(tc),
 			Face: ff,
-			Dot:  fixed.Point26_6{X: fixed.I(int(x)), Y: fixed.I(int(y))},
+			Dot:  fixed.Point26_6{X: fixed.Int26_6(x * 64), Y: fixed.Int26_6(y * 64)},
 		}
 		drawer.DrawString(text)
 		return
@@ -305,7 +431,7 @@ func (r *PNGRenderer) drawTextWithEmoji(text string, x, y, ascent, size float64,
 				Dst:  r.img,
 				Src:  image.NewUniform(tc),
 				Face: ff,
-				Dot:  fixed.Point26_6{X: fixed.I(int(cx)), Y: fixed.I(int(y))},
+				Dot:  fixed.Point26_6{X: fixed.Int26_6(cx * 64), Y: fixed.Int26_6(y * 64)},
 			}
 			drawer.DrawString(seg.Text)
 			cx += m.StringWidth(seg.Text)
@@ -348,6 +474,7 @@ func (r *PNGRenderer) renderLinearGradientPNG(g style.Gradient, rx, ry, rw, rh i
 		length = 1
 	}
 
+	linStops := toLinearStops(g.Stops)
 	bounds := r.img.Bounds()
 	for py := ry; py < ry+rh; py++ {
 		if py < bounds.Min.Y || py >= bounds.Max.Y {
@@ -359,14 +486,14 @@ func (r *PNGRenderer) renderLinearGradientPNG(g style.Gradient, rx, ry, rw, rh i
 			}
 			dx := float64(px-rx) - cx
 			dy := float64(py-ry) - cy
-			t := (dx*sinA + dy*cosA) / length
+			t := (dx*sinA - dy*cosA) / length
 			t += 0.5
 			if g.Repeating {
 				t = t - math.Floor(t)
 			} else {
 				t = math.Max(0, math.Min(1, t))
 			}
-			c := interpolateStops(g.Stops, t)
+			c := interpolateLinearStops(linStops, t, px, py)
 			r.img.SetRGBA(px, py, c)
 		}
 	}
@@ -389,6 +516,7 @@ func (r *PNGRenderer) renderRadialGradientPNG(g style.Gradient, rx, ry, rw, rh i
 		maxDist = 1
 	}
 
+	linStops := toLinearStops(g.Stops)
 	bounds := r.img.Bounds()
 	for py := ry; py < ry+rh; py++ {
 		if py < bounds.Min.Y || py >= bounds.Max.Y {
@@ -407,21 +535,65 @@ func (r *PNGRenderer) renderRadialGradientPNG(g style.Gradient, rx, ry, rw, rh i
 			} else {
 				t = math.Max(0, math.Min(1, t))
 			}
-			c := interpolateStops(g.Stops, t)
+			c := interpolateLinearStops(linStops, t, px, py)
 			r.img.SetRGBA(px, py, c)
 		}
 	}
 }
 
-func interpolateStops(stops []style.ColorStop, t float64) color.RGBA {
+type linearStop struct {
+	R, G, B, A float64
+	Position   float64
+}
+
+func srgbToLinear(v uint8) float64 {
+	c := float64(v) / 255
+	if c <= 0.04045 {
+		return c / 12.92
+	}
+	return math.Pow((c+0.055)/1.055, 2.4)
+}
+
+func linearToSrgbF(v float64) float64 {
+	if v <= 0.0031308 {
+		return v * 12.92
+	}
+	return 1.055*math.Pow(v, 1.0/2.4) - 0.055
+}
+
+func linearToSrgb(v float64) uint8 {
+	return uint8(math.Round(linearToSrgbF(v) * 255))
+}
+
+func toLinearStops(stops []style.ColorStop) []linearStop {
+	out := make([]linearStop, len(stops))
+	for i, s := range stops {
+		out[i] = linearStop{
+			R: srgbToLinear(s.Color.R), G: srgbToLinear(s.Color.G),
+			B: srgbToLinear(s.Color.B), A: s.Color.A,
+			Position: s.Position,
+		}
+	}
+	return out
+}
+
+var bayerMatrix = [4][4]float64{
+	{0.0 / 16, 8.0 / 16, 2.0 / 16, 10.0 / 16},
+	{12.0 / 16, 4.0 / 16, 14.0 / 16, 6.0 / 16},
+	{3.0 / 16, 11.0 / 16, 1.0 / 16, 9.0 / 16},
+	{15.0 / 16, 7.0 / 16, 13.0 / 16, 5.0 / 16},
+}
+
+func interpolateLinearStops(stops []linearStop, t float64, px, py int) color.RGBA {
 	if len(stops) == 0 {
 		return color.RGBA{0, 0, 0, 255}
 	}
 	if t <= stops[0].Position {
-		return styleToColor(stops[0].Color)
+		return color.RGBA{linearToSrgb(stops[0].R), linearToSrgb(stops[0].G), linearToSrgb(stops[0].B), uint8(math.Round(stops[0].A * 255))}
 	}
-	if t >= stops[len(stops)-1].Position {
-		return styleToColor(stops[len(stops)-1].Color)
+	last := stops[len(stops)-1]
+	if t >= last.Position {
+		return color.RGBA{linearToSrgb(last.R), linearToSrgb(last.G), linearToSrgb(last.B), uint8(math.Round(last.A * 255))}
 	}
 	for i := 1; i < len(stops); i++ {
 		if t <= stops[i].Position {
@@ -429,23 +601,33 @@ func interpolateStops(stops []style.ColorStop, t float64) color.RGBA {
 			curr := stops[i]
 			span := curr.Position - prev.Position
 			if span <= 0 {
-				return styleToColor(curr.Color)
+				return color.RGBA{linearToSrgb(curr.R), linearToSrgb(curr.G), linearToSrgb(curr.B), uint8(math.Round(curr.A * 255))}
 			}
 			f := (t - prev.Position) / span
+			lr := prev.R + f*(curr.R-prev.R)
+			lg := prev.G + f*(curr.G-prev.G)
+			lb := prev.B + f*(curr.B-prev.B)
+			la := prev.A + f*(curr.A-prev.A)
+
+			sr := linearToSrgbF(math.Max(0, math.Min(1, lr)))
+			sg := linearToSrgbF(math.Max(0, math.Min(1, lg)))
+			sb := linearToSrgbF(math.Max(0, math.Min(1, lb)))
+
+			dither := bayerMatrix[py&3][px&3] - 0.5
 			return color.RGBA{
-				R: uint8(math.Round(float64(prev.Color.R) + f*(float64(curr.Color.R)-float64(prev.Color.R)))),
-				G: uint8(math.Round(float64(prev.Color.G) + f*(float64(curr.Color.G)-float64(prev.Color.G)))),
-				B: uint8(math.Round(float64(prev.Color.B) + f*(float64(curr.Color.B)-float64(prev.Color.B)))),
-				A: uint8(math.Round((prev.Color.A + f*(curr.Color.A-prev.Color.A)) * 255)),
+				R: uint8(math.Max(0, math.Min(255, math.Floor(sr*255+dither+0.5)))),
+				G: uint8(math.Max(0, math.Min(255, math.Floor(sg*255+dither+0.5)))),
+				B: uint8(math.Max(0, math.Min(255, math.Floor(sb*255+dither+0.5)))),
+				A: uint8(math.Round(la * 255)),
 			}
 		}
 	}
-	return styleToColor(stops[len(stops)-1].Color)
+	return color.RGBA{linearToSrgb(last.R), linearToSrgb(last.G), linearToSrgb(last.B), uint8(math.Round(last.A * 255))}
 }
 
 func fillRect(img *image.RGBA, x, y, w, h int, c color.Color) {
 	rect := image.Rect(x, y, x+w, y+h).Intersect(img.Bounds())
-	draw.Draw(img, rect, image.NewUniform(c), image.Point{}, draw.Over)
+	draw.Draw(img, rect, uniformSrc(c), image.Point{}, draw.Over)
 }
 
 func blendOver(sr, sg, sb, sa, dr, dg, db, da uint8) (uint8, uint8, uint8, uint8) {
@@ -470,6 +652,13 @@ func blendOver(sr, sg, sb, sa, dr, dg, db, da uint8) (uint8, uint8, uint8, uint8
 func styleToColor(c style.Color) color.RGBA {
 	a := uint8(math.Round(c.A * 255))
 	return color.RGBA{R: c.R, G: c.G, B: c.B, A: a}
+}
+
+func uniformSrc(c color.Color) *image.Uniform {
+	if rgba, ok := c.(color.RGBA); ok {
+		return image.NewUniform(color.NRGBA{R: rgba.R, G: rgba.G, B: rgba.B, A: rgba.A})
+	}
+	return image.NewUniform(c)
 }
 
 func (r *PNGRenderer) renderBoxShadows(l layout.Layout, cs *style.ComputedStyle, absX, absY float64, insetPass bool) {
@@ -650,51 +839,187 @@ func (r *PNGRenderer) renderInsetShadow(absX, absY, w, h float64, s style.Shadow
 }
 
 func roundedMask(w, h int, tl, tr, br, bl float64) *image.Alpha {
-	mask := image.NewAlpha(image.Rect(0, 0, w, h))
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			mask.SetAlpha(x, y, color.Alpha{A: 255})
+	const s = 2
+	sw, sh := w*s, h*s
+
+	hi := image.NewAlpha(image.Rect(0, 0, sw, sh))
+	for y := range sh {
+		for x := range sw {
+			hi.SetAlpha(x, y, color.Alpha{A: 255})
 		}
 	}
+
 	type corner struct {
 		r      float64
+		cx, cy float64
 		x0, y0 int
-		flipX  bool
-		flipY  bool
 	}
 	corners := []corner{
-		{tl, 0, 0, false, false},
-		{tr, w - int(tr), 0, true, false},
-		{bl, 0, h - int(bl), false, true},
-		{br, w - int(br), h - int(br), true, true},
+		{tl * s, tl * s, tl * s, 0, 0},
+		{tr * s, float64(sw) - tr*s, tr * s, sw - int(tr*s), 0},
+		{bl * s, bl * s, float64(sh) - bl*s, 0, sh - int(bl*s)},
+		{br * s, float64(sw) - br*s, float64(sh) - br*s, sw - int(br*s), sh - int(br*s)},
 	}
 	for _, c := range corners {
 		if c.r <= 0 {
 			continue
 		}
 		ri := int(c.r)
-		for ly := 0; ly < ri; ly++ {
-			for lx := 0; lx < ri; lx++ {
-				var dx, dy float64
-				if c.flipX {
-					dx = float64(lx) + 0.5
-				} else {
-					dx = float64(ri-lx) - 0.5
+		for ly := range ri {
+			for lx := range ri {
+				px := c.x0 + lx
+				py := c.y0 + ly
+				if px < 0 || px >= sw || py < 0 || py >= sh {
+					continue
 				}
-				if c.flipY {
-					dy = float64(ly) + 0.5
-				} else {
-					dy = float64(ri-ly) - 0.5
-				}
-				if dx*dx+dy*dy > c.r*c.r {
-					px := c.x0 + lx
-					py := c.y0 + ly
-					if px >= 0 && px < w && py >= 0 && py < h {
-						mask.SetAlpha(px, py, color.Alpha{A: 0})
-					}
+				dx := float64(px) + 0.5 - c.cx
+				dy := float64(py) + 0.5 - c.cy
+				dist := math.Sqrt(dx*dx+dy*dy) - c.r
+				if dist >= 0.5 {
+					hi.SetAlpha(px, py, color.Alpha{A: 0})
+				} else if dist > -0.5 {
+					a := uint8((0.5 - dist) * 255)
+					hi.SetAlpha(px, py, color.Alpha{A: a})
 				}
 			}
 		}
 	}
+
+	mask := image.NewAlpha(image.Rect(0, 0, w, h))
+	for y := range h {
+		for x := range w {
+			a00 := uint32(hi.AlphaAt(x*s, y*s).A)
+			a10 := uint32(hi.AlphaAt(x*s+1, y*s).A)
+			a01 := uint32(hi.AlphaAt(x*s, y*s+1).A)
+			a11 := uint32(hi.AlphaAt(x*s+1, y*s+1).A)
+			mask.SetAlpha(x, y, color.Alpha{A: uint8((a00 + a10 + a01 + a11 + 2) / 4)})
+		}
+	}
 	return mask
+}
+
+func (r *PNGRenderer) renderInlineSVG(pn *parse.Node, cs *style.ComputedStyle, absX, absY, w, h float64) {
+	svgXML := SerializeSVGNode(pn)
+	img, err := rasterizeSVG([]byte(svgXML), int(w), int(h))
+	if err != nil {
+		return
+	}
+	dstRect := image.Rect(int(absX), int(absY), int(absX+w), int(absY+h))
+	hasRadius := cs.BorderTopLeftRadius > 0 || cs.BorderTopRightRadius > 0 ||
+		cs.BorderBottomLeftRadius > 0 || cs.BorderBottomRightRadius > 0
+	if hasRadius {
+		tmp := image.NewRGBA(dstRect.Sub(dstRect.Min))
+		xdraw.BiLinear.Scale(tmp, tmp.Bounds(), img, img.Bounds(), xdraw.Over, nil)
+		mask := roundedMask(int(w), int(h),
+			cs.BorderTopLeftRadius, cs.BorderTopRightRadius,
+			cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
+		draw.DrawMask(r.img, dstRect, tmp, image.Point{}, mask, image.Point{}, draw.Over)
+	} else {
+		xdraw.BiLinear.Scale(r.img, dstRect, img, img.Bounds(), xdraw.Over, nil)
+	}
+}
+
+func (r *PNGRenderer) renderImage(src string, cs *style.ComputedStyle, absX, absY, w, h float64) {
+	dataURI, ok := resolveImageSource(src)
+	if !ok {
+		return
+	}
+
+	img, err := decodeDataURI(dataURI, int(w), int(h))
+	if err != nil {
+		return
+	}
+
+	dstRect := image.Rect(int(absX), int(absY), int(absX+w), int(absY+h))
+
+	hasRadius := cs.BorderTopLeftRadius > 0 || cs.BorderTopRightRadius > 0 ||
+		cs.BorderBottomLeftRadius > 0 || cs.BorderBottomRightRadius > 0
+
+	if hasRadius {
+		tmp := image.NewRGBA(dstRect.Sub(dstRect.Min))
+		xdraw.BiLinear.Scale(tmp, tmp.Bounds(), img, img.Bounds(), xdraw.Over, nil)
+		mask := roundedMask(int(w), int(h),
+			cs.BorderTopLeftRadius, cs.BorderTopRightRadius,
+			cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
+		draw.DrawMask(r.img, dstRect, tmp, image.Point{}, mask, image.Point{}, draw.Over)
+	} else {
+		xdraw.BiLinear.Scale(r.img, dstRect, img, img.Bounds(), xdraw.Over, nil)
+	}
+}
+
+func decodeDataURI(uri string, targetSize ...int) (image.Image, error) {
+	idx := strings.Index(uri, ",")
+	if idx < 0 {
+		return nil, image.ErrFormat
+	}
+	header := uri[:idx]
+	payload := uri[idx+1:]
+
+	if strings.Contains(header, "image/svg") {
+		var data []byte
+		if strings.Contains(header, "base64") {
+			var err error
+			data, err = base64.StdEncoding.DecodeString(payload)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			decoded, err := urlDecode(payload)
+			if err != nil {
+				return nil, err
+			}
+			data = []byte(decoded)
+		}
+		tw, th := 0, 0
+		if len(targetSize) >= 2 {
+			tw, th = targetSize[0], targetSize[1]
+		}
+		return rasterizeSVG(data, tw, th)
+	}
+
+	data, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		return nil, err
+	}
+	r := bytes.NewReader(data)
+	if strings.Contains(header, "image/png") {
+		return png.Decode(r)
+	}
+	if strings.Contains(header, "image/jpeg") {
+		return jpeg.Decode(r)
+	}
+	img, _, err := image.Decode(r)
+	return img, err
+}
+
+func urlDecode(s string) (string, error) {
+	var b strings.Builder
+	b.Grow(len(s))
+	i := 0
+	for i < len(s) {
+		if s[i] == '%' && i+2 < len(s) {
+			hi := unhex(s[i+1])
+			lo := unhex(s[i+2])
+			if hi >= 0 && lo >= 0 {
+				b.WriteByte(byte(hi<<4 | lo))
+				i += 3
+				continue
+			}
+		}
+		b.WriteByte(s[i])
+		i++
+	}
+	return b.String(), nil
+}
+
+func unhex(c byte) int {
+	switch {
+	case c >= '0' && c <= '9':
+		return int(c - '0')
+	case c >= 'a' && c <= 'f':
+		return int(c-'a') + 10
+	case c >= 'A' && c <= 'F':
+		return int(c-'A') + 10
+	}
+	return -1
 }

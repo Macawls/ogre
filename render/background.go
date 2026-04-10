@@ -200,7 +200,7 @@ func renderLinearGradient(g style.Gradient, w, h float64, idGen func(string) str
 	}
 	x1, y1, x2, y2 := gradientEndpoints(rad, w, h)
 
-	defs := fmt.Sprintf(`<linearGradient id="%s" x1="%.6g%%" y1="%.6g%%" x2="%.6g%%" y2="%.6g%%">`, id, x1, y1, x2, y2)
+	defs := fmt.Sprintf(`<linearGradient id="%s" x1="%.6g%%" y1="%.6g%%" x2="%.6g%%" y2="%.6g%%" color-interpolation="linearRGB">`, id, x1, y1, x2, y2)
 	for _, s := range g.Stops {
 		defs += fmt.Sprintf(`<stop offset="%.6g%%" stop-color="%s"/>`, s.Position*100, s.Color.String())
 	}
@@ -218,7 +218,7 @@ func renderRadialGradient(g style.Gradient, idGen func(string) string) Backgroun
 	cx := g.PositionX
 	cy := g.PositionY
 
-	defs := fmt.Sprintf(`<radialGradient id="%s" cx="%.6g%%" cy="%.6g%%" r="50%%">`, id, cx, cy)
+	defs := fmt.Sprintf(`<radialGradient id="%s" cx="%.6g%%" cy="%.6g%%" r="50%%" color-interpolation="linearRGB">`, id, cx, cy)
 	for _, s := range g.Stops {
 		defs += fmt.Sprintf(`<stop offset="%.6g%%" stop-color="%s"/>`, s.Position*100, s.Color.String())
 	}

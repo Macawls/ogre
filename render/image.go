@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/macawls/ogre/parse"
 	"github.com/macawls/ogre/style"
 )
 
@@ -128,6 +129,58 @@ func parsePosValue(s string, size float64) float64 {
 		return v
 	}
 	return 0
+}
+
+func SerializeSVGNode(n *parse.Node) string {
+	var b strings.Builder
+	serializeNode(&b, n)
+	return b.String()
+}
+
+func serializeNode(b *strings.Builder, n *parse.Node) {
+	if n.Type == parse.TextNode {
+		b.WriteString(xmlEscape(n.Text))
+		return
+	}
+	b.WriteByte('<')
+	b.WriteString(n.Tag)
+	for k, v := range n.Attrs {
+		fmt.Fprintf(b, ` %s="%s"`, k, xmlEscape(v))
+	}
+	for k, v := range n.Style {
+		fmt.Fprintf(b, ` %s="%s"`, k, xmlEscape(v))
+	}
+	if len(n.Children) == 0 {
+		b.WriteString("/>")
+		return
+	}
+	b.WriteByte('>')
+	for _, c := range n.Children {
+		serializeNode(b, c)
+	}
+	fmt.Fprintf(b, "</%s>", n.Tag)
+}
+
+func RenderInlineSVG(pn *parse.Node, x, y, w, h float64) string {
+	var b strings.Builder
+	b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg"`)
+	if vb, ok := pn.Attrs["viewBox"]; ok {
+		fmt.Fprintf(&b, ` viewBox="%s"`, xmlEscape(vb))
+	}
+	fmt.Fprintf(&b, ` x="%.4g" y="%.4g" width="%.4g" height="%.4g"`, x, y, w, h)
+	for k, v := range pn.Attrs {
+		switch k {
+		case "viewBox", "width", "height", "xmlns":
+			continue
+		}
+		fmt.Fprintf(&b, ` %s="%s"`, k, xmlEscape(v))
+	}
+	b.WriteByte('>')
+	for _, c := range pn.Children {
+		serializeNode(&b, c)
+	}
+	b.WriteString("</svg>")
+	return b.String()
 }
 
 func renderBrokenImage(x, y, w, h float64) string {
