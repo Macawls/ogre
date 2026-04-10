@@ -51,7 +51,7 @@ export const templates = {
 </div>`,
 
   product: `<div style="display:flex;width:100%;height:100%;background-color:#ffffff">
-  <div style="display:flex;flex-direction:column;width:55%;padding:56px 64px;justify-content:space-between">
+  <div style="display:flex;flex-direction:column;width:50%;padding:56px 64px;justify-content:space-between">
     <div style="display:flex;align-items:center;gap:12px">
       <div style="width:40px;height:40px;border-radius:10px;background-image:linear-gradient(135deg,#3b82f6,#8b5cf6)"></div>
       <div style="font-size:18px;font-weight:700;color:#111827;letter-spacing:-0.3px">Acme Analytics</div>
@@ -65,9 +65,9 @@ export const templates = {
       <div style="color:#6b7280;font-size:13px">No credit card required</div>
     </div>
   </div>
-  <div style="display:flex;flex-direction:column;width:45%;background-image:linear-gradient(135deg,#eff6ff,#f5f3ff);padding:40px;gap:14px;padding-top:auto;padding-bottom:auto">
+  <div style="display:flex;flex-direction:column;width:50%;background-image:linear-gradient(135deg,#eff6ff,#f5f3ff);padding:48px 40px;justify-content:center;gap:14px">
     <div style="display:flex;align-items:center;gap:14px;background-color:white;padding:18px 22px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-      <div style="width:40px;height:40px;border-radius:10px;background-color:#eff6ff;display:flex;align-items:center;justify-content:center">
+      <div style="width:36px;height:36px;border-radius:8px;background-color:#eff6ff;display:flex;align-items:center;justify-content:center">
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%233b82f6' x='4' y='13' width='4' height='8' rx='1'/%3E%3Crect fill='%233b82f6' x='10' y='5' width='4' height='16' rx='1'/%3E%3Crect fill='%233b82f6' x='16' y='9' width='4' height='12' rx='1'/%3E%3C/svg%3E" style="width:22px;height:22px" />
       </div>
       <div style="display:flex;flex-direction:column">
@@ -79,7 +79,7 @@ export const templates = {
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:14px;background-color:white;padding:18px 22px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-      <div style="width:40px;height:40px;border-radius:10px;background-color:#f5f3ff;display:flex;align-items:center;justify-content:center">
+      <div style="width:36px;height:36px;border-radius:8px;background-color:#f5f3ff;display:flex;align-items:center;justify-content:center">
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238b5cf6' d='M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z'/%3E%3C/svg%3E" style="width:22px;height:22px" />
       </div>
       <div style="display:flex;flex-direction:column">
@@ -91,7 +91,7 @@ export const templates = {
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:14px;background-color:white;padding:18px 22px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-      <div style="width:40px;height:40px;border-radius:10px;background-color:#fefce8;display:flex;align-items:center;justify-content:center">
+      <div style="width:36px;height:36px;border-radius:8px;background-color:#fefce8;display:flex;align-items:center;justify-content:center">
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ca8a04' d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E" style="width:22px;height:22px" />
       </div>
       <div style="display:flex;flex-direction:column">
@@ -150,21 +150,21 @@ export const templates = {
   </div>
   <div style="display:flex;gap:16px">
     <div style="display:flex;align-items:center;gap:10px;background-color:rgba(255,255,255,0.06);padding:16px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
-      <div style="font-size:32px">🌍</div>
+      <div style="font-size:16px">🌍</div>
       <div style="display:flex;flex-direction:column">
         <div style="color:white;font-size:20px;font-weight:700">42 regions</div>
         <div style="color:#71717a;font-size:14px">Global edge network</div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;background-color:rgba(255,255,255,0.06);padding:16px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
-      <div style="font-size:32px">⚡</div>
+      <div style="font-size:16px">⚡</div>
       <div style="display:flex;flex-direction:column">
         <div style="color:white;font-size:20px;font-weight:700">&lt;50ms</div>
         <div style="color:#71717a;font-size:14px">Average latency</div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;background-color:rgba(255,255,255,0.06);padding:16px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
-      <div style="font-size:32px">🔒</div>
+      <div style="font-size:16px">🔒</div>
       <div style="display:flex;flex-direction:column">
         <div style="color:white;font-size:20px;font-weight:700">SOC 2</div>
         <div style="color:#71717a;font-size:14px">Certified</div>
