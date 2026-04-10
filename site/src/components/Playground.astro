@@ -1,440 +1,994 @@
 ---
+import { templates } from "../data/templates";
+const presetsJSON = JSON.stringify(templates);
 ---
 
 <div class="not-content pg-root">
-  <div class="pg-vscode">
-    <!-- Activity bar -->
-    <div class="pg-activity">
-      <div class="pg-activity-icon pg-activity-active" title="Explorer">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-      </div>
-      <div class="pg-activity-icon" title="Search">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      </div>
-    </div>
+	<!-- Options card -->
+	<div class="pg-options">
+		<div class="pg-row">
+			<label class="pg-label">Template</label>
+			<div class="pg-seg">
+				<button class="pg-seg-btn pg-seg-btn--active" data-preset="blog"
+					>Blog</button
+				>
+				<button class="pg-seg-btn" data-preset="event">Event</button>
+				<button class="pg-seg-btn" data-preset="product">Product</button>
+				<button class="pg-seg-btn" data-preset="repo">Repo</button>
+				<button class="pg-seg-btn" data-preset="emoji">Emoji</button>
+				<button class="pg-seg-btn" data-preset="rtl">RTL</button>
+			</div>
+		</div>
+		<div class="pg-row">
+			<label class="pg-label">Output</label>
+			<div class="pg-seg pg-seg--sm">
+				<button class="pg-seg-btn pg-seg-btn--active" data-format="svg"
+					>SVG</button
+				>
+				<button class="pg-seg-btn" data-format="png">PNG</button>
+				<button class="pg-seg-btn" data-format="jpeg">JPEG</button>
+			</div>
+			<div class="pg-fields">
+				<label class="pg-field">
+					<span class="pg-field-label">W</span>
+					<input
+						id="pg-width"
+						type="number"
+						value="1200"
+						min="1"
+						max="4096"
+						class="pg-input"
+					/>
+				</label>
+				<span class="pg-times">&times;</span>
+				<label class="pg-field">
+					<span class="pg-field-label">H</span>
+					<input
+						id="pg-height"
+						type="number"
+						value="630"
+						min="1"
+						max="4096"
+						class="pg-input"
+					/>
+				</label>
+				<label
+					class="pg-field pg-field--quality"
+					id="pg-quality-field"
+					style="display:none"
+				>
+					<span class="pg-field-label">Quality</span>
+					<input
+						id="pg-quality"
+						type="number"
+						value="90"
+						min="1"
+						max="100"
+						class="pg-input pg-input--sm"
+					/>
+				</label>
+			</div>
+			<button
+				id="pg-copy-curl"
+				class="pg-curl-btn"
+				title="Copy as curl command"
+			>
+				<svg
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					><rect x="9" y="9" width="13" height="13" rx="2"></rect><path
+						d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg
+				>
+				<span id="pg-curl-text">curl</span>
+			</button>
+		</div>
+	</div>
 
-    <!-- Sidebar -->
-    <div class="pg-sidebar">
-      <div class="pg-sidebar-title">TEMPLATES</div>
-      <button class="pg-file pg-file-active" data-preset="blog">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
-        blog-post.html
-      </button>
-      <button class="pg-file" data-preset="event">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
-        conference.html
-      </button>
-      <button class="pg-file" data-preset="product">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
-        product.html
-      </button>
-      <button class="pg-file" data-preset="repo">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
-        repo-card.html
-      </button>
-      <button class="pg-file" data-preset="emoji">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
-        emoji.html
-      </button>
-    </div>
-
-    <!-- Main area -->
-    <div class="pg-main">
-      <!-- Editor tabs -->
-      <div class="pg-tabs">
-        <div class="pg-tab pg-tab-active" id="pg-tab-editor">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#e06c75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
-          <span id="pg-tab-name">blog-post.html</span>
-        </div>
-        <div class="pg-tab" id="pg-tab-output">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#61afef"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-          output.svg
-        </div>
-        <div class="pg-tabs-spacer"></div>
-        <button id="pg-render" class="pg-run-btn" disabled>
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2l10 6-10 6V2z"/></svg>
-          Run
-        </button>
-        <span id="pg-status" class="pg-status-badge">Loading...</span>
-      </div>
-
-      <!-- Editor + Preview split -->
-      <div class="pg-content">
-        <div id="pg-editor-wrap" class="pg-editor-wrap">
-          <div id="pg-editor-mount" class="pg-editor-mount"></div>
-        </div>
-        <div id="pg-output" class="pg-preview">
-          <div class="pg-placeholder">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            <span>Ctrl+Enter to render</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Status bar -->
-      <div class="pg-statusbar">
-        <span>HTML</span>
-        <span>UTF-8</span>
-        <span>Ogre WASM</span>
-        <span id="pg-render-time"></span>
-      </div>
-    </div>
-  </div>
+	<!-- Split -->
+	<div class="pg-split">
+		<div class="pg-editor-pane">
+			<div id="pg-editor-mount" class="pg-editor-mount"></div>
+		</div>
+		<div class="pg-preview-pane">
+			<div class="pg-preview-inner">
+				<div class="pg-img-container">
+					<div id="pg-output">
+						<div class="pg-placeholder">
+							<svg
+								width="28"
+								height="28"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+								><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle
+									cx="8.5"
+									cy="8.5"
+									r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg
+							>
+							<span>Edit HTML to render</span>
+						</div>
+					</div>
+					<div id="pg-loading" class="pg-loading-bar"></div>
+				</div>
+				<details id="pg-http-details" class="pg-http-details" style="display:none">
+					<summary class="pg-http-summary">
+						<span>Request &amp; Response</span>
+						<span id="pg-http-status" class="pg-http-status-badge"></span>
+					</summary>
+					<div id="pg-http" class="pg-http"></div>
+				</details>
+			</div>
+		</div>
+	</div>
 </div>
 
-<script is:inline src="/playground/wasm_exec.js"></script>
-<script is:inline>
-const PRESETS = {
-  blog: { name: 'blog-post.html', code: `<div class="flex flex-col w-full h-full bg-slate-950 p-16 justify-between">\n  <div class="flex gap-3">\n    <div class="bg-rose-500 text-white text-sm px-3 py-1 rounded-md font-semibold">Engineering</div>\n    <div class="bg-slate-800 text-slate-300 text-sm px-3 py-1 rounded-md">12 min read</div>\n  </div>\n  <div class="flex flex-col mt-6">\n    <div class="text-6xl font-extrabold text-white">Why We Migrated to Postgres</div>\n    <div class="text-2xl text-slate-400 mt-4">Lessons from moving 2TB of data with zero downtime</div>\n  </div>\n  <div class="flex items-center gap-4 mt-auto">\n    <div class="w-12 h-12 rounded-full bg-rose-600"></div>\n    <div class="flex flex-col">\n      <div class="text-white font-semibold">Sarah Chen</div>\n      <div class="text-slate-500 text-sm">March 15, 2026</div>\n    </div>\n  </div>\n</div>` },
-  event: { name: 'conference.html', code: `<div style="display:flex;flex-direction:column;width:100%;height:100%;padding:64px;justify-content:space-between;background-image:linear-gradient(135deg,#0c0a1a 0%,#1a0533 40%,#2d0a4e 100%)">\n  <div style="display:flex;flex-direction:column">\n    <div style="color:#c084fc;font-size:14px;font-weight:700;letter-spacing:4px">JUNE 12–14, 2026 · BERLIN</div>\n    <div style="color:white;font-size:68px;font-weight:800;margin-top:24px">Systems Conf Europe</div>\n    <div style="color:#a78bfa;font-size:24px;margin-top:12px">Infrastructure, distributed systems, and platform engineering</div>\n  </div>\n  <div style="display:flex;align-items:center;gap:16px">\n    <div style="background-color:#c084fc;color:#0c0a1a;font-size:16px;font-weight:700;padding:10px 24px;border-radius:8px">Get Tickets</div>\n    <div style="color:#a78bfa;font-size:16px">Early bird pricing ends May 1</div>\n  </div>\n</div>` },
-  product: { name: 'product.html', code: `<div style="display:flex;flex-direction:column;width:100%;height:100%;background-color:#fafafa;padding:64px;justify-content:space-between">\n  <div style="display:flex;align-items:center;gap:12px">\n    <div style="width:44px;height:44px;border-radius:10px;background-image:linear-gradient(135deg,#3b82f6,#8b5cf6)"></div>\n    <div style="font-size:22px;font-weight:700;color:#111827">Acme Analytics</div>\n  </div>\n  <div style="display:flex;flex-direction:column;margin-top:32px">\n    <div style="font-size:52px;font-weight:800;color:#111827">Real-time dashboards for your entire team</div>\n    <div style="font-size:22px;color:#6b7280;margin-top:16px">Track metrics, set alerts, and share insights. No SQL required.</div>\n  </div>\n  <div style="display:flex;align-items:center;gap:16px;margin-top:auto">\n    <div style="background-color:#3b82f6;color:white;font-size:16px;font-weight:600;padding:10px 24px;border-radius:8px">Start Free Trial</div>\n    <div style="color:#6b7280;font-size:16px">No credit card required</div>\n  </div>\n</div>` },
-  repo: { name: 'repo-card.html', code: `<div style="display:flex;flex-direction:column;width:100%;height:100%;background-color:#0d1117;padding:64px;justify-content:space-between">\n  <div style="display:flex;align-items:center;gap:14px">\n    <div style="width:48px;height:48px;border-radius:24px;background-color:#238636"></div>\n    <div style="font-size:24px;font-weight:600;color:#f0f6fc">vercel / next.js</div>\n  </div>\n  <div style="display:flex;flex-direction:column;margin-top:32px">\n    <div style="font-size:48px;font-weight:700;color:#f0f6fc">The React Framework for the Web</div>\n    <div style="font-size:20px;color:#8b949e;margin-top:16px;line-height:1.5">Used by some of the world's largest companies, Next.js enables you to create full-stack web applications.</div>\n  </div>\n  <div style="display:flex;align-items:center;gap:24px;margin-top:auto">\n    <div style="color:#8b949e;font-size:15px">TypeScript</div>\n    <div style="color:#8b949e;font-size:15px">MIT License</div>\n    <div style="color:#f0f6fc;font-size:15px;font-weight:600">★ 128k</div>\n  </div>\n</div>` },
-  emoji: { name: 'emoji.html', code: `<div style="display:flex;flex-direction:column;width:100%;height:100%;background-color:#18181b;padding:64px;justify-content:center">\n  <div style="color:white;font-size:52px;font-weight:800">Ship faster 🚀</div>\n  <div style="color:#a1a1aa;font-size:24px;margin-top:16px">Deploy with confidence ✨ Monitor in real-time 📊 Scale automatically ⚡</div>\n</div>` }
-};
+<script is:inline define:vars={{ presetsJSON }}>
+	const API_URL = "https://ogre-api.macawls.dev/render";
 
-let wasmReady = false;
-let editor = null;
-let currentPreset = 'blog';
+	const PRESETS = JSON.parse(presetsJSON);
 
-async function loadMonaco() {
-  return new Promise((resolve) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js';
-    s.onload = () => {
-      require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs' }});
-      window.MonacoEnvironment = {
-        getWorkerUrl: () => `data:text/javascript;charset=utf-8,${encodeURIComponent('self.MonacoEnvironment={baseUrl:"https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/"};importScripts("https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/base/worker/workerMain.js");')}`
-      };
-      require(['vs/editor/editor.main'], function() {
-        monaco.editor.defineTheme('ogre-dark', {
-          base: 'vs-dark', inherit: true,
-          rules: [
-            { token: 'tag', foreground: 'e06c75' },
-            { token: 'attribute.name', foreground: 'd19a66' },
-            { token: 'attribute.value', foreground: '98c379' },
-            { token: 'delimiter', foreground: 'abb2bf' },
-            { token: 'string', foreground: '98c379' },
-          ],
-          colors: {
-            'editor.background': '#1e1e1e',
-            'editor.foreground': '#d4d4d4',
-            'editor.lineHighlightBackground': '#2a2d2e',
-            'editorCursor.foreground': '#aeafad',
-            'editor.selectionBackground': '#264f78',
-            'editorLineNumber.foreground': '#858585',
-            'editorLineNumber.activeForeground': '#c6c6c6',
-            'editorGutter.background': '#1e1e1e',
-            'editorWidget.background': '#252526',
-            'tab.activeBackground': '#1e1e1e',
-            'tab.inactiveBackground': '#2d2d2d',
-          }
-        });
-        editor = monaco.editor.create(document.getElementById('pg-editor-mount'), {
-          value: PRESETS.blog.code,
-          language: 'html',
-          theme: 'ogre-dark',
-          fontSize: 13,
-          fontFamily: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
-          fontLigatures: true,
-          lineHeight: 20,
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          renderLineHighlight: 'line',
-          padding: { top: 8, bottom: 8 },
-          overviewRulerLanes: 0,
-          hideCursorInOverviewRuler: true,
-          scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 },
-          wordWrap: 'on',
-          tabSize: 2,
-          automaticLayout: true,
-          bracketPairColorization: { enabled: true },
-          guides: { bracketPairs: true },
-        });
-        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, doRender);
-        resolve();
-      });
-    };
-    document.head.appendChild(s);
-  });
-}
+	let editor = null;
+	let currentPreset = "blog";
+	let rendering = false;
+	let currentObjectURL = null;
 
-async function loadWasm() {
-  const status = document.getElementById('pg-status');
-  const btn = document.getElementById('pg-render');
-  try {
-    status.textContent = 'Loading WASM...';
-    const go = new Go();
-    const result = await WebAssembly.instantiateStreaming(fetch('/playground/ogre.wasm'), go.importObject);
-    go.run(result.instance);
-    wasmReady = true;
-    btn.disabled = false;
-    status.textContent = 'Ready';
-    status.classList.add('ready');
-  } catch (err) {
-    status.textContent = 'Failed';
-    status.classList.add('error');
-  }
-}
+	async function loadMonaco() {
+		return new Promise((resolve) => {
+			const s = document.createElement("script");
+			s.src =
+				"https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js";
+			s.onload = () => {
+				require.config({
+					paths: {
+						vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs",
+					},
+				});
+				window.MonacoEnvironment = {
+					getWorkerUrl: () =>
+						`data:text/javascript;charset=utf-8,${encodeURIComponent('self.MonacoEnvironment={baseUrl:"https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/"};importScripts("https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/base/worker/workerMain.js");')}`,
+				};
+				require(["vs/editor/editor.main"], function () {
+					const isDark = document.documentElement.dataset.theme !== "light";
+					monaco.editor.defineTheme("ogre-dark", {
+						base: "vs-dark",
+						inherit: true,
+						rules: [
+							{ token: "tag", foreground: "e06c75" },
+							{ token: "attribute.name", foreground: "d19a66" },
+							{ token: "attribute.value", foreground: "98c379" },
+							{ token: "delimiter", foreground: "abb2bf" },
+							{ token: "string", foreground: "98c379" },
+						],
+						colors: {
+							"editor.background": "#282c34",
+							"editor.foreground": "#abb2bf",
+							"editor.lineHighlightBackground": "#2c313a",
+							"editorCursor.foreground": "#528bff",
+							"editor.selectionBackground": "#3e4451",
+							"editorLineNumber.foreground": "#5c6370",
+							"editorLineNumber.activeForeground": "#abb2bf",
+							"editorGutter.background": "#282c34",
+						},
+					});
+					monaco.editor.defineTheme("ogre-light", {
+						base: "vs",
+						inherit: true,
+						rules: [
+							{ token: "tag", foreground: "e45649" },
+							{ token: "attribute.name", foreground: "986801" },
+							{ token: "attribute.value", foreground: "50a14f" },
+							{ token: "delimiter", foreground: "383a42" },
+							{ token: "string", foreground: "50a14f" },
+						],
+						colors: {
+							"editor.background": "#fafafa",
+							"editor.foreground": "#383a42",
+							"editor.lineHighlightBackground": "#f0f0f1",
+							"editorCursor.foreground": "#526fff",
+							"editor.selectionBackground": "#dce6fb",
+							"editorLineNumber.foreground": "#a0a1a7",
+							"editorLineNumber.activeForeground": "#383a42",
+							"editorGutter.background": "#fafafa",
+						},
+					});
+					editor = monaco.editor.create(
+						document.getElementById("pg-editor-mount"),
+						{
+							value: PRESETS.blog,
+							language: "html",
+							theme: isDark ? "ogre-dark" : "ogre-light",
+							fontSize: 13,
+							fontFamily:
+								"'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
+							fontLigatures: true,
+							lineHeight: 20,
+							minimap: { enabled: false },
+							scrollBeyondLastLine: false,
+							renderLineHighlight: "line",
+							padding: { top: 12, bottom: 12 },
+							overviewRulerLanes: 0,
+							hideCursorInOverviewRuler: true,
+							scrollbar: {
+								verticalScrollbarSize: 8,
+								horizontalScrollbarSize: 8,
+							},
+							wordWrap: "on",
+							tabSize: 2,
+							automaticLayout: true,
+							bracketPairColorization: { enabled: true },
+							guides: { bracketPairs: true },
+						},
+					);
+					resolve();
+				});
+			};
+			document.head.appendChild(s);
+		});
+	}
 
-function doRender() {
-  if (!wasmReady || !editor) return;
-  const output = document.getElementById('pg-output');
-  const timeEl = document.getElementById('pg-render-time');
-  const start = performance.now();
-  const result = ogreRender(editor.getValue(), 1200, 630);
-  const elapsed = (performance.now() - start).toFixed(1);
-  if (result.error) {
-    output.innerHTML = `<div class="pg-error">${result.error}</div>`;
-    timeEl.textContent = '';
-  } else {
-    output.innerHTML = result.svg;
-    timeEl.textContent = `${elapsed}ms`;
-  }
-}
+	function syncEditorTheme() {
+		if (!editor) return;
+		const isDark = document.documentElement.dataset.theme !== "light";
+		monaco.editor.setTheme(isDark ? "ogre-dark" : "ogre-light");
+	}
 
-let renderTimeout = null;
+	const themeObserver = new MutationObserver(syncEditorTheme);
+	themeObserver.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ["data-theme"],
+	});
 
-function scheduleRender() {
-  if (!wasmReady) return;
-  clearTimeout(renderTimeout);
-  renderTimeout = setTimeout(doRender, 400);
-}
+	function getFormat() {
+		return (
+			document.querySelector("[data-format].pg-seg-btn--active")?.dataset
+				.format || "svg"
+		);
+	}
 
-function selectPreset(key) {
-  if (!PRESETS[key] || !editor) return;
-  currentPreset = key;
-  editor.setValue(PRESETS[key].code);
-  document.getElementById('pg-tab-name').textContent = PRESETS[key].name;
-  document.querySelectorAll('.pg-file').forEach(f => f.classList.remove('pg-file-active'));
-  document.querySelector(`[data-preset="${key}"]`)?.classList.add('pg-file-active');
-  if (wasmReady) doRender();
-}
+	function formatBytes(bytes) {
+		if (bytes < 1024) return bytes + " B";
+		if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+		return (bytes / 1048576).toFixed(1) + " MB";
+	}
 
-document.addEventListener('DOMContentLoaded', async () => {
-  await Promise.all([loadMonaco(), loadWasm()]);
-  document.getElementById('pg-render').addEventListener('click', doRender);
-  document.querySelectorAll('.pg-file').forEach(f => {
-    f.addEventListener('click', () => selectPreset(f.dataset.preset));
-  });
-  if (editor) {
-    editor.onDidChangeModelContent(() => scheduleRender());
-  }
-  doRender();
-});
+	function updateQualityVisibility() {
+		const fmt = getFormat();
+		document.getElementById("pg-quality-field").style.display =
+			fmt === "jpeg" ? "" : "none";
+	}
+
+	function buildCurl() {
+		const format = getFormat();
+		const html = editor ? editor.getValue() : "";
+		const width = parseInt(document.getElementById("pg-width").value) || 1200;
+		const height = parseInt(document.getElementById("pg-height").value) || 630;
+		const body = { html, width, height, format };
+		if (format === "jpeg")
+			body.quality =
+				parseInt(document.getElementById("pg-quality").value) || 90;
+		const json = JSON.stringify(body);
+		const escaped = json.replace(/'/g, "'\\''");
+		return `curl -X POST ${API_URL} \\\n  -H 'Content-Type: application/json' \\\n  -d '${escaped}'`;
+	}
+
+	function showLoading(show) {
+		document
+			.getElementById("pg-loading")
+			.classList.toggle("pg-loading-bar--visible", show);
+	}
+
+	function updateHttpBadge(status, elapsed) {
+		const badge = document.getElementById("pg-http-status");
+		if (!status) {
+			badge.textContent = "";
+			return;
+		}
+		const cls = status >= 200 && status < 300 ? "pg-badge-ok" : "pg-badge-err";
+		badge.className = "pg-http-status-badge " + cls;
+		badge.textContent = `${status} · ${elapsed}ms`;
+	}
+
+	async function doRender() {
+		if (!editor || rendering) return;
+		rendering = true;
+		const output = document.getElementById("pg-output");
+		const httpEl = document.getElementById("pg-http");
+		const format = getFormat();
+		const html = editor.getValue();
+		const width = parseInt(document.getElementById("pg-width").value) || 1200;
+		const height = parseInt(document.getElementById("pg-height").value) || 630;
+		const reqBody = { html, width, height, format };
+		if (format === "jpeg") {
+			reqBody.quality =
+				parseInt(document.getElementById("pg-quality").value) || 90;
+		}
+
+		showLoading(true);
+		httpEl.innerHTML = "";
+		const bodyStr = JSON.stringify(reqBody, null, 2);
+
+		const start = performance.now();
+		try {
+			const res = await fetch(API_URL, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(reqBody),
+			});
+
+			const elapsed = (performance.now() - start).toFixed(0);
+			showLoading(false);
+
+			const resHeaders = {};
+			res.headers.forEach((v, k) => {
+				resHeaders[k] = v;
+			});
+
+			if (!res.ok) {
+				const text = await res.text();
+				let msg = text;
+				try {
+					msg = JSON.parse(text).error || text;
+				} catch {}
+				output.innerHTML = `<div class="pg-error">${escapeHtml(msg)}</div>`;
+				updateHttpBadge(res.status, elapsed);
+				httpEl.innerHTML = buildHttpDetail({
+					method: "POST",
+					path: "/render",
+					reqHeaders: { "Content-Type": "application/json" },
+					reqBody: bodyStr,
+					status: res.status,
+					statusText: res.statusText,
+					resHeaders,
+					resBody: text,
+					elapsed,
+				});
+				rendering = false;
+				return;
+			}
+
+			if (currentObjectURL) {
+				URL.revokeObjectURL(currentObjectURL);
+				currentObjectURL = null;
+			}
+
+			let responseSize = 0;
+			let resBodyPreview = "";
+			if (format === "svg") {
+				const svgText = await res.text();
+				responseSize = new Blob([svgText]).size;
+				output.innerHTML = `<div class="pg-img-wrap">${svgText}</div>`;
+				resBodyPreview =
+					svgText.length > 200 ? svgText.slice(0, 200) + "\u2026" : svgText;
+			} else {
+				const blob = await res.blob();
+				responseSize = blob.size;
+				currentObjectURL = URL.createObjectURL(blob);
+				output.innerHTML = `<div class="pg-img-wrap"><img src="${currentObjectURL}" alt="Rendered ${format.toUpperCase()}" /></div>`;
+				resBodyPreview = `<${format} binary, ${formatBytes(responseSize)}>`;
+			}
+
+			updateHttpBadge(res.status, elapsed);
+			httpEl.innerHTML = buildHttpDetail({
+				method: "POST",
+				path: "/render",
+				reqHeaders: { "Content-Type": "application/json" },
+				reqBody: bodyStr,
+				status: res.status,
+				statusText: res.statusText,
+				resHeaders,
+				resBody: resBodyPreview,
+				elapsed,
+				size: responseSize,
+			});
+		} catch (err) {
+			showLoading(false);
+			output.innerHTML = `<div class="pg-error">Connection failed. Is the API running?</div>`;
+			const failElapsed = (performance.now() - start).toFixed(0);
+			updateHttpBadge(0, failElapsed);
+			httpEl.innerHTML = buildHttpDetail({
+				method: "POST",
+				path: "/render",
+				reqHeaders: { "Content-Type": "application/json" },
+				reqBody: bodyStr,
+				status: 0,
+				statusText: "Connection Failed",
+				resHeaders: {},
+				resBody: "",
+				elapsed: failElapsed,
+			});
+		}
+		rendering = false;
+	}
+
+	function buildHttpDetail({
+		method,
+		path,
+		reqHeaders,
+		reqBody,
+		status,
+		statusText,
+		resHeaders,
+		resBody,
+		elapsed,
+		size,
+	}) {
+		const statusClass = status >= 200 && status < 300 ? "pg-c-ok" : "pg-c-err";
+		const statusLine =
+			status === 0
+				? `<span class="pg-c-err">ERR</span> ${escapeHtml(statusText)}`
+				: `<span class="${statusClass}">${status}</span> ${escapeHtml(statusText)}`;
+
+		const reqHdr = Object.entries(reqHeaders)
+			.map(([k, v]) => `${escapeHtml(k)}: ${escapeHtml(v)}`)
+			.join("\n");
+		const resHdr = Object.entries(resHeaders)
+			.map(([k, v]) => `${escapeHtml(k)}: ${escapeHtml(v)}`)
+			.join("\n");
+
+		return `
+    <div class="pg-http-section">
+      <div class="pg-http-title">
+        <span class="pg-c-accent">${method}</span> ${escapeHtml(path)}
+        <span class="pg-c-dim">&middot; ${elapsed}ms${size ? " &middot; " + formatBytes(size) : ""}</span>
+      </div>
+    </div>
+    <div class="pg-http-section">
+      <div class="pg-http-heading">Request Headers</div>
+      <pre class="pg-http-pre">${reqHdr}</pre>
+    </div>
+    <div class="pg-http-section">
+      <div class="pg-http-heading">Request Body</div>
+      <pre class="pg-http-pre">${escapeHtml(reqBody)}</pre>
+    </div>
+    <div class="pg-http-section">
+      <div class="pg-http-heading">Response &nbsp;${statusLine}</div>
+      <pre class="pg-http-pre">${resHdr}</pre>
+    </div>
+    ${
+			resBody
+				? `<div class="pg-http-section">
+      <div class="pg-http-heading">Response Body</div>
+      <pre class="pg-http-pre">${escapeHtml(resBody)}</pre>
+    </div>`
+				: ""
+		}`;
+	}
+
+	function escapeHtml(s) {
+		const d = document.createElement("div");
+		d.textContent = s;
+		return d.innerHTML;
+	}
+
+	let renderTimeout = null;
+	function scheduleRender() {
+		clearTimeout(renderTimeout);
+		renderTimeout = setTimeout(doRender, 400);
+	}
+
+	function selectPreset(key, skipRender) {
+		if (!PRESETS[key] || !editor) return;
+		currentPreset = key;
+		editor.setValue(PRESETS[key]);
+		document
+			.querySelectorAll("[data-preset]")
+			.forEach((p) => p.classList.remove("pg-seg-btn--active"));
+		document
+			.querySelector(`[data-preset="${key}"]`)
+			?.classList.add("pg-seg-btn--active");
+		if (!skipRender) {
+			updateURL();
+			doRender();
+		}
+	}
+
+	function updateURL() {
+		const params = new URLSearchParams();
+		const format = getFormat();
+		const w = document.getElementById("pg-width").value;
+		const h = document.getElementById("pg-height").value;
+		const q = document.getElementById("pg-quality").value;
+		const html = editor ? editor.getValue() : "";
+
+		if (currentPreset && PRESETS[currentPreset] === html) {
+			params.set("template", currentPreset);
+		} else if (html) {
+			params.set("html", btoa(unescape(encodeURIComponent(html))));
+		}
+		if (format !== "svg") params.set("format", format);
+		if (w !== "1200") params.set("w", w);
+		if (h !== "630") params.set("h", h);
+		if (format === "jpeg" && q !== "90") params.set("q", q);
+
+		const qs = params.toString();
+		const url = window.location.pathname + (qs ? "?" + qs : "");
+		history.replaceState(null, "", url);
+	}
+
+	function loadFromURL() {
+		const params = new URLSearchParams(window.location.search);
+
+		const template = params.get("template");
+		if (template && PRESETS[template]) {
+			currentPreset = template;
+		}
+
+		const format = params.get("format");
+		if (format && ["svg", "png", "jpeg"].includes(format)) {
+			document
+				.querySelectorAll("[data-format]")
+				.forEach((b) => b.classList.remove("pg-seg-btn--active"));
+			document
+				.querySelector(`[data-format="${format}"]`)
+				?.classList.add("pg-seg-btn--active");
+		}
+
+		const w = params.get("w");
+		if (w) document.getElementById("pg-width").value = w;
+		const h = params.get("h");
+		if (h) document.getElementById("pg-height").value = h;
+		const q = params.get("q");
+		if (q) document.getElementById("pg-quality").value = q;
+
+		updateQualityVisibility();
+
+		const htmlParam = params.get("html");
+		return htmlParam ? decodeURIComponent(escape(atob(htmlParam))) : null;
+	}
+
+	document.addEventListener("DOMContentLoaded", async () => {
+		const customHtml = loadFromURL();
+
+		await loadMonaco();
+
+		if (customHtml && editor) {
+			editor.setValue(customHtml);
+			document
+				.querySelectorAll("[data-preset]")
+				.forEach((p) => p.classList.remove("pg-seg-btn--active"));
+			currentPreset = null;
+		} else if (currentPreset !== "blog" && editor) {
+			selectPreset(currentPreset, true);
+		}
+
+		if (editor) {
+			editor.onDidChangeModelContent(() => {
+				updateURL();
+				scheduleRender();
+			});
+		}
+		document.querySelectorAll("[data-preset]").forEach((p) => {
+			p.addEventListener("click", () => selectPreset(p.dataset.preset));
+		});
+		document.querySelectorAll("[data-format]").forEach((f) => {
+			f.addEventListener("click", () => {
+				document
+					.querySelectorAll("[data-format]")
+					.forEach((b) => b.classList.remove("pg-seg-btn--active"));
+				f.classList.add("pg-seg-btn--active");
+				updateQualityVisibility();
+				updateURL();
+				doRender();
+			});
+		});
+		document.getElementById("pg-width").addEventListener("change", () => {
+			updateURL();
+			scheduleRender();
+		});
+		document.getElementById("pg-height").addEventListener("change", () => {
+			updateURL();
+			scheduleRender();
+		});
+		document.getElementById("pg-quality").addEventListener("change", () => {
+			updateURL();
+			scheduleRender();
+		});
+
+		document
+			.getElementById("pg-copy-curl")
+			.addEventListener("click", async () => {
+				const text = document.getElementById("pg-curl-text");
+				try {
+					await navigator.clipboard.writeText(buildCurl());
+					text.textContent = "copied";
+					setTimeout(() => {
+						text.textContent = "curl";
+					}, 1500);
+				} catch {}
+			});
+
+		doRender();
+	});
 </script>
 
 <style>
-  .pg-root {
-    max-width: 100%;
-    margin-top: -1rem;
-  }
-  .pg-root * { box-sizing: border-box; }
-  .pg-root button { all: unset; display: revert; box-sizing: border-box; cursor: pointer; }
-  .pg-root select { all: unset; display: revert; box-sizing: border-box; }
+	.pg-root {
+		max-width: 100%;
+		margin-top: -0.5rem;
+		font-family: var(--sl-font-system);
+	}
+	.pg-root *,
+	.pg-root *::before,
+	.pg-root *::after {
+		box-sizing: border-box;
+	}
 
-  .pg-vscode {
-    display: grid;
-    grid-template-columns: 48px 180px 1fr;
-    height: 600px;
-    border: 1px solid #333;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #1e1e1e;
-  }
+	/* ── Options card ── */
+	.pg-options {
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 10px;
+		background: var(--sl-color-gray-6);
+		padding: 12px 16px;
+		margin-bottom: 10px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.pg-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex-wrap: wrap;
+	}
+	.pg-label {
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--sl-color-gray-3);
+		width: 64px;
+		flex-shrink: 0;
+	}
 
-  /* Activity bar */
-  .pg-activity {
-    background: #333;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 8px;
-    gap: 2px;
-  }
-  .pg-activity-icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #858585;
-    cursor: pointer;
-  }
-  .pg-activity-icon:hover { color: #d4d4d4; }
-  .pg-activity-active {
-    color: #d4d4d4;
-    border-left: 2px solid #d4d4d4;
-  }
+	/* Segmented control */
+	.pg-seg {
+		display: inline-flex;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 8px;
+		overflow: hidden;
+		background: var(--sl-color-black);
+	}
+	.pg-seg-btn {
+		appearance: none;
+		border: none;
+		background: transparent;
+		font-family: var(--sl-font-system);
+		font-size: 0.8rem;
+		font-weight: 500;
+		padding: 6px 16px;
+		color: var(--sl-color-gray-2);
+		cursor: pointer;
+		transition:
+			color 0.12s,
+			background 0.12s;
+		border-right: 1px solid var(--sl-color-hairline-light);
+		line-height: 1.4;
+	}
+	.pg-seg-btn:last-child {
+		border-right: none;
+	}
+	.pg-seg-btn:hover {
+		color: var(--sl-color-white);
+		background: var(--sl-color-gray-5);
+	}
+	.pg-seg-btn--active {
+		color: var(--sl-color-white);
+		background: var(--sl-color-accent-low);
+	}
+	.pg-seg--sm .pg-seg-btn {
+		font-family: var(--sl-font-system-mono);
+		font-size: 0.75rem;
+		padding: 6px 14px;
+	}
 
-  /* Sidebar */
-  .pg-sidebar {
-    background: #252526;
-    border-right: 1px solid #333;
-    overflow-y: auto;
-    padding-top: 4px;
-  }
-  .pg-sidebar-title {
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #bbb;
-    padding: 8px 16px 6px;
-    letter-spacing: 0.8px;
-    font-family: 'Geist', system-ui, sans-serif;
-  }
-  .pg-file {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    padding: 3px 16px;
-    font-size: 0.75rem;
-    color: #ccc;
-    font-family: 'Geist', system-ui, sans-serif;
-    border: none;
-    background: none;
-    text-align: left;
-    white-space: nowrap;
-  }
-  .pg-file:hover { background: rgba(255,255,255,0.05); }
-  .pg-file-active { background: rgba(255,255,255,0.08); color: #fff; }
+	/* Dimension / quality fields */
+	.pg-fields {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-left: 4px;
+	}
+	.pg-field {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.pg-field-label {
+		font-size: 0.68rem;
+		font-weight: 600;
+		color: var(--sl-color-gray-3);
+		text-transform: uppercase;
+		letter-spacing: 0.3px;
+	}
+	.pg-input {
+		width: 60px;
+		font-family: var(--sl-font-system-mono);
+		font-size: 0.78rem;
+		padding: 4px 8px;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 6px;
+		background: var(--sl-color-black);
+		color: var(--sl-color-white);
+		outline: none;
+		transition: border-color 0.12s;
+		-moz-appearance: textfield;
+	}
+	.pg-input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+	}
+	.pg-input:focus {
+		border-color: var(--sl-color-accent);
+	}
+	.pg-input--sm {
+		width: 48px;
+	}
+	.pg-times {
+		font-size: 0.72rem;
+		color: var(--sl-color-gray-3);
+	}
+	.pg-field--quality {
+		margin-left: 8px;
+	}
 
-  /* Main area */
-  .pg-main {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
+	/* Copy curl button */
+	.pg-curl-btn {
+		appearance: none;
+		border: 1px solid var(--sl-color-hairline-light);
+		background: var(--sl-color-black);
+		font-family: var(--sl-font-system-mono);
+		font-size: 0.72rem;
+		font-weight: 500;
+		padding: 4px 10px;
+		border-radius: 6px;
+		color: var(--sl-color-gray-2);
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		margin-left: auto;
+		transition:
+			color 0.12s,
+			border-color 0.12s;
+	}
+	.pg-curl-btn:hover {
+		color: var(--sl-color-white);
+		border-color: var(--sl-color-gray-3);
+	}
 
-  /* Tabs */
-  .pg-tabs {
-    display: flex;
-    align-items: center;
-    background: #252526;
-    height: 35px;
-    flex-shrink: 0;
-  }
-  .pg-tab {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0 14px;
-    height: 100%;
-    font-size: 0.75rem;
-    color: #969696;
-    background: #2d2d2d;
-    border-right: 1px solid #252526;
-    cursor: pointer;
-    font-family: 'Geist', system-ui, sans-serif;
-    white-space: nowrap;
-  }
-  .pg-tab-active {
-    background: #1e1e1e;
-    color: #fff;
-    border-bottom: 1px solid #1e1e1e;
-  }
-  .pg-tabs-spacer { flex: 1; }
+	/* ── Split panes ── */
+	.pg-split {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 10px;
+		overflow: hidden;
+		height: 520px;
+	}
+	.pg-editor-pane {
+		min-height: 0;
+		overflow: hidden;
+		border-right: 1px solid var(--sl-color-hairline-light);
+	}
+	.pg-editor-mount {
+		width: 100%;
+		height: 100%;
+	}
+	.pg-preview-pane {
+		background: var(--sl-color-gray-6);
+		overflow: auto;
+		min-height: 0;
+	}
+	.pg-preview-inner {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+	}
+	.pg-img-container {
+		position: relative;
+		width: 100%;
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 20px;
+		min-height: 0;
+	}
+	.pg-img-container :global(#pg-output) {
+		width: 100%;
+	}
+	.pg-img-container :global(.pg-img-wrap) {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.pg-img-container :global(.pg-img-wrap svg),
+	.pg-img-container :global(.pg-img-wrap img) {
+		width: 100%;
+		height: auto;
+		border-radius: 6px;
+		box-shadow: 0 2px 20px rgba(0, 0, 0, 0.18);
+	}
+	.pg-placeholder {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		color: var(--sl-color-gray-3);
+		font-size: 0.8rem;
+	}
+	.pg-error {
+		color: #f44336;
+		font-size: 0.8rem;
+		font-family: var(--sl-font-system-mono);
+		padding: 20px;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
 
-  .pg-run-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.7rem;
-    padding: 3px 10px;
-    margin-right: 8px;
-    background: rgba(75,175,80,0.15);
-    border: 1px solid rgba(75,175,80,0.3);
-    border-radius: 4px;
-    color: #4caf50;
-    font-weight: 500;
-    font-family: 'Geist', system-ui, sans-serif;
-    transition: background 0.15s;
-  }
-  .pg-run-btn:hover:not(:disabled) { background: rgba(75,175,80,0.25); }
-  .pg-run-btn:disabled { opacity: 0.4; cursor: wait; }
+	/* Loading bar — indeterminate progress line at top of image */
+	.pg-loading-bar {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		border-radius: 6px 6px 0 0;
+		z-index: 10;
+		overflow: hidden;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.15s;
+	}
+	.pg-loading-bar::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: var(--sl-color-accent);
+		transform-origin: left;
+		animation: pg-indeterminate 1.2s ease-in-out infinite;
+	}
+	.pg-loading-bar--visible {
+		opacity: 1;
+	}
+	@keyframes pg-indeterminate {
+		0% {
+			transform: translateX(-100%) scaleX(0.3);
+		}
+		50% {
+			transform: translateX(30%) scaleX(0.5);
+		}
+		100% {
+			transform: translateX(100%) scaleX(0.3);
+		}
+	}
 
-  .pg-status-badge {
-    font-size: 0.62rem;
-    color: #858585;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 2px 8px;
-    margin-right: 10px;
-    border-radius: 3px;
-    background: rgba(255,255,255,0.05);
-  }
-  .pg-status-badge.ready { color: #4caf50; }
-  .pg-status-badge.error { color: #f44336; }
+	/* ── Collapsible HTTP detail ── */
+	.pg-http-details {
+		border-top: 1px solid var(--sl-color-hairline-light);
+		flex-shrink: 0;
+	}
+	.pg-http-summary {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 14px;
+		font-family: var(--sl-font-system);
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: var(--sl-color-gray-3);
+		cursor: pointer;
+		user-select: none;
+		list-style: none;
+	}
+	.pg-http-summary::-webkit-details-marker {
+		display: none;
+	}
+	.pg-http-summary::marker {
+		display: none;
+		content: "";
+	}
+	.pg-http-chevron {
+		transition: transform 0.15s;
+		flex-shrink: 0;
+	}
+	.pg-http-details[open] .pg-http-chevron {
+		transform: rotate(90deg);
+	}
+	.pg-http-status-badge {
+		font-family: var(--sl-font-system-mono);
+		font-size: 0.68rem;
+		font-weight: 600;
+		margin-left: auto;
+	}
+	.pg-badge-ok {
+		color: #4caf50;
+	}
+	.pg-badge-err {
+		color: #f44336;
+	}
 
-  /* Content split */
-  .pg-content {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    min-height: 0;
-  }
-  .pg-editor-wrap {
-    border-right: 1px solid #333;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .pg-editor-mount {
-    width: 100%;
-    height: 100%;
-  }
+	.pg-http {
+		font-size: 0.72rem;
+		font-family: var(--sl-font-system-mono);
+		line-height: 1.5;
+		max-height: 220px;
+		overflow-y: auto;
+		border-top: 1px solid var(--sl-color-hairline-light);
+	}
+	.pg-http:empty {
+		display: none;
+	}
+	.pg-http :global(.pg-http-section) {
+		border-bottom: 1px solid var(--sl-color-hairline-light);
+	}
+	.pg-http :global(.pg-http-section:last-child) {
+		border-bottom: none;
+	}
+	.pg-http :global(.pg-http-title) {
+		padding: 6px 14px;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--sl-color-white);
+	}
+	.pg-http :global(.pg-http-heading) {
+		padding: 4px 14px 2px;
+		font-size: 0.6rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--sl-color-gray-3);
+	}
+	.pg-http :global(.pg-http-pre) {
+		margin: 0;
+		padding: 2px 14px 6px;
+		font-family: var(--sl-font-system-mono);
+		font-size: 0.68rem;
+		color: var(--sl-color-gray-2);
+		white-space: pre-wrap;
+		word-break: break-all;
+		background: transparent;
+		border: none;
+		line-height: 1.6;
+	}
+	.pg-http :global(.pg-c-accent) {
+		color: var(--sl-color-accent);
+		font-weight: 600;
+	}
+	.pg-http :global(.pg-c-ok) {
+		color: #4caf50;
+		font-weight: 600;
+	}
+	.pg-http :global(.pg-c-err) {
+		color: #f44336;
+		font-weight: 600;
+	}
+	.pg-http :global(.pg-c-dim) {
+		color: var(--sl-color-gray-3);
+	}
 
-  .pg-preview {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #1a1a1a;
-    overflow: auto;
-    padding: 16px;
-    min-height: 0;
-  }
-  .pg-preview :global(svg) {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.4);
-  }
-  .pg-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: #555;
-    font-size: 0.75rem;
-    font-family: 'Geist', system-ui, sans-serif;
-  }
-  .pg-error {
-    color: #f44336;
-    font-size: 0.75rem;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 16px;
-    white-space: pre-wrap;
-  }
-
-  /* Status bar */
-  .pg-statusbar {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 0 12px;
-    height: 22px;
-    background: #007acc;
-    font-size: 0.65rem;
-    color: #fff;
-    font-family: 'Geist', system-ui, sans-serif;
-    flex-shrink: 0;
-  }
-
-  @media (max-width: 900px) {
-    .pg-vscode {
-      grid-template-columns: 1fr;
-      height: auto;
-    }
-    .pg-activity, .pg-sidebar { display: none; }
-    .pg-content { grid-template-columns: 1fr; }
-    .pg-editor-mount { min-height: 300px; }
-    .pg-preview { min-height: 250px; }
-  }
+	@media (max-width: 768px) {
+		.pg-split {
+			grid-template-columns: 1fr;
+			height: auto;
+		}
+		.pg-editor-pane {
+			border-right: none;
+			border-bottom: 1px solid var(--sl-color-hairline-light);
+		}
+		.pg-editor-mount {
+			min-height: 300px;
+		}
+		.pg-preview-pane {
+			min-height: 250px;
+		}
+		.pg-label {
+			width: auto;
+		}
+	}
 </style>

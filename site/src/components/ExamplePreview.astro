@@ -1,0 +1,232 @@
+---
+interface Props {
+  name: string;
+  hideTabs?: boolean;
+}
+const { name, hideTabs } = Astro.props;
+const base = `/examples/ex-${name}`;
+---
+
+<div class="ex-preview not-content" data-name={name}>
+  {!hideTabs && (
+    <div class="ex-tabs">
+      <button class="ex-tab ex-tab--active" data-fmt="svg">SVG</button>
+      <button class="ex-tab" data-fmt="png">PNG</button>
+      <button class="ex-tab" data-fmt="jpg">JPEG</button>
+    </div>
+  )}
+  <img class="ex-img" src={`${base}.svg`} alt={`${name} example`} loading="lazy" />
+</div>
+
+<style is:global>
+  .ex-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 1rem 0;
+  }
+  .ex-tabs { display: flex; gap: 4px; align-items: center; }
+  .ex-tab {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--sl-color-gray-5, #444);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--sl-color-gray-3, #aaa);
+    cursor: pointer;
+    line-height: 1.4;
+  }
+  .ex-tab:hover:not(.ex-tab--active) {
+    background: var(--sl-color-gray-6, #333);
+    color: var(--sl-color-white, #fff);
+  }
+  .ex-tab.ex-tab--active {
+    background: var(--sl-color-white, #fff);
+    color: var(--sl-color-black, #000);
+    border-color: var(--sl-color-white, #fff);
+  }
+  .ex-img {
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--sl-color-gray-5, #444);
+    image-rendering: -webkit-optimize-contrast;
+  }
+  .ex-img:hover { opacity: 0.92; }
+
+  #ex-lb {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: #000;
+    display: none;
+    flex-direction: column;
+  }
+  #ex-lb.ex-open { display: flex; }
+  .ex-lb-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .ex-lb-tabs { display: flex; gap: 4px; align-items: center; }
+  .ex-lb-tabs .ex-tab {
+    border-color: rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7);
+  }
+  .ex-lb-tabs .ex-tab:hover { background: rgba(255,255,255,0.1); }
+  .ex-lb-tabs .ex-tab--active {
+    background: white; color: black; border-color: white;
+  }
+  .ex-lb-actions { display: flex; align-items: center; gap: 4px; }
+  .ex-lb-btn {
+    width: 32px; height: 32px; border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.8);
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ex-lb-btn:hover { background: rgba(255,255,255,0.15); }
+  .ex-lb-zoom {
+    color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 600;
+    min-width: 44px; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  .ex-lb-close { margin-left: 8px; }
+  .ex-lb-vp {
+    flex: 1; overflow: hidden; position: relative; cursor: grab;
+  }
+  .ex-lb-vp.ex-grabbing { cursor: grabbing; }
+  .ex-lb-img {
+    position: absolute; top: 50%; left: 50%;
+    max-width: 90%; max-height: 90%; object-fit: contain;
+    border-radius: 6px; user-select: none; pointer-events: none;
+  }
+</style>
+
+<script is:inline>
+(function() {
+  if (document.getElementById('ex-lb')) return;
+
+  var exts = { svg: '.svg', png: '.png', jpg: '.jpg' };
+  var lb = document.createElement('div');
+  lb.id = 'ex-lb';
+  lb.innerHTML = '<div class="ex-lb-bar"><div class="ex-lb-tabs">' +
+    '<button class="ex-tab ex-tab--active" data-fmt="svg">SVG</button>' +
+    '<button class="ex-tab" data-fmt="png">PNG</button>' +
+    '<button class="ex-tab" data-fmt="jpg">JPEG</button>' +
+    '</div><div class="ex-lb-actions">' +
+    '<button class="ex-lb-btn" data-zoom="out" title="Zoom out">\u2212</button>' +
+    '<span class="ex-lb-zoom">100%</span>' +
+    '<button class="ex-lb-btn" data-zoom="in" title="Zoom in">+</button>' +
+    '<button class="ex-lb-btn" data-zoom="reset" title="Reset">\u27F2</button>' +
+    '<button class="ex-lb-btn ex-lb-close" title="Close (Esc)">\u2715</button>' +
+    '</div></div>' +
+    '<div class="ex-lb-vp"><img class="ex-lb-img" draggable="false" /></div>';
+  document.body.appendChild(lb);
+
+  var lbImg = lb.querySelector('.ex-lb-img');
+  var vp = lb.querySelector('.ex-lb-vp');
+  var zoomLabel = lb.querySelector('.ex-lb-zoom');
+  var zoom = 1, panX = 0, panY = 0;
+  var dragging = false, dsx = 0, dsy = 0, psx = 0, psy = 0;
+  var activePreview = null, activeFmt = 'svg', activeBase = '';
+
+  function setTabs(container, fmt) {
+    container.querySelectorAll('.ex-tab').forEach(function(t) {
+      t.classList.toggle('ex-tab--active', t.dataset.fmt === fmt);
+    });
+  }
+  function update() {
+    lbImg.style.transform = 'translate(-50%,-50%) translate(' + panX + 'px,' + panY + 'px) scale(' + zoom + ')';
+    zoomLabel.textContent = Math.round(zoom * 100) + '%';
+  }
+  function sz(z) { zoom = Math.max(0.1, Math.min(10, z)); update(); }
+  function open(preview, fmt, base) {
+    activePreview = preview; activeFmt = fmt; activeBase = base;
+    lbImg.src = base + exts[fmt];
+    setTabs(lb, fmt);
+    zoom = 1; panX = 0; panY = 0; update();
+    lb.classList.add('ex-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lb.classList.remove('ex-open');
+    document.body.style.overflow = '';
+  }
+
+  lb.querySelector('.ex-lb-tabs').querySelectorAll('.ex-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      activeFmt = tab.dataset.fmt;
+      lbImg.src = activeBase + exts[activeFmt];
+      setTabs(lb, activeFmt);
+      if (activePreview) {
+        activePreview.querySelector('.ex-img').src = activeBase + exts[activeFmt];
+        setTabs(activePreview, activeFmt);
+      }
+    });
+  });
+  lb.querySelectorAll('[data-zoom]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (btn.dataset.zoom === 'in') sz(zoom * 1.25);
+      else if (btn.dataset.zoom === 'out') sz(zoom / 1.25);
+      else { zoom = 1; panX = 0; panY = 0; update(); }
+    });
+  });
+  lb.querySelector('.ex-lb-close').addEventListener('click', close);
+  vp.addEventListener('wheel', function(e) {
+    e.preventDefault(); sz(zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+  }, { passive: false });
+  vp.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    dragging = true; dsx = e.clientX; dsy = e.clientY; psx = panX; psy = panY;
+    vp.classList.add('ex-grabbing');
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    panX = psx + (e.clientX - dsx); panY = psy + (e.clientY - dsy); update();
+  });
+  window.addEventListener('mouseup', function() {
+    if (dragging) { dragging = false; vp.classList.remove('ex-grabbing'); }
+  });
+  document.addEventListener('keydown', function(e) {
+    if (!lb.classList.contains('ex-open')) return;
+    if (e.key === 'Escape') close();
+    if (e.key === '+' || e.key === '=') sz(zoom * 1.25);
+    if (e.key === '-') sz(zoom / 1.25);
+    if (e.key === '0') { zoom = 1; panX = 0; panY = 0; update(); }
+  });
+
+  function bindPreviews() {
+    document.querySelectorAll('.ex-preview').forEach(function(preview) {
+      if (preview.dataset.bound) return;
+      preview.dataset.bound = '1';
+      var name = preview.dataset.name;
+      var base = '/examples/ex-' + name;
+      var fmt = 'svg';
+
+      preview.querySelectorAll('.ex-tab').forEach(function(tab) {
+        tab.addEventListener('click', function(e) {
+          e.stopPropagation();
+          fmt = tab.dataset.fmt;
+          preview.querySelector('.ex-img').src = base + exts[fmt];
+          setTabs(preview, fmt);
+        });
+      });
+      preview.querySelector('.ex-img').addEventListener('click', function() {
+        open(preview, fmt, base);
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindPreviews);
+  } else {
+    bindPreviews();
+  }
+})();
+</script>

@@ -1,0 +1,67 @@
+---
+title: Examples
+description: Real-world input/output examples — blog posts, events, products, repos — rendered in SVG, PNG, and JPEG.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import { templates } from '../../../data/templates';
+import ExamplePreview from '../../../components/ExamplePreview.astro';
+
+## Blog post
+
+<Code code={templates.blog} lang="html" />
+<ExamplePreview name="blog" />
+
+## Conference
+
+<Code code={templates.event} lang="html" />
+<ExamplePreview name="event" />
+
+## Product
+
+<Code code={templates.product} lang="html" />
+<ExamplePreview name="product" />
+
+## Repository
+
+<Code code={templates.repo} lang="html" />
+<ExamplePreview name="repo" />
+
+## Emoji
+
+<Code code={templates.emoji} lang="html" />
+<ExamplePreview name="emoji" hideTabs />
+
+## RTL
+
+<Code code={templates.rtl} lang="html" />
+<ExamplePreview name="rtl" hideTabs />
+
+## Tailwind
+
+<Code code={templates.tailwind} lang="html" />
+<ExamplePreview name="tailwind" />
+
+---
+
+## Rendering
+
+```bash title="CLI"
+ogre --render card.html --output card.png --format png
+```
+
+```bash title="curl"
+curl -X POST https://your-server/render \
+  -H "Content-Type: application/json" \
+  -d '{"html":"<div class=\"flex w-full h-full bg-slate-900 p-16\">...</div>","format":"png","width":1200,"height":630}' \
+  --output card.png
+```
+
+```go title="Go Library"
+result, _ := ogre.Render(html, ogre.Options{
+    Width:  1200,
+    Height: 630,
+    Format: ogre.FormatPNG,
+})
+os.WriteFile("card.png", result.Data, 0644)
+```
