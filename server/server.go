@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -258,9 +259,30 @@ func (s *Server) Start() error {
 	}
 }
 
-func corsMiddleware(next http.Handler, origin string) http.Handler {
+func corsMiddleware(next http.Handler, allowedOrigin string) http.Handler {
+	patterns := strings.Split(allowedOrigin, ",")
+	for i := range patterns {
+		patterns[i] = strings.TrimSpace(patterns[i])
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
+		origin := r.Header.Get("Origin")
+		matched := "*"
+		if allowedOrigin != "*" && origin != "" {
+			matched = ""
+			for _, p := range patterns {
+				if matchOrigin(origin, p) {
+					matched = origin
+					break
+				}
+			}
+		}
+		if matched != "" {
+			w.Header().Set("Access-Control-Allow-Origin", matched)
+			if matched != "*" {
+				w.Header().Set("Vary", "Origin")
+			}
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == http.MethodOptions {
@@ -269,6 +291,22 @@ func corsMiddleware(next http.Handler, origin string) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func matchOrigin(origin, pattern string) bool {
+	if pattern == "*" {
+		return true
+	}
+	if pattern == origin {
+		return true
+	}
+	if strings.Contains(pattern, "*") {
+		parts := strings.SplitN(pattern, "*", 2)
+		prefix := parts[0]
+		suffix := parts[1]
+		return strings.HasPrefix(origin, prefix) && strings.HasSuffix(origin, suffix) && len(origin) >= len(prefix)+len(suffix)
+	}
+	return false
 }
 
 func (s *Server) withRateLimit(next http.HandlerFunc) http.HandlerFunc {

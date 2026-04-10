@@ -20,14 +20,21 @@ All server settings can be configured via environment variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ADDR` | `:3000` | Listen address |
-| `CORS_ORIGIN` | `*` | Allowed CORS origin |
+| `CORS_ORIGIN` | `*` | Allowed CORS origin(s), comma-separated, supports wildcards |
 | `CACHE_MB` | `64` | LRU cache size in MB |
 | `RATE_LIMIT` | `0` | Requests per second per IP (0 = unlimited) |
 | `TIMEOUT` | `10` | Render timeout in seconds |
 | `MAX_ELEMENTS` | `1000` | Max HTML elements per render |
 
 ```bash
-CORS_ORIGIN=https://example.com CACHE_MB=128 RATE_LIMIT=10 ogre --serve
+# Single origin
+CORS_ORIGIN=https://example.com ogre --serve
+
+# Wildcard subdomains
+CORS_ORIGIN="https://*.example.com" ogre --serve
+
+# Multiple origins
+CORS_ORIGIN="https://*.example.com,http://localhost:*" ogre --serve
 ```
 
 ### Programmatically
