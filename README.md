@@ -24,13 +24,15 @@
 ## Features
 
 - HTML + inline CSS to SVG, PNG, or JPEG
-- Tailwind CSS v3 utility classes (no build step)
+- Inline `<svg>` elements and SVG data URI rasterization
+- Tailwind CSS v3 utility classes including gradients (no build step)
 - Flexbox layout engine (W3C spec)
 - Complex script rendering via pure Go HarfBuzz port (Arabic, Hebrew, Devanagari, Thai)
 - RTL text support with Unicode bidi algorithm
 - Emoji rendering (Twemoji, OpenMoji, Noto) in SVG and PNG
 - Font embedding as SVG paths (self-contained SVGs)
 - Built-in Go fonts, Google Fonts auto-fetch, CDN loading, WOFF decompression
+- Linear RGB gradient interpolation with ordered dithering
 - HTTP server with LRU caching, rate limiting, templates
 - Go library with `http.Handler` integration
 - JSX-style Go builder API
@@ -206,7 +208,7 @@ Returns `{"status":"ok"}`.
 
 ### CORS
 
-All endpoints return `Access-Control-Allow-Origin: *`.
+Configurable via `CORS_ORIGIN` env var. Supports `*`, single origin, or comma-separated origins.
 
 ### Limits
 
@@ -328,7 +330,7 @@ Use bracket notation for custom values:
 | ---------------- | ------------------------- | ----------------- |
 | Language         | Go                        | TypeScript        |
 | Output formats   | SVG, PNG, JPEG            | SVG only          |
-| Dependencies     | stdlib + golang.org/x     | yoga-wasm, others |
+| Dependencies     | stdlib + golang.org/x + go-text | yoga-wasm, others |
 | Binary size      | Single static binary      | Node.js runtime   |
 | Tailwind support | Built-in (v3)             | Via plugin        |
 | Font embedding   | SVG paths                 | SVG paths         |
@@ -370,10 +372,11 @@ The rendering pipeline has four stages:
 
 ### Dependencies
 
-Only `golang.org/x/*` packages are used. No third-party imports.
+Standard library, `golang.org/x/*`, and one external package:
 
 - `golang.org/x/net/html` -- HTML parsing
-- `golang.org/x/image/font` -- Font interfaces
-- `golang.org/x/image/font/opentype` -- OTF/TTF parsing
+- `golang.org/x/image/font` -- Font interfaces and rasterization
+- `golang.org/x/image/vector` -- 2D vector path rasterization
 - `golang.org/x/image/math/fixed` -- Fixed-point math for font metrics
 - `golang.org/x/text/unicode/bidi` -- Bidirectional text
+- `github.com/go-text/typesetting` -- Text shaping (kerning, ligatures, RTL)
