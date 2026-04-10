@@ -191,6 +191,27 @@ func ResolveTailwind(classes []string) map[string]string {
 	for _, cls := range classes {
 		resolveTailwindClass(cls, result)
 	}
+	if dir, ok := result["--tw-gradient-dir"]; ok {
+		from := result["--tw-gradient-from"]
+		via := result["--tw-gradient-via"]
+		to := result["--tw-gradient-to"]
+		if to == "" {
+			to = "transparent"
+		}
+		var grad string
+		if via != "" {
+			grad = fmt.Sprintf("linear-gradient(%s,%s,%s,%s)", dir, from, via, to)
+		} else if from != "" {
+			grad = fmt.Sprintf("linear-gradient(%s,%s,%s)", dir, from, to)
+		}
+		if grad != "" {
+			result["background-image"] = grad
+		}
+		delete(result, "--tw-gradient-dir")
+		delete(result, "--tw-gradient-from")
+		delete(result, "--tw-gradient-via")
+		delete(result, "--tw-gradient-to")
+	}
 	return result
 }
 
@@ -769,6 +790,23 @@ func resolveTailwindClass(cls string, out map[string]string) {
 	case "w-max":
 		out["width"] = "auto"
 
+	case "bg-gradient-to-t":
+		out["--tw-gradient-dir"] = "to top"
+	case "bg-gradient-to-tr":
+		out["--tw-gradient-dir"] = "to top right"
+	case "bg-gradient-to-r":
+		out["--tw-gradient-dir"] = "to right"
+	case "bg-gradient-to-br":
+		out["--tw-gradient-dir"] = "to bottom right"
+	case "bg-gradient-to-b":
+		out["--tw-gradient-dir"] = "to bottom"
+	case "bg-gradient-to-bl":
+		out["--tw-gradient-dir"] = "to bottom left"
+	case "bg-gradient-to-l":
+		out["--tw-gradient-dir"] = "to left"
+	case "bg-gradient-to-tl":
+		out["--tw-gradient-dir"] = "to top left"
+
 	default:
 		resolveTailwindDynamic(cls, out)
 	}
@@ -962,6 +1000,18 @@ func resolveTailwindDynamic(cls string, out map[string]string) {
 		}
 	case "text", "bg":
 		resolveColorPrefix(prefix, rest, out)
+	case "from":
+		if _, val, ok := resolveColorClass("bg", rest); ok {
+			out["--tw-gradient-from"] = val
+		}
+	case "via":
+		if _, val, ok := resolveColorClass("bg", rest); ok {
+			out["--tw-gradient-via"] = val
+		}
+	case "to":
+		if _, val, ok := resolveColorClass("bg", rest); ok {
+			out["--tw-gradient-to"] = val
+		}
 	case "border":
 		resolveBorderDynamic(rest, out)
 	}
