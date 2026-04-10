@@ -149,21 +149,21 @@ export const templates = {
     <div style="color:#a1a1aa;font-size:22px;margin-top:8px;line-height:1.5">Deploy with confidence ✨ Monitor in real-time 📊</div>
   </div>
   <div style="display:flex;gap:16px">
-    <div style="display:flex;flex:1;align-items:center;gap:14px;background-color:rgba(255,255,255,0.06);padding:16px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
+    <div style="display:flex;flex:1;align-items:center;gap:30px;background-color:rgba(255,255,255,0.06);padding:16px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
       <div style="font-size:20px">🌍</div>
       <div style="display:flex;flex-direction:column">
         <div style="color:white;font-size:18px;font-weight:700">42 regions</div>
         <div style="color:#71717a;font-size:13px">Global edge network</div>
       </div>
     </div>
-    <div style="display:flex;flex:1;align-items:center;gap:14px;background-color:rgba(255,255,255,0.06);padding:16px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
+    <div style="display:flex;flex:1;align-items:center;gap:30px;background-color:rgba(255,255,255,0.06);padding:16px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
       <div style="font-size:20px">⚡</div>
       <div style="display:flex;flex-direction:column">
         <div style="color:white;font-size:18px;font-weight:700">&lt;50ms</div>
         <div style="color:#71717a;font-size:13px">Average latency</div>
       </div>
     </div>
-    <div style="display:flex;flex:1;align-items:center;gap:14px;background-color:rgba(255,255,255,0.06);padding:16px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
+    <div style="display:flex;flex:1;align-items:center;gap:30px;background-color:rgba(255,255,255,0.06);padding:16px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.08)">
       <div style="font-size:20px">🔒</div>
       <div style="display:flex;flex-direction:column">
         <div style="color:white;font-size:18px;font-weight:700">SOC 2</div>
