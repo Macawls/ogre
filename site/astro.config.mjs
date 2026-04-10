@@ -18,6 +18,12 @@ export default defineConfig({
 			components: {
 				Header: './src/components/Header.astro',
 			},
+			head: [
+				{
+					tag: 'script',
+					content: `if(!localStorage.getItem('starlight-theme')){document.documentElement.dataset.theme='dark';}`,
+				},
+			],
 			expressiveCode: {
 				themes: ['one-dark-pro', 'one-light'],
 			},

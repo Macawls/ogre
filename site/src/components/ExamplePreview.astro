@@ -4,10 +4,21 @@ interface Props {
   hideTabs?: boolean;
 }
 const { name, hideTabs } = Astro.props;
-const base = `/examples/ex-${name}`;
+
+const allImages = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/assets/examples/ex-*.{svg,png,jpg}',
+  { eager: true }
+);
+
+function src(n: string, ext: string): string {
+  const key = `/src/assets/examples/ex-${n}.${ext}`;
+  return allImages[key]?.default?.src ?? '';
+}
+
+const urls = { svg: src(name, 'svg'), png: src(name, 'png'), jpg: src(name, 'jpg') };
 ---
 
-<div class="ex-preview not-content" data-name={name}>
+<div class="ex-preview not-content" data-name={name} data-urls={JSON.stringify(urls)}>
   {!hideTabs && (
     <div class="ex-tabs">
       <button class="ex-tab ex-tab--active" data-fmt="svg">SVG</button>
@@ -15,7 +26,7 @@ const base = `/examples/ex-${name}`;
       <button class="ex-tab" data-fmt="jpg">JPEG</button>
     </div>
   )}
-  <img class="ex-img" src={`${base}.svg`} alt={`${name} example`} loading="lazy" />
+  <img class="ex-img" src={urls.svg} alt={`${name} example`} loading="lazy" />
 </div>
 
 <style is:global>
@@ -112,7 +123,6 @@ const base = `/examples/ex-${name}`;
 (function() {
   if (document.getElementById('ex-lb')) return;
 
-  var exts = { svg: '.svg', png: '.png', jpg: '.jpg' };
   var lb = document.createElement('div');
   lb.id = 'ex-lb';
   lb.innerHTML = '<div class="ex-lb-bar"><div class="ex-lb-tabs">' +
@@ -134,7 +144,7 @@ const base = `/examples/ex-${name}`;
   var zoomLabel = lb.querySelector('.ex-lb-zoom');
   var zoom = 1, panX = 0, panY = 0;
   var dragging = false, dsx = 0, dsy = 0, psx = 0, psy = 0;
-  var activePreview = null, activeFmt = 'svg', activeBase = '';
+  var activePreview = null, activeFmt = 'svg', activeUrls = {};
 
   function setTabs(container, fmt) {
     container.querySelectorAll('.ex-tab').forEach(function(t) {
@@ -146,9 +156,9 @@ const base = `/examples/ex-${name}`;
     zoomLabel.textContent = Math.round(zoom * 100) + '%';
   }
   function sz(z) { zoom = Math.max(0.1, Math.min(10, z)); update(); }
-  function open(preview, fmt, base) {
-    activePreview = preview; activeFmt = fmt; activeBase = base;
-    lbImg.src = base + exts[fmt];
+  function open(preview, fmt, urls) {
+    activePreview = preview; activeFmt = fmt; activeUrls = urls;
+    lbImg.src = urls[fmt];
     setTabs(lb, fmt);
     zoom = 1; panX = 0; panY = 0; update();
     lb.classList.add('ex-open');
@@ -162,10 +172,11 @@ const base = `/examples/ex-${name}`;
   lb.querySelector('.ex-lb-tabs').querySelectorAll('.ex-tab').forEach(function(tab) {
     tab.addEventListener('click', function() {
       activeFmt = tab.dataset.fmt;
-      lbImg.src = activeBase + exts[activeFmt];
+      lbImg.src = activeUrls[activeFmt];
       setTabs(lb, activeFmt);
       if (activePreview) {
-        activePreview.querySelector('.ex-img').src = activeBase + exts[activeFmt];
+        var pu = JSON.parse(activePreview.dataset.urls);
+        activePreview.querySelector('.ex-img').src = pu[activeFmt];
         setTabs(activePreview, activeFmt);
       }
     });
@@ -205,20 +216,19 @@ const base = `/examples/ex-${name}`;
     document.querySelectorAll('.ex-preview').forEach(function(preview) {
       if (preview.dataset.bound) return;
       preview.dataset.bound = '1';
-      var name = preview.dataset.name;
-      var base = '/examples/ex-' + name;
+      var urls = JSON.parse(preview.dataset.urls);
       var fmt = 'svg';
 
       preview.querySelectorAll('.ex-tab').forEach(function(tab) {
         tab.addEventListener('click', function(e) {
           e.stopPropagation();
           fmt = tab.dataset.fmt;
-          preview.querySelector('.ex-img').src = base + exts[fmt];
+          preview.querySelector('.ex-img').src = urls[fmt];
           setTabs(preview, fmt);
         });
       });
       preview.querySelector('.ex-img').addEventListener('click', function() {
-        open(preview, fmt, base);
+        open(preview, fmt, urls);
       });
     });
   }

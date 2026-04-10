@@ -51,7 +51,7 @@ func main() {
 		}
 	}
 
-	outDir := "site/public/examples"
+	outDir := "site/src/assets/examples"
 	for _, name := range names {
 		html := readTemplate(content, name)
 		for _, format := range []ogre.Format{ogre.FormatSVG, ogre.FormatPNG, ogre.FormatJPEG} {

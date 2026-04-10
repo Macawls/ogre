@@ -48,7 +48,7 @@ Dynamic image generation (OG cards, social previews, certificates, invoices) typ
 - **Headless Chrome / Puppeteer** uses hundreds of megabytes of RAM and takes seconds per render.
 - **Image manipulation libraries** (like Go's `image` package) work but require manual layout instead of HTML/CSS.
 
-Ogre is a pure Go alternative. No CGo, no external binaries, no JavaScript runtime — it compiles to a single static binary with `CGO_ENABLED=0`. Add it as a dependency and call `ogre.Render()`, or run it as a standalone HTTP server. It won't break cross-compilation or force CGo on your build.
+Ogre compiles to a single static binary with `CGO_ENABLED=0`. Add it as a dependency and call `ogre.Render()`, or run it as a standalone HTTP server.
 
 | | Ogre | Satori |
 |---|---|---|
@@ -62,8 +62,8 @@ Render times measured on AMD Ryzen 5 5600H, 1200x630 renders, both producing SVG
 
 ## Design goals
 
-- **Pure Go.** No CGo, no external binaries, no runtime dependencies. Adding Ogre won't force CGo on your project. Single static binary with `CGO_ENABLED=0`.
-- **Beyond Satori.** Supports everything Satori does — plus PNG/JPEG output, inline SVGs, box shadows, CSS filters, transforms, and RTL text. No JavaScript runtime needed.
+- **Pure Go.** No CGo, no external binaries. Single static binary with `CGO_ENABLED=0`.
+- **Beyond Satori.** PNG/JPEG output, inline SVGs, box shadows, CSS filters, transforms, RTL text.
 - **Tailwind built-in.** Resolves Tailwind v3 utility classes directly. No build step needed.
 - **Production-ready server.** Includes an HTTP server with LRU caching, rate limiting, and template support.
 

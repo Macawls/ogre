@@ -65,7 +65,7 @@ export const templates = {
       <div style="color:#6b7280;font-size:13px">No credit card required</div>
     </div>
   </div>
-  <div style="display:flex;flex-direction:column;width:45%;height:100%;background-image:linear-gradient(135deg,#eff6ff,#f5f3ff);padding:40px;justify-content:center;gap:14px">
+  <div style="display:flex;flex-direction:column;width:45%;background-image:linear-gradient(135deg,#eff6ff,#f5f3ff);padding:40px;gap:14px;padding-top:auto;padding-bottom:auto">
     <div style="display:flex;align-items:center;gap:14px;background-color:white;padding:18px 22px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
       <div style="width:40px;height:40px;border-radius:10px;background-color:#eff6ff;display:flex;align-items:center;justify-content:center">
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%233b82f6' x='4' y='13' width='4' height='8' rx='1'/%3E%3Crect fill='%233b82f6' x='10' y='5' width='4' height='16' rx='1'/%3E%3Crect fill='%233b82f6' x='16' y='9' width='4' height='12' rx='1'/%3E%3C/svg%3E" style="width:22px;height:22px" />
@@ -200,18 +200,19 @@ export const templates = {
   tailwind: `<div class="flex flex-col w-full h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-16 justify-between">
   <div class="flex items-center gap-4">
     <div class="w-12 h-12 rounded-xl bg-violet-500"></div>
-    <div class="text-white text-2xl font-bold">Tailwind Example</div>
+    <div class="text-white text-2xl font-bold">Nebula</div>
+    <div class="text-slate-500 text-base">Developer Platform</div>
   </div>
   <div class="flex flex-col gap-3">
-    <div class="text-5xl font-extrabold text-white">Build with utility classes</div>
-    <div class="text-xl text-slate-400">No inline styles needed. Ogre resolves Tailwind v3 classes at render time with zero build step.</div>
+    <div class="text-5xl font-extrabold text-white">Deploy anywhere in seconds</div>
+    <div class="text-xl text-slate-400">Push your code. We handle the infrastructure, scaling, and monitoring so you can focus on shipping.</div>
   </div>
   <div class="flex items-center gap-6">
-    <div class="bg-violet-500 text-white text-base font-semibold px-7 py-3 rounded-lg">Get Started</div>
-    <div class="border border-slate-600 text-slate-300 text-base font-medium px-7 py-3 rounded-lg">View Docs</div>
+    <div class="bg-violet-500 text-white text-base font-semibold px-7 py-3 rounded-lg">Start Building</div>
+    <div class="border border-slate-600 text-slate-300 text-base font-medium px-7 py-3 rounded-lg">View Pricing</div>
     <div class="flex items-center gap-2">
       <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-      <div class="text-sm text-slate-500">No build step required</div>
+      <div class="text-sm text-slate-500">99.99% uptime SLA</div>
     </div>
   </div>
 </div>`,
