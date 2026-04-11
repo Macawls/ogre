@@ -135,7 +135,7 @@ async function sel(n){
   document.getElementById('b-diff').classList.remove('on');
   document.querySelectorAll('.fx').forEach(b=>b.classList.toggle('on',b.textContent===n));
   document.getElementById('name').textContent=n;
-  document.getElementById('view').innerHTML='<div class="loading"><div class="spin"></div>Rendering across all three engines\u2026</div>';
+  document.getElementById('view').innerHTML='<div class="loading"><div class="spin"></div>Rendering\u2026</div>';
   const hr=await fetch('/api/fixture-html/'+n);
   html=await hr.text();
   const rr=await fetch('/api/render/'+n,{method:'POST'});
