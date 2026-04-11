@@ -63,6 +63,12 @@ function parseNodes(html: string): (VNode | string)[] {
       const props: any = {};
       const sm = attrs.match(/style="([^"]*)"/);
       if (sm) props.style = parseStyle(sm[1]);
+      const srcMatch = attrs.match(/src="([^"]*)"/);
+      if (srcMatch) props.src = srcMatch[1];
+      const widthMatch = attrs.match(/width="([^"]*)"/);
+      if (widthMatch) props.width = Number(widthMatch[1]) || widthMatch[1];
+      const heightMatch = attrs.match(/height="([^"]*)"/);
+      if (heightMatch) props.height = Number(heightMatch[1]) || heightMatch[1];
       if (sc || ["br", "img", "hr"].includes(tag)) { nodes.push({ type: tag, props }); i = tagEnd + 1; continue; }
       const is2 = tagEnd + 1;
       let d = 1, j = is2;

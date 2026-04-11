@@ -25,6 +25,7 @@ func main() {
 	mux.Handle("/", http.FileServer(http.FS(sub)))
 
 	mux.HandleFunc("/api/fixtures", handleFixtures)
+	mux.HandleFunc("/api/fixture-html/", handleFixtureHTML)
 	mux.HandleFunc("/api/render/", handleRender)
 	mux.HandleFunc("/api/diff/", handleDiff)
 
@@ -52,6 +53,17 @@ func handleFixtures(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(names)
+}
+
+func handleFixtureHTML(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/api/fixture-html/")
+	data, err := os.ReadFile(filepath.Join(fixturesDir, name+".html"))
+	if err != nil {
+		http.Error(w, "not found", 404)
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write(data)
 }
 
 func handleRender(w http.ResponseWriter, r *http.Request) {
