@@ -66,6 +66,7 @@ export default defineConfig({
 						{ label: 'Tailwind Classes', slug: 'reference/tailwind' },
 						{ label: 'Architecture', slug: 'advanced/architecture' },
 						{ label: 'Satori Comparison', slug: 'advanced/satori-comparison' },
+						{ label: 'Changelog', slug: 'advanced/changelog' },
 						{ label: 'llms.txt', link: '/llms.txt' },
 						{ label: 'llms-full.txt', link: '/llms-full.txt' },
 					],
