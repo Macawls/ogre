@@ -347,7 +347,12 @@ func determineFlexBaseSize(child *Node, mainSize float64, isRow bool, containerW
 	}
 
 	if child.Measure != nil {
-		w, h := child.Measure(mainSize, math.Inf(1))
+		var w, h float64
+		if isRow {
+			w, h = child.Measure(mainSize, math.Inf(1))
+		} else {
+			w, h = child.Measure(math.Inf(1), mainSize)
+		}
 		if isRow {
 			return w
 		}
@@ -625,7 +630,12 @@ func determineCrossSize(item *flexItem, crossSize float64, isRow bool, container
 	}
 
 	if item.node.Measure != nil {
-		w, h := item.node.Measure(item.mainSize, crossSize)
+		var w, h float64
+		if isRow {
+			w, h = item.node.Measure(item.mainSize, crossSize)
+		} else {
+			w, h = item.node.Measure(crossSize, item.mainSize)
+		}
 		if isRow {
 			return h
 		}
