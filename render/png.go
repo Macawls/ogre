@@ -546,19 +546,40 @@ type linearStop struct {
 	Position   float64
 }
 
-func srgbToLinear(v uint8) float64 {
-	c := float64(v) / 255
-	if c <= 0.04045 {
-		return c / 12.92
+var srgbDecodeTable [256]float64
+var srgbEncodeTable [4096]float64
+
+func init() {
+	for i := range 256 {
+		c := float64(i) / 255
+		if c <= 0.04045 {
+			srgbDecodeTable[i] = c / 12.92
+		} else {
+			srgbDecodeTable[i] = math.Pow((c+0.055)/1.055, 2.4)
+		}
 	}
-	return math.Pow((c+0.055)/1.055, 2.4)
+	for i := range 4096 {
+		v := float64(i) / 4095
+		if v <= 0.0031308 {
+			srgbEncodeTable[i] = v * 12.92
+		} else {
+			srgbEncodeTable[i] = 1.055*math.Pow(v, 1.0/2.4) - 0.055
+		}
+	}
+}
+
+func srgbToLinear(v uint8) float64 {
+	return srgbDecodeTable[v]
 }
 
 func linearToSrgbF(v float64) float64 {
-	if v <= 0.0031308 {
-		return v * 12.92
+	if v <= 0 {
+		return 0
 	}
-	return 1.055*math.Pow(v, 1.0/2.4) - 0.055
+	if v >= 1 {
+		return 1
+	}
+	return srgbEncodeTable[int(v*4095+0.5)]
 }
 
 func linearToSrgb(v float64) uint8 {
