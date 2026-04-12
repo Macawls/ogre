@@ -10,6 +10,7 @@ import (
 	"image/png"
 	"math"
 	"strings"
+	"sync"
 
 	xdraw "golang.org/x/image/draw"
 	"golang.org/x/image/font"
@@ -22,6 +23,27 @@ import (
 	"github.com/macawls/ogre/style"
 )
 
+var rgbaPool sync.Pool
+
+func acquireRGBA(r image.Rectangle) *image.RGBA {
+	if v := rgbaPool.Get(); v != nil {
+		img := v.(*image.RGBA)
+		need := r.Dx() * 4 * r.Dy()
+		if cap(img.Pix) >= need {
+			img.Pix = img.Pix[:need]
+			img.Stride = r.Dx() * 4
+			img.Rect = r
+			clear(img.Pix)
+			return img
+		}
+	}
+	return image.NewRGBA(r)
+}
+
+func releaseRGBA(img *image.RGBA) {
+	rgbaPool.Put(img)
+}
+
 type PNGRenderer struct {
 	img           *image.RGBA
 	styles        map[*parse.Node]*style.ComputedStyle
@@ -29,6 +51,12 @@ type PNGRenderer struct {
 	reverse       map[*layout.Node]*parse.Node
 	wrappedText   map[*parse.Node][]fontpkg.TextLine
 	emojiProvider *fontpkg.EmojiProvider
+	maskCache     map[maskKey]*image.Alpha
+}
+
+type maskKey struct {
+	w, h             int
+	tl, tr, br, bl   int
 }
 
 // RenderPNG generates the corresponding output format.
@@ -91,7 +119,8 @@ func (r *PNGRenderer) renderNode(node *layout.Node, pn *parse.Node, cs *style.Co
 	absY := parentY + l.Y
 
 	if opacity < 1 {
-		tmp := image.NewRGBA(r.img.Bounds())
+		tmp := acquireRGBA(r.img.Bounds())
+		defer releaseRGBA(tmp)
 		sub := &PNGRenderer{
 			img:           tmp,
 			styles:        r.styles,
@@ -152,12 +181,13 @@ func (r *PNGRenderer) renderNodeContent(node *layout.Node, pn *parse.Node, cs *s
 
 	if cs.BackgroundImage != "" {
 		if hasRadius {
-			tmp := image.NewRGBA(r.img.Bounds())
+			tmp := acquireRGBA(r.img.Bounds())
 			sub := &PNGRenderer{img: tmp, styles: r.styles, fonts: r.fonts, reverse: r.reverse, wrappedText: r.wrappedText, emojiProvider: r.emojiProvider}
 			sub.renderGradient(absX, absY, l.Width, l.Height, cs)
 			rect := image.Rect(int(absX), int(absY), int(absX+l.Width), int(absY+l.Height)).Intersect(r.img.Bounds())
-			mask := roundedMask(int(l.Width), int(l.Height), cs.BorderTopLeftRadius, cs.BorderTopRightRadius, cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
+			mask := r.cachedMask(int(l.Width), int(l.Height), cs.BorderTopLeftRadius, cs.BorderTopRightRadius, cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
 			draw.DrawMask(r.img, rect, tmp, rect.Min, mask, image.Point{}, draw.Over)
+			releaseRGBA(tmp)
 		} else {
 			r.renderGradient(absX, absY, l.Width, l.Height, cs)
 		}
@@ -165,7 +195,7 @@ func (r *PNGRenderer) renderNodeContent(node *layout.Node, pn *parse.Node, cs *s
 		c := styleToColor(cs.BackgroundColor)
 		rect := image.Rect(int(absX), int(absY), int(absX+l.Width), int(absY+l.Height)).Intersect(r.img.Bounds())
 		if hasRadius {
-			mask := roundedMask(int(l.Width), int(l.Height), cs.BorderTopLeftRadius, cs.BorderTopRightRadius, cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
+			mask := r.cachedMask(int(l.Width), int(l.Height), cs.BorderTopLeftRadius, cs.BorderTopRightRadius, cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
 			draw.DrawMask(r.img, rect, uniformSrc(c), image.Point{}, mask, image.Point{}, draw.Over)
 		} else {
 			draw.Draw(r.img, rect, uniformSrc(c), image.Point{}, draw.Over)
@@ -178,7 +208,7 @@ func (r *PNGRenderer) renderNodeContent(node *layout.Node, pn *parse.Node, cs *s
 
 	if cs.Overflow == style.OverflowHidden {
 		clip := image.Rect(int(absX), int(absY), int(absX+l.Width), int(absY+l.Height))
-		tmp := image.NewRGBA(r.img.Bounds())
+		tmp := acquireRGBA(r.img.Bounds())
 		sub := &PNGRenderer{img: tmp, styles: r.styles, fonts: r.fonts, reverse: r.reverse, wrappedText: r.wrappedText, emojiProvider: r.emojiProvider}
 		for _, child := range node.Children {
 			cpn := sub.reverse[child]
@@ -188,13 +218,14 @@ func (r *PNGRenderer) renderNodeContent(node *layout.Node, pn *parse.Node, cs *s
 		hasRadius := cs.BorderTopLeftRadius > 0 || cs.BorderTopRightRadius > 0 ||
 			cs.BorderBottomLeftRadius > 0 || cs.BorderBottomRightRadius > 0
 		if hasRadius {
-			mask := roundedMask(int(l.Width), int(l.Height),
+			mask := r.cachedMask(int(l.Width), int(l.Height),
 				cs.BorderTopLeftRadius, cs.BorderTopRightRadius,
 				cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
 			draw.DrawMask(r.img, clip, tmp, clip.Min, mask, image.Point{}, draw.Over)
 		} else {
 			draw.Draw(r.img, clip, tmp, clip.Min, draw.Over)
 		}
+		releaseRGBA(tmp)
 		return
 	}
 
@@ -223,7 +254,7 @@ func (r *PNGRenderer) renderBorders(absX, absY, w, h float64, cs *style.Computed
 		cs.BorderBottomLeftRadius > 0 || cs.BorderBottomRightRadius > 0
 
 	if hasRadius {
-		tmp := image.NewRGBA(r.img.Bounds())
+		tmp := acquireRGBA(r.img.Bounds())
 		if cs.BorderTopWidth > 0 && cs.BorderTopStyle != style.BorderStyleNone {
 			c := styleToColor(cs.BorderTopColor)
 			fillRect(tmp, x, y, wi, int(math.Max(1, cs.BorderTopWidth)), c)
@@ -243,8 +274,9 @@ func (r *PNGRenderer) renderBorders(absX, absY, w, h float64, cs *style.Computed
 			fillRect(tmp, bx, y, int(math.Max(1, cs.BorderRightWidth)), hi, c)
 		}
 		rect := image.Rect(x, y, x+wi, y+hi).Intersect(r.img.Bounds())
-		mask := roundedMask(wi, hi, cs.BorderTopLeftRadius, cs.BorderTopRightRadius, cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
+		mask := r.cachedMask(wi, hi, cs.BorderTopLeftRadius, cs.BorderTopRightRadius, cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
 		draw.DrawMask(r.img, rect, tmp, rect.Min, mask, image.Point{}, draw.Over)
+		releaseRGBA(tmp)
 		return
 	}
 
@@ -475,28 +507,108 @@ func (r *PNGRenderer) renderLinearGradientPNG(g style.Gradient, rx, ry, rw, rh i
 	}
 
 	linStops := toLinearStops(g.Stops)
+
+	stripLen := int(math.Ceil(length)) + 1
+	if stripLen < 2 {
+		stripLen = 2
+	}
+	strip := buildGradientStrip(linStops, stripLen)
+
 	bounds := r.img.Bounds()
+	invLength := 1.0 / length
 	for py := ry; py < ry+rh; py++ {
 		if py < bounds.Min.Y || py >= bounds.Max.Y {
 			continue
 		}
+		dy := float64(py-ry) - cy
+		rowBase := -dy*cosA*invLength + 0.5
+		rowStep := sinA * invLength
+		t := rowBase + (float64(0)-cx)*rowStep
+		rowOff := py * r.img.Stride
 		for px := rx; px < rx+rw; px++ {
-			if px < bounds.Min.X || px >= bounds.Max.X {
-				continue
+			if px >= bounds.Min.X && px < bounds.Max.X {
+				tc := t
+				if g.Repeating {
+					tc = tc - math.Floor(tc)
+				} else if tc < 0 {
+					tc = 0
+				} else if tc > 1 {
+					tc = 1
+				}
+				idx := int(tc * float64(stripLen-1))
+				if idx >= stripLen {
+					idx = stripLen - 1
+				}
+				s := strip[idx]
+				dither := bayerMatrix[py&3][px&3] - 0.5
+				off := rowOff + px*4
+				r.img.Pix[off] = uint8(clampF(math.Floor(s.sr*255+dither+0.5), 0, 255))
+				r.img.Pix[off+1] = uint8(clampF(math.Floor(s.sg*255+dither+0.5), 0, 255))
+				r.img.Pix[off+2] = uint8(clampF(math.Floor(s.sb*255+dither+0.5), 0, 255))
+				r.img.Pix[off+3] = s.a
 			}
-			dx := float64(px-rx) - cx
-			dy := float64(py-ry) - cy
-			t := (dx*sinA - dy*cosA) / length
-			t += 0.5
-			if g.Repeating {
-				t = t - math.Floor(t)
-			} else {
-				t = math.Max(0, math.Min(1, t))
-			}
-			c := interpolateLinearStops(linStops, t, px, py)
-			r.img.SetRGBA(px, py, c)
+			t += rowStep
 		}
 	}
+}
+
+type stripEntry struct {
+	sr, sg, sb float64
+	a          uint8
+}
+
+func buildGradientStrip(stops []linearStop, n int) []stripEntry {
+	strip := make([]stripEntry, n)
+	for i := range n {
+		t := float64(i) / float64(n-1)
+		lr, lg, lb, la := interpolateLinear(stops, t)
+		strip[i] = stripEntry{
+			sr: linearToSrgbF(clampF(lr, 0, 1)),
+			sg: linearToSrgbF(clampF(lg, 0, 1)),
+			sb: linearToSrgbF(clampF(lb, 0, 1)),
+			a:  uint8(math.Round(la * 255)),
+		}
+	}
+	return strip
+}
+
+func interpolateLinear(stops []linearStop, t float64) (r, g, b, a float64) {
+	if len(stops) == 0 {
+		return 0, 0, 0, 1
+	}
+	if t <= stops[0].Position {
+		return stops[0].R, stops[0].G, stops[0].B, stops[0].A
+	}
+	last := stops[len(stops)-1]
+	if t >= last.Position {
+		return last.R, last.G, last.B, last.A
+	}
+	for i := 1; i < len(stops); i++ {
+		if t <= stops[i].Position {
+			prev := stops[i-1]
+			curr := stops[i]
+			span := curr.Position - prev.Position
+			if span <= 0 {
+				return curr.R, curr.G, curr.B, curr.A
+			}
+			f := (t - prev.Position) / span
+			return prev.R + f*(curr.R-prev.R),
+				prev.G + f*(curr.G-prev.G),
+				prev.B + f*(curr.B-prev.B),
+				prev.A + f*(curr.A-prev.A)
+		}
+	}
+	return last.R, last.G, last.B, last.A
+}
+
+func clampF(v, lo, hi float64) float64 {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
 }
 
 func (r *PNGRenderer) renderRadialGradientPNG(g style.Gradient, rx, ry, rw, rh int) {
@@ -517,26 +629,45 @@ func (r *PNGRenderer) renderRadialGradientPNG(g style.Gradient, rx, ry, rw, rh i
 	}
 
 	linStops := toLinearStops(g.Stops)
+
+	stripLen := int(math.Ceil(maxDist)) + 1
+	if stripLen < 2 {
+		stripLen = 2
+	}
+	strip := buildGradientStrip(linStops, stripLen)
+
 	bounds := r.img.Bounds()
+	invMax := 1.0 / maxDist
 	for py := ry; py < ry+rh; py++ {
 		if py < bounds.Min.Y || py >= bounds.Max.Y {
 			continue
 		}
+		dy := float64(py-ry) - cy
+		dy2 := dy * dy
+		rowOff := py * r.img.Stride
 		for px := rx; px < rx+rw; px++ {
 			if px < bounds.Min.X || px >= bounds.Max.X {
 				continue
 			}
 			dx := float64(px-rx) - cx
-			dy := float64(py-ry) - cy
-			dist := math.Sqrt(dx*dx + dy*dy)
-			t := dist / maxDist
+			dist := math.Sqrt(dx*dx + dy2)
+			t := dist * invMax
 			if g.Repeating {
 				t = t - math.Floor(t)
-			} else {
-				t = math.Max(0, math.Min(1, t))
+			} else if t > 1 {
+				t = 1
 			}
-			c := interpolateLinearStops(linStops, t, px, py)
-			r.img.SetRGBA(px, py, c)
+			idx := int(t * float64(stripLen-1))
+			if idx >= stripLen {
+				idx = stripLen - 1
+			}
+			s := strip[idx]
+			dither := bayerMatrix[py&3][px&3] - 0.5
+			off := rowOff + px*4
+			r.img.Pix[off] = uint8(clampF(math.Floor(s.sr*255+dither+0.5), 0, 255))
+			r.img.Pix[off+1] = uint8(clampF(math.Floor(s.sg*255+dither+0.5), 0, 255))
+			r.img.Pix[off+2] = uint8(clampF(math.Floor(s.sb*255+dither+0.5), 0, 255))
+			r.img.Pix[off+3] = s.a
 		}
 	}
 }
@@ -582,9 +713,6 @@ func linearToSrgbF(v float64) float64 {
 	return srgbEncodeTable[int(v*4095+0.5)]
 }
 
-func linearToSrgb(v float64) uint8 {
-	return uint8(math.Round(linearToSrgbF(v) * 255))
-}
 
 func toLinearStops(stops []style.ColorStop) []linearStop {
 	out := make([]linearStop, len(stops))
@@ -605,46 +733,6 @@ var bayerMatrix = [4][4]float64{
 	{15.0 / 16, 7.0 / 16, 13.0 / 16, 5.0 / 16},
 }
 
-func interpolateLinearStops(stops []linearStop, t float64, px, py int) color.RGBA {
-	if len(stops) == 0 {
-		return color.RGBA{0, 0, 0, 255}
-	}
-	if t <= stops[0].Position {
-		return color.RGBA{linearToSrgb(stops[0].R), linearToSrgb(stops[0].G), linearToSrgb(stops[0].B), uint8(math.Round(stops[0].A * 255))}
-	}
-	last := stops[len(stops)-1]
-	if t >= last.Position {
-		return color.RGBA{linearToSrgb(last.R), linearToSrgb(last.G), linearToSrgb(last.B), uint8(math.Round(last.A * 255))}
-	}
-	for i := 1; i < len(stops); i++ {
-		if t <= stops[i].Position {
-			prev := stops[i-1]
-			curr := stops[i]
-			span := curr.Position - prev.Position
-			if span <= 0 {
-				return color.RGBA{linearToSrgb(curr.R), linearToSrgb(curr.G), linearToSrgb(curr.B), uint8(math.Round(curr.A * 255))}
-			}
-			f := (t - prev.Position) / span
-			lr := prev.R + f*(curr.R-prev.R)
-			lg := prev.G + f*(curr.G-prev.G)
-			lb := prev.B + f*(curr.B-prev.B)
-			la := prev.A + f*(curr.A-prev.A)
-
-			sr := linearToSrgbF(math.Max(0, math.Min(1, lr)))
-			sg := linearToSrgbF(math.Max(0, math.Min(1, lg)))
-			sb := linearToSrgbF(math.Max(0, math.Min(1, lb)))
-
-			dither := bayerMatrix[py&3][px&3] - 0.5
-			return color.RGBA{
-				R: uint8(math.Max(0, math.Min(255, math.Floor(sr*255+dither+0.5)))),
-				G: uint8(math.Max(0, math.Min(255, math.Floor(sg*255+dither+0.5)))),
-				B: uint8(math.Max(0, math.Min(255, math.Floor(sb*255+dither+0.5)))),
-				A: uint8(math.Round(la * 255)),
-			}
-		}
-	}
-	return color.RGBA{linearToSrgb(last.R), linearToSrgb(last.G), linearToSrgb(last.B), uint8(math.Round(last.A * 255))}
-}
 
 func fillRect(img *image.RGBA, x, y, w, h int, c color.Color) {
 	rect := image.Rect(x, y, x+w, y+h).Intersect(img.Bounds())
@@ -776,37 +864,93 @@ func boxBlurAlpha(src *image.Alpha, radius int) *image.Alpha {
 }
 
 func boxBlurH(src, dst *image.Alpha, b image.Rectangle, r int) {
+	h := b.Dy()
+	if h > 64 {
+		workers := 4
+		chunk := (h + workers - 1) / workers
+		var wg sync.WaitGroup
+		for i := range workers {
+			y0 := b.Min.Y + i*chunk
+			y1 := y0 + chunk
+			if y1 > b.Max.Y {
+				y1 = b.Max.Y
+			}
+			if y0 >= y1 {
+				break
+			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				blurHRows(src, dst, b, r, y0, y1)
+			}()
+		}
+		wg.Wait()
+		return
+	}
+	blurHRows(src, dst, b, r, b.Min.Y, b.Max.Y)
+}
+
+func blurHRows(src, dst *image.Alpha, b image.Rectangle, r, y0, y1 int) {
 	w := b.Dx()
 	div := float64(2*r + 1)
-	for y := b.Min.Y; y < b.Max.Y; y++ {
+	stride := dst.Stride
+	for y := y0; y < y1; y++ {
 		sum := 0.0
 		for x := -r; x <= r; x++ {
 			cx := clampInt(x, 0, w-1)
-			sum += float64(src.AlphaAt(cx, y).A)
+			sum += float64(src.Pix[y*stride+cx])
 		}
 		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.SetAlpha(x, y, color.Alpha{A: uint8(math.Round(sum / div))})
+			dst.Pix[y*stride+x] = uint8(math.Round(sum / div))
 			nx := clampInt(x+r+1, 0, w-1)
 			ox := clampInt(x-r, 0, w-1)
-			sum += float64(src.AlphaAt(nx, y).A) - float64(src.AlphaAt(ox, y).A)
+			sum += float64(src.Pix[y*stride+nx]) - float64(src.Pix[y*stride+ox])
 		}
 	}
 }
 
 func boxBlurV(src, dst *image.Alpha, b image.Rectangle, r int) {
+	w := b.Dx()
+	if w > 64 {
+		workers := 4
+		chunk := (w + workers - 1) / workers
+		var wg sync.WaitGroup
+		for i := range workers {
+			x0 := b.Min.X + i*chunk
+			x1 := x0 + chunk
+			if x1 > b.Max.X {
+				x1 = b.Max.X
+			}
+			if x0 >= x1 {
+				break
+			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				blurVCols(src, dst, b, r, x0, x1)
+			}()
+		}
+		wg.Wait()
+		return
+	}
+	blurVCols(src, dst, b, r, b.Min.X, b.Max.X)
+}
+
+func blurVCols(src, dst *image.Alpha, b image.Rectangle, r, x0, x1 int) {
 	h := b.Dy()
 	div := float64(2*r + 1)
-	for x := b.Min.X; x < b.Max.X; x++ {
+	stride := dst.Stride
+	for x := x0; x < x1; x++ {
 		sum := 0.0
 		for y := -r; y <= r; y++ {
 			cy := clampInt(y, 0, h-1)
-			sum += float64(src.AlphaAt(x, cy).A)
+			sum += float64(src.Pix[cy*stride+x])
 		}
 		for y := b.Min.Y; y < b.Max.Y; y++ {
-			dst.SetAlpha(x, y, color.Alpha{A: uint8(math.Round(sum / div))})
+			dst.Pix[y*stride+x] = uint8(math.Round(sum / div))
 			ny := clampInt(y+r+1, 0, h-1)
 			oy := clampInt(y-r, 0, h-1)
-			sum += float64(src.AlphaAt(x, ny).A) - float64(src.AlphaAt(x, oy).A)
+			sum += float64(src.Pix[ny*stride+x]) - float64(src.Pix[oy*stride+x])
 		}
 	}
 }
@@ -857,6 +1001,21 @@ func (r *PNGRenderer) renderInsetShadow(absX, absY, w, h float64, s style.Shadow
 			fillRect(r.img, rightX, y, 1, hi, c)
 		}
 	}
+}
+
+func (r *PNGRenderer) cachedMask(w, h int, tl, tr, br, bl float64) *image.Alpha {
+	key := maskKey{w, h, int(tl * 100), int(tr * 100), int(br * 100), int(bl * 100)}
+	if m, ok := r.maskCache[key]; ok {
+		return m
+	}
+	m := roundedMask(w, h, tl, tr, br, bl)
+	if r.maskCache == nil {
+		r.maskCache = make(map[maskKey]*image.Alpha)
+	}
+	if len(r.maskCache) < 32 {
+		r.maskCache[key] = m
+	}
+	return m
 }
 
 func roundedMask(w, h int, tl, tr, br, bl float64) *image.Alpha {
@@ -931,7 +1090,7 @@ func (r *PNGRenderer) renderInlineSVG(pn *parse.Node, cs *style.ComputedStyle, a
 	if hasRadius {
 		tmp := image.NewRGBA(dstRect.Sub(dstRect.Min))
 		xdraw.BiLinear.Scale(tmp, tmp.Bounds(), img, img.Bounds(), xdraw.Over, nil)
-		mask := roundedMask(int(w), int(h),
+		mask := r.cachedMask(int(w), int(h),
 			cs.BorderTopLeftRadius, cs.BorderTopRightRadius,
 			cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
 		draw.DrawMask(r.img, dstRect, tmp, image.Point{}, mask, image.Point{}, draw.Over)
@@ -959,7 +1118,7 @@ func (r *PNGRenderer) renderImage(src string, cs *style.ComputedStyle, absX, abs
 	if hasRadius {
 		tmp := image.NewRGBA(dstRect.Sub(dstRect.Min))
 		xdraw.BiLinear.Scale(tmp, tmp.Bounds(), img, img.Bounds(), xdraw.Over, nil)
-		mask := roundedMask(int(w), int(h),
+		mask := r.cachedMask(int(w), int(h),
 			cs.BorderTopLeftRadius, cs.BorderTopRightRadius,
 			cs.BorderBottomRightRadius, cs.BorderBottomLeftRadius)
 		draw.DrawMask(r.img, dstRect, tmp, image.Point{}, mask, image.Point{}, draw.Over)
