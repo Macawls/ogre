@@ -209,6 +209,35 @@ func computeNode(node *Node, availableWidth, availableHeight float64) {
 
 	crossAxisAlignment(lines, crossSize, s.AlignItems, s.AlignContent, isRow)
 
+	if !s.Height.IsDefined() {
+		if isRow {
+			var totalCross float64
+			for _, line := range lines {
+				totalCross += line.crossSize
+			}
+			if totalCross+bpH < node.Layout.Height {
+				node.Layout.Height = totalCross + bpH
+			}
+		} else {
+			var totalMain float64
+			for _, line := range lines {
+				lineMain := 0.0
+				for i, item := range line.items {
+					lineMain += item.mainSize + marginStart(item.node, mainSize, isRow) + marginEnd(item.node, mainSize, isRow)
+					if i > 0 {
+						lineMain += gap
+					}
+				}
+				if lineMain > totalMain {
+					totalMain = lineMain
+				}
+			}
+			if totalMain+bpH < node.Layout.Height {
+				node.Layout.Height = totalMain + bpH
+			}
+		}
+	}
+
 	insetX := paddingLeft + s.BorderLeft
 	insetY := paddingTop + s.BorderTop
 
