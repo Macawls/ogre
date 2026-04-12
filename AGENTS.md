@@ -41,6 +41,21 @@ server/          # HTTP server, caching, templates, rate limiting
 - Comparison fixtures in `test/fixtures/` for cross-tool accuracy tests.
 - No mocks for internal packages. Test real behavior.
 
+### Comparison tool
+
+Interactive three-way comparison (Ogre vs Satori vs Takumi). Requires [Bun](https://bun.sh). Lives on the `compare-tool` branch.
+
+```bash
+cd test/satori-reference && bun install   # first time only
+cd test/compare && go run .               # http://localhost:4444
+```
+
+### Regenerating example images
+
+```bash
+go run gen_examples.go   # outputs to site/src/assets/examples/
+```
+
 ## Commits
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `perf:`, `docs:`, `test:`, `ci:`, `chore:`.

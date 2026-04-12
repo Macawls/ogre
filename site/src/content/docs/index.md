@@ -63,7 +63,7 @@ Render times measured on AMD Ryzen 5 5600H, 1200x630 renders, both producing SVG
 ## Design goals
 
 - **Pure Go.** No CGo, no external binaries. Single static binary with `CGO_ENABLED=0`.
-- **Beyond Satori.** PNG/JPEG output, inline SVGs, box shadows, CSS filters, transforms, RTL text.
+- **Output quality first.** The priority is correct, complete rendering — PNG/JPEG output, inline SVGs, box shadows, CSS filters, transforms, RTL text. Performance optimizations follow once output fidelity is solid.
 - **Tailwind built-in.** Resolves Tailwind v3 utility classes directly. No build step needed.
 - **Production-ready server.** Includes an HTTP server with LRU caching, rate limiting, and template support.
 
