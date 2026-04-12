@@ -1,7 +1,21 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## [Unreleased]
+## [1.4.0] - 2026-04-12
+
+### Bug Fixes
+
+- Rename changelog to .mdx for import support
+
+### Features
+
+- Automated changelog with git-cliff
+
+### Performance
+
+- Gradient strip precomputation, buffer pooling, parallel blur
+
+## [1.3.0] - 2026-04-12
 
 ### Bug Fixes
 
