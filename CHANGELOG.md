@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [1.5.1] - 2026-07-22
+
+### Bug Fixes
+
+- Styling, layout, and PNG rendering fixes (#6)
+
+### Documentation
+
+- Update changelog for v1.5.0
+
 ## [1.5.0] - 2026-07-14
 
 ### Documentation
