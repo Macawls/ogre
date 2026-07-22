@@ -272,6 +272,7 @@ func renderTextAt(b *strings.Builder, l layout.Layout, pn *parse.Node, cs *style
 	}
 
 	ascent := size * 0.8
+	descent := size * 0.2
 	if fontMgr != nil {
 		fontStyle := cs.FontStyle
 		if fontStyle == "" {
@@ -282,10 +283,12 @@ func renderTextAt(b *strings.Builder, l layout.Layout, pn *parse.Node, cs *style
 			ff, err := fontMgr.NewFace(face, size)
 			if err == nil {
 				ascent = font.Ascent(ff)
+				descent = font.Descent(ff)
 			}
 		}
 	}
-	y := l.Y + ascent
+	halfLeading := (l.Height - (ascent + descent)) / 2
+	y := l.Y + halfLeading + ascent
 
 	if fontMgr != nil {
 		fontStyle := cs.FontStyle

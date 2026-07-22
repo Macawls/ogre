@@ -78,6 +78,8 @@ func RenderTextWithIDGen(lines []font.TextLine, cs *style.ComputedStyle, boxX, b
 		}
 	}
 
+	halfLeading := (lineHeight - (ascent + descent)) / 2
+
 	var shadows strings.Builder
 	var content strings.Builder
 	var decorations strings.Builder
@@ -109,7 +111,7 @@ func RenderTextWithIDGen(lines []font.TextLine, cs *style.ComputedStyle, boxX, b
 			align = style.TextAlignRight
 		}
 		x := alignX(boxX, boxW, line.Width, align)
-		y := boxY + ascent + float64(i)*lineHeight
+		y := boxY + halfLeading + ascent + float64(i)*lineHeight
 
 		for _, s := range textShadows {
 			sx := x + s.OffsetX

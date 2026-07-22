@@ -56,8 +56,8 @@ type PNGRenderer struct {
 }
 
 type maskKey struct {
-	w, h             int
-	tl, tr, br, bl   int
+	w, h           int
+	tl, tr, br, bl int
 }
 
 // RenderPNG generates the corresponding output format.
@@ -68,7 +68,6 @@ type PNGOptions struct {
 
 func RenderPNG(tree *layout.LayoutTree, styles map[*parse.Node]*style.ComputedStyle, fonts *fontpkg.Manager, width, height int, opts ...PNGOptions) ([]byte, error) {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	draw.Draw(img, img.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
 
 	reverse := make(map[*layout.Node]*parse.Node, len(tree.NodeMap))
 	for pn, ln := range tree.NodeMap {
@@ -358,10 +357,12 @@ func (r *PNGRenderer) renderTextNode(l layout.Layout, pn *parse.Node, cs *style.
 		lineHeight = size * 1.2
 	}
 	ascent := fontpkg.Ascent(ff)
+	descent := fontpkg.Descent(ff)
+	halfLeading := (lineHeight - (ascent + descent)) / 2
 
 	if cs.BackgroundClip == "text" && cs.BackgroundImage != "" {
 		if _, err := style.ParseGradient(cs.BackgroundImage); err == nil {
-			r.renderGradientText(l, pn, cs, absX, absY, ff, ascent, size, lineHeight)
+			r.renderGradientText(l, pn, cs, absX, absY, ff, ascent+halfLeading, size, lineHeight)
 			return
 		}
 	}
@@ -370,13 +371,13 @@ func (r *PNGRenderer) renderTextNode(l layout.Layout, pn *parse.Node, cs *style.
 		for i, line := range lines {
 			text := applyTextTransform(line.Text, cs.TextTransform)
 			x := alignX(absX, l.Width, line.Width, cs.TextAlign)
-			y := absY + ascent + float64(i)*lineHeight
+			y := absY + halfLeading + ascent + float64(i)*lineHeight
 			r.drawTextWithEmoji(text, x, y, ascent, size, tc, ff, cs)
 		}
 		return
 	}
 
-	r.drawTextWithEmoji(pn.Text, absX, absY+ascent, ascent, size, tc, ff, cs)
+	r.drawTextWithEmoji(pn.Text, absX, absY+halfLeading+ascent, ascent, size, tc, ff, cs)
 }
 
 func (r *PNGRenderer) renderGradientText(l layout.Layout, pn *parse.Node, cs *style.ComputedStyle, absX, absY float64, ff font.Face, ascent, size, lineHeight float64) {
@@ -789,7 +790,6 @@ func linearToSrgbF(v float64) float64 {
 	return srgbEncodeTable[int(v*4095+0.5)]
 }
 
-
 func toLinearStops(stops []style.ColorStop) []linearStop {
 	out := make([]linearStop, len(stops))
 	for i, s := range stops {
@@ -808,7 +808,6 @@ var bayerMatrix = [4][4]float64{
 	{3.0 / 16, 11.0 / 16, 1.0 / 16, 9.0 / 16},
 	{15.0 / 16, 7.0 / 16, 13.0 / 16, 5.0 / 16},
 }
-
 
 func fillRect(img *image.RGBA, x, y, w, h int, c color.Color) {
 	rect := image.Rect(x, y, x+w, y+h).Intersect(img.Bounds())

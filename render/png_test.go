@@ -199,12 +199,9 @@ func TestRenderPNG_OverflowHiddenClipsChildren(t *testing.T) {
 		t.Errorf("pixel inside parent (50,50) should be red, got R=%d", r50>>8)
 	}
 
-	r150, g150, b150, _ := img.At(150, 150).RGBA()
-	if r150>>8 > 10 || g150>>8 < 200 || b150>>8 < 200 {
-		isWhite := r150>>8 > 240 && g150>>8 > 240 && b150>>8 > 240
-		if !isWhite {
-			t.Errorf("pixel outside parent (150,150) should be white (clipped), got R=%d G=%d B=%d", r150>>8, g150>>8, b150>>8)
-		}
+	_, _, _, a150 := img.At(150, 150).RGBA()
+	if a150 != 0 {
+		t.Errorf("pixel outside parent (150,150) should be transparent (clipped), got alpha=%d", a150>>8)
 	}
 }
 
@@ -233,10 +230,9 @@ func TestRenderPNG_RoundedCorners(t *testing.T) {
 		t.Errorf("center pixel should be red, got R=%d", cr>>8)
 	}
 
-	cornR, cornG, cornB, _ := img.At(0, 0).RGBA()
-	isWhite := cornR>>8 > 240 && cornG>>8 > 240 && cornB>>8 > 240
-	if !isWhite {
-		t.Errorf("corner pixel (0,0) should be white (rounded off), got R=%d G=%d B=%d", cornR>>8, cornG>>8, cornB>>8)
+	_, _, _, cornA := img.At(0, 0).RGBA()
+	if cornA != 0 {
+		t.Errorf("corner pixel (0,0) should be transparent (rounded off), got alpha=%d", cornA>>8)
 	}
 }
 

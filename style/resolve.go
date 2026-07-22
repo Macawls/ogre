@@ -10,27 +10,27 @@ import (
 const defaultRootFontSize = 16.0
 
 var inheritedProperties = map[string]bool{
-	"color":                  true,
-	"font-family":            true,
-	"font-size":              true,
-	"font-weight":            true,
-	"font-style":             true,
-	"line-height":            true,
-	"letter-spacing":         true,
-	"text-align":             true,
-	"text-transform":         true,
-	"text-decoration-line":   true,
-	"text-decoration-color":  true,
-	"text-decoration-style":  true,
-	"white-space":            true,
-	"word-break":             true,
-	"text-shadow":            true,
+	"color":                 true,
+	"font-family":           true,
+	"font-size":             true,
+	"font-weight":           true,
+	"font-style":            true,
+	"line-height":           true,
+	"letter-spacing":        true,
+	"text-align":            true,
+	"text-transform":        true,
+	"text-decoration-line":  true,
+	"text-decoration-color": true,
+	"text-decoration-style": true,
+	"white-space":           true,
+	"word-break":            true,
+	"text-shadow":           true,
 }
 
 var tagDefaults = map[string]map[string]string{
 	"div": {
 		"display":        "flex",
-		"flex-direction":  "row",
+		"flex-direction": "row",
 	},
 	"p": {
 		"display":       "flex",
@@ -424,16 +424,36 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 		cs.LetterSpacing = ParseValue(v).Resolve(ctx)
 	}
 
-	cs.Direction = getOr(props, "direction", "")
-	cs.TextAlign = ParseTextAlign(getOr(props, "text-align", ""))
-	cs.TextTransform = ParseTextTransform(getOr(props, "text-transform", ""))
-	cs.TextDecorationLine = ParseTextDecorationLine(getOr(props, "text-decoration-line", ""))
-	cs.TextDecorationColor = resolveColor(props, "text-decoration-color", cs.Color)
-	cs.TextDecorationStyle = getOr(props, "text-decoration-style", "")
-	cs.WhiteSpace = ParseWhiteSpace(getOr(props, "white-space", ""))
-	cs.WordBreak = ParseWordBreak(getOr(props, "word-break", ""))
+	if v, ok := props["direction"]; ok {
+		cs.Direction = v
+	}
+	if v, ok := props["text-align"]; ok {
+		cs.TextAlign = ParseTextAlign(v)
+	}
+	if v, ok := props["text-transform"]; ok {
+		cs.TextTransform = ParseTextTransform(v)
+	}
+	if v, ok := props["text-decoration-line"]; ok {
+		cs.TextDecorationLine = ParseTextDecorationLine(v)
+	}
+	if _, ok := props["text-decoration-color"]; ok {
+		cs.TextDecorationColor = resolveColor(props, "text-decoration-color", cs.Color)
+	} else if parent == nil {
+		cs.TextDecorationColor = cs.Color
+	}
+	if v, ok := props["text-decoration-style"]; ok {
+		cs.TextDecorationStyle = v
+	}
+	if v, ok := props["white-space"]; ok {
+		cs.WhiteSpace = ParseWhiteSpace(v)
+	}
+	if v, ok := props["word-break"]; ok {
+		cs.WordBreak = ParseWordBreak(v)
+	}
 	cs.TextOverflow = getOr(props, "text-overflow", "")
-	cs.TextShadow = getOr(props, "text-shadow", "")
+	if v, ok := props["text-shadow"]; ok {
+		cs.TextShadow = v
+	}
 
 	if v, ok := props["line-clamp"]; ok {
 		cs.LineClamp = parseInt(v)
@@ -612,4 +632,3 @@ func parseAspectRatio(s string) float64 {
 	}
 	return parseFloat(s)
 }
-
