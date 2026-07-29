@@ -35,7 +35,7 @@ Ogre supports a subset of CSS designed for image generation. All properties can 
 | `gap`, `row-gap`, `column-gap` | Length values |
 
 > [!NOTE]
-> `<div>` defaults to `display: flex`, matching Satori behavior (not browser behavior).
+> `<div>` defaults to `display: block` (browser behavior). Set `display: flex` explicitly to opt into flexbox layout.
 
 ## Box model
 

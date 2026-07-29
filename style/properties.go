@@ -21,7 +21,7 @@ func (d Display) String() string {
 	case DisplayContents:
 		return "contents"
 	}
-	return "flex"
+	return "block"
 }
 
 // ParseDisplay parses a CSS display value string.
@@ -36,7 +36,7 @@ func ParseDisplay(s string) Display {
 	case "contents":
 		return DisplayContents
 	}
-	return DisplayFlex
+	return DisplayBlock
 }
 
 // Position represents the CSS position property.

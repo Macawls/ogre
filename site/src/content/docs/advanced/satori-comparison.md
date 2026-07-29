@@ -19,7 +19,7 @@ Ogre is designed as a Go-native alternative to [Satori](https://github.com/verce
 | HTTP server | Built-in with caching | BYO |
 | Font embedding | SVG paths | SVG paths |
 | Emoji | Twemoji CDN | Twemoji CDN |
-| `<div>` default | `display: flex` | `display: flex` |
+| `<div>` default | `display: block` | `display: flex` |
 | Pixel accuracy | 95%+ vs Satori | Reference |
 
 ## When to use Ogre

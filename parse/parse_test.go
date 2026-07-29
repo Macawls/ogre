@@ -65,6 +65,9 @@ func TestMultipleRootElements(t *testing.T) {
 	if node.Style["display"] != "flex" {
 		t.Fatalf("expected display:flex on wrapper, got %s", node.Style["display"])
 	}
+	if node.Style["flex-direction"] != "column" {
+		t.Fatalf("expected flex-direction:column on wrapper, got %s", node.Style["flex-direction"])
+	}
 	if len(node.Children) != 2 {
 		t.Fatalf("expected 2 children, got %d", len(node.Children))
 	}

@@ -16,7 +16,7 @@ Instructions for AI agents and contributors working on this codebase.
 
 - **Minimal external imports.** Prefer stdlib and `golang.org/x/*`. The only allowed `github.com` import is `github.com/go-text/typesetting` for text shaping.
 - **No CGo.** Single static binary.
-- **`<div>` defaults to `display: flex`** (matching Satori, not browser behavior).
+- **`<div>` defaults to `display: block`** (browser behavior). Set `display: flex` explicitly for flexbox layout. Because the engine is flex-only, block containers are laid out as `flex-direction: column` with `align-items: stretch`.
 - Tests go next to the code they test, in the same package.
 
 ## Package structure

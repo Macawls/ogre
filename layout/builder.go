@@ -54,14 +54,22 @@ func buildNode(pn *parse.Node, styles map[*parse.Node]*style.ComputedStyle, meas
 }
 
 func mapStyle(cs *style.ComputedStyle) Style {
+	direction := mapDirection(cs.FlexDirection)
+	alignItems := mapAlignItems(cs.AlignItems)
+	if cs.Display == style.DisplayBlock {
+		direction = Column
+		if cs.AlignItems == style.AlignItemsAuto {
+			alignItems = AlignStretch
+		}
+	}
 	return Style{
 		Display:  mapDisplay(cs.Display),
 		Position: mapPosition(cs.Position),
 
-		Direction: mapDirection(cs.FlexDirection),
+		Direction: direction,
 		Wrap:      mapWrap(cs.FlexWrap),
 
-		AlignItems:     mapAlignItems(cs.AlignItems),
+		AlignItems:     alignItems,
 		AlignSelf:      mapAlignSelf(cs.AlignSelf),
 		AlignContent:   mapAlignContent(cs.AlignContent),
 		JustifyContent: mapJustify(cs.JustifyContent),

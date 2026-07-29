@@ -228,7 +228,7 @@ Background: background-color, background-image (linear-gradient, radial-gradient
 
 Visual: opacity, box-shadow, transform, transform-origin, filter (blur, grayscale, brightness), object-fit.
 
-Note: <div> defaults to display: flex (matching Satori behavior, not browser behavior).
+Note: <div> defaults to display: block (browser behavior). Set display: flex explicitly to opt into flexbox layout. Because the engine is flex-only, block containers are laid out as flex-direction: column with align-items: stretch.
 
 ## Tailwind v3 Support
 

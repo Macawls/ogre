@@ -36,7 +36,7 @@ func Parse(htmlStr string) (*Node, error) {
 	return &Node{
 		Type:     ElementNode,
 		Tag:      "div",
-		Style:    map[string]string{"display": "flex"},
+		Style:    map[string]string{"display": "flex", "flex-direction": "column"},
 		Children: roots,
 	}, nil
 }

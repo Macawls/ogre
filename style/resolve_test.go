@@ -20,11 +20,8 @@ func TestDefaultDiv(t *testing.T) {
 	result := Resolve(root, 1200, 630)
 	cs := result[root]
 
-	if cs.Display != DisplayFlex {
-		t.Errorf("div display: got %v, want flex", cs.Display)
-	}
-	if cs.FlexDirection != FlexDirectionRow {
-		t.Errorf("div flex-direction: got %v, want row", cs.FlexDirection)
+	if cs.Display != DisplayBlock {
+		t.Errorf("div display: got %v, want block", cs.Display)
 	}
 	if cs.Position != PositionRelative {
 		t.Errorf("div position: got %v, want relative", cs.Position)
@@ -59,8 +56,8 @@ func TestDefaultP(t *testing.T) {
 	result := Resolve(root, 1200, 630)
 	p := result[root.Children[0]]
 
-	if p.Display != DisplayFlex {
-		t.Errorf("p display: got %v, want flex", p.Display)
+	if p.Display != DisplayBlock {
+		t.Errorf("p display: got %v, want block", p.Display)
 	}
 	if !approxEqual(p.MarginTop.Raw, 16, 0.01) {
 		t.Errorf("p margin-top: got %v, want 16 (1em at 16px)", p.MarginTop.Raw)

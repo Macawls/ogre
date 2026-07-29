@@ -28,12 +28,7 @@ var inheritedProperties = map[string]bool{
 }
 
 var tagDefaults = map[string]map[string]string{
-	"div": {
-		"display":        "flex",
-		"flex-direction": "row",
-	},
 	"p": {
-		"display":       "flex",
 		"margin-top":    "1em",
 		"margin-bottom": "1em",
 	},
@@ -127,9 +122,6 @@ var tagDefaults = map[string]map[string]string{
 	},
 	"ol": {
 		"padding-left": "40px",
-	},
-	"li": {
-		"display": "flex",
 	},
 	"section":    {},
 	"article":    {},
@@ -254,7 +246,7 @@ func resolveVar(value string, vars map[string]string) string {
 func mergeProps(node *parse.Node) map[string]string {
 	props := make(map[string]string)
 
-	props["display"] = "flex"
+	props["display"] = "block"
 	props["position"] = "relative"
 	props["box-sizing"] = "border-box"
 
@@ -330,7 +322,7 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 		cs.LineHeight = 1.2 * cs.FontSize
 	}
 
-	cs.Display = ParseDisplay(getOr(props, "display", "flex"))
+	cs.Display = ParseDisplay(getOr(props, "display", "block"))
 	cs.Position = ParsePosition(getOr(props, "position", "relative"))
 	cs.BoxSizing = ParseBoxSizing(getOr(props, "box-sizing", "border-box"))
 

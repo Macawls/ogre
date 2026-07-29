@@ -336,7 +336,7 @@ Use bracket notation for custom values:
 | Font embedding   | SVG paths                 | SVG paths         |
 | Layout engine    | Custom flexbox (W3C spec) | Yoga (via WASM)   |
 | Emoji            | Twemoji CDN               | Twemoji CDN       |
-| `<div>` default  | `display: flex`           | `display: flex`   |
+| `<div>` default  | `display: block`          | `display: flex`   |
 | PNG output       | Built-in                  | Requires resvg    |
 | Pixel accuracy   | 95%+ vs Satori            | Reference         |
 

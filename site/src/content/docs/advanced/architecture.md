@@ -57,7 +57,7 @@ ogre.go          # Public API: Render(), NewRenderer()
 
 ## Key design decisions
 
-**`<div>` defaults to `display: flex`.** This matches Satori's behavior, not browser behavior. It means every `<div>` is a flex container by default.
+**`<div>` defaults to `display: block`.** This matches browser behavior — children stack vertically, taking full inline width. Set `display: flex` explicitly for flexbox layout. Because Ogre's engine is flex-only under the hood, block containers are laid out as `flex-direction: column` with `align-items: stretch`.
 
 **Font glyphs as SVG paths.** In SVG output, text is not rendered as `<text>` elements with font references. Instead, each glyph is converted to path data. This makes SVGs self-contained but larger.
 
