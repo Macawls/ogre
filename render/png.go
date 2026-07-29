@@ -1011,8 +1011,36 @@ func boxBlurH(src, dst *image.Alpha, b image.Rectangle, r int) {
 
 func blurHRows(src, dst *image.Alpha, b image.Rectangle, r, y0, y1 int) {
 	w := b.Dx()
-	div := float64(2*r + 1)
 	stride := dst.Stride
+	if r == 1 {
+		// Fast path for shadow-sm and similar thin blurs: integer-only
+		// moving sum of 3 pixels, avoiding float64 conversion and
+		// math.Round per pixel. (sum+1)/3 matches math.Round(sum/3) for
+		// all uint8 accumulator values.
+		p1Idx := 1
+		if p1Idx > w-1 {
+			p1Idx = w - 1
+		}
+		for y := y0; y < y1; y++ {
+			rowOff := y * stride
+			p0 := int(src.Pix[rowOff])
+			sum := p0 + p0 + int(src.Pix[rowOff+p1Idx])
+			for x := b.Min.X; x < b.Max.X; x++ {
+				dst.Pix[rowOff+x] = uint8((sum + 1) / 3)
+				nx := x + 2
+				if nx > w-1 {
+					nx = w - 1
+				}
+				ox := x - 1
+				if ox < 0 {
+					ox = 0
+				}
+				sum += int(src.Pix[rowOff+nx]) - int(src.Pix[rowOff+ox])
+			}
+		}
+		return
+	}
+	div := float64(2*r + 1)
 	for y := y0; y < y1; y++ {
 		sum := 0.0
 		for x := -r; x <= r; x++ {
@@ -1057,8 +1085,31 @@ func boxBlurV(src, dst *image.Alpha, b image.Rectangle, r int) {
 
 func blurVCols(src, dst *image.Alpha, b image.Rectangle, r, x0, x1 int) {
 	h := b.Dy()
-	div := float64(2*r + 1)
 	stride := dst.Stride
+	if r == 1 {
+		p1RowIdx := 1
+		if p1RowIdx > h-1 {
+			p1RowIdx = h - 1
+		}
+		for x := x0; x < x1; x++ {
+			p0 := int(src.Pix[x])
+			sum := p0 + p0 + int(src.Pix[p1RowIdx*stride+x])
+			for y := b.Min.Y; y < b.Max.Y; y++ {
+				dst.Pix[y*stride+x] = uint8((sum + 1) / 3)
+				ny := y + 2
+				if ny > h-1 {
+					ny = h - 1
+				}
+				oy := y - 1
+				if oy < 0 {
+					oy = 0
+				}
+				sum += int(src.Pix[ny*stride+x]) - int(src.Pix[oy*stride+x])
+			}
+		}
+		return
+	}
+	div := float64(2*r + 1)
 	for x := x0; x < x1; x++ {
 		sum := 0.0
 		for y := -r; y <= r; y++ {

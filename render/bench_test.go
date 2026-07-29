@@ -64,6 +64,20 @@ func BenchmarkBoxBlurAlpha(b *testing.B) {
 	}
 }
 
+func BenchmarkBoxBlurAlphaR1(b *testing.B) {
+	src := image.NewAlpha(image.Rect(0, 0, 500, 350))
+	for y := 50; y < 300; y++ {
+		for x := 50; x < 450; x++ {
+			src.SetAlpha(x, y, color.Alpha{A: 200})
+		}
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		boxBlurAlpha(src, 1)
+	}
+}
+
 func BenchmarkFillRect(b *testing.B) {
 	img := image.NewRGBA(image.Rect(0, 0, 1200, 630))
 	c := color.RGBA{R: 255, G: 255, B: 255, A: 255}
