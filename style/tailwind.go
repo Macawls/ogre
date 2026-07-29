@@ -4,7 +4,16 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+type cssProp struct{ K, V string }
+
+// tailwindClassCache memoizes the CSS-property expansion of each Tailwind
+// class string. The class corpus is effectively bounded (~2k realistic
+// utilities), so an uncapped sync.Map is safe here. Arbitrary-value classes
+// (e.g. w-[52.3%]) are unbounded and are not cached.
+var tailwindClassCache sync.Map // key: class string, value: []cssProp
 
 var tailwindColors = map[string]map[int]string{
 	"slate": {
@@ -220,7 +229,23 @@ func resolveTailwindClass(cls string, out map[string]string) {
 		resolveArbitrary(cls, out)
 		return
 	}
+	if cached, ok := tailwindClassCache.Load(cls); ok {
+		for _, p := range cached.([]cssProp) {
+			out[p.K] = p.V
+		}
+		return
+	}
+	scratch := make(map[string]string)
+	resolveTailwindClassBody(cls, scratch)
+	props := make([]cssProp, 0, len(scratch))
+	for k, v := range scratch {
+		props = append(props, cssProp{K: k, V: v})
+		out[k] = v
+	}
+	tailwindClassCache.Store(cls, props)
+}
 
+func resolveTailwindClassBody(cls string, out map[string]string) {
 	switch cls {
 	// Flexbox display & direction
 	case "flex":
