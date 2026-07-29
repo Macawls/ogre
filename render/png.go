@@ -57,6 +57,27 @@ func releaseRGBA(img *image.RGBA) {
 	rgbaPool.Put(img)
 }
 
+var alphaPool sync.Pool
+
+func acquireAlpha(r image.Rectangle) *image.Alpha {
+	if v := alphaPool.Get(); v != nil {
+		img := v.(*image.Alpha)
+		need := r.Dx() * r.Dy()
+		if cap(img.Pix) >= need {
+			img.Pix = img.Pix[:need]
+			img.Stride = r.Dx()
+			img.Rect = r
+			clear(img.Pix)
+			return img
+		}
+	}
+	return image.NewAlpha(r)
+}
+
+func releaseAlpha(img *image.Alpha) {
+	alphaPool.Put(img)
+}
+
 type PNGRenderer struct {
 	img           *image.RGBA
 	styles        map[*parse.Node]*style.ComputedStyle
@@ -898,7 +919,7 @@ func (r *PNGRenderer) renderOutsetShadow(absX, absY, w, h float64, s style.Shado
 		return
 	}
 
-	alpha := image.NewAlpha(image.Rect(0, 0, tw, th))
+	alpha := acquireAlpha(image.Rect(0, 0, tw, th))
 	for py := pad; py < pad+sh; py++ {
 		for px := pad; px < pad+sw; px++ {
 			alpha.SetAlpha(px, py, color.Alpha{A: sc.A})
@@ -906,6 +927,8 @@ func (r *PNGRenderer) renderOutsetShadow(absX, absY, w, h float64, s style.Shado
 	}
 
 	blurred := boxBlurAlpha(alpha, blur)
+	releaseAlpha(alpha)
+	defer releaseAlpha(blurred)
 
 	ox := sx - pad
 	oy := sy - pad
@@ -936,19 +959,26 @@ func (r *PNGRenderer) renderOutsetShadow(absX, absY, w, h float64, s style.Shado
 	}
 }
 
+// boxBlurAlpha runs a 2-pass separable box blur (H,V,H,V) on src and returns
+// a fresh alpha image. Intermediates come from alphaPool. The returned image
+// is pool-owned; callers should releaseAlpha it when done. If radius <= 0,
+// src is returned unchanged (caller owns it and must not double-release).
 func boxBlurAlpha(src *image.Alpha, radius int) *image.Alpha {
 	if radius <= 0 {
 		return src
 	}
 	b := src.Bounds()
-	tmp := image.NewAlpha(b)
-	dst := image.NewAlpha(b)
+	tmp := acquireAlpha(b)
+	dst := acquireAlpha(b)
 	boxBlurH(src, tmp, b, radius)
 	boxBlurV(tmp, dst, b, radius)
-	tmp2 := image.NewAlpha(b)
+	releaseAlpha(tmp)
+	tmp2 := acquireAlpha(b)
 	boxBlurH(dst, tmp2, b, radius)
-	dst2 := image.NewAlpha(b)
+	releaseAlpha(dst)
+	dst2 := acquireAlpha(b)
 	boxBlurV(tmp2, dst2, b, radius)
+	releaseAlpha(tmp2)
 	return dst2
 }
 
