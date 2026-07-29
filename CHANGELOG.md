@@ -1,6 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.1.0] - 2026-07-29
+
+### Performance
+
+- Tune PNG encoder with BestSpeed + BufferPool (encode -22%, -98% bytes/op, 29 -> 0 allocs)
+- Drop fmt.Sscanf and []rune conversion in glyph path parser (TextToPath 4.3x faster)
+- Cache resolved Tailwind class expansions in a sync.Map (ResolveTailwind -17%, -56% allocs)
+- Cache parsed go-text Face on Manager for reuse across shape calls (i18n shape 23x faster)
+- Pool alpha buffers used by box-shadow blur (-75% mem per blur)
+- LRU-cap the glyph path cache (bounded memory for long-lived servers)
+- Use strings.Builder in wrapCollapsed to kill O(n) string concat (wrap -14%, -71% allocs)
+- Integer fast path in box blur for radius=1 (~28% faster for thin shadows)
+- Direct Pix writes in the opacity composite loop (~27% faster)
+
+### Documentation
+
+- Update changelog for v2.0.1
+
 ## [2.0.1] - 2026-07-29
 
 ### Bug Fixes
