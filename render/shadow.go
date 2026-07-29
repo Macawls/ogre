@@ -27,13 +27,16 @@ func RenderBoxShadow(shadows []style.Shadow, x, y, w, h float64, borderRadius fl
 		filterID := idGen("shadow")
 		stdDev := s.Blur / 2
 
+		// Filter output is the offset+blurred silhouette of the source rect,
+		// re-colored with the shadow color. SourceGraphic is deliberately not
+		// merged back in, so only the shadow itself renders — the box's own
+		// fill and stroke are drawn by the caller in a separate rect above.
 		defs.WriteString(fmt.Sprintf(
 			`<filter id="%s" x="-50%%" y="-50%%" width="200%%" height="200%%">`+
 				`<feGaussianBlur in="SourceAlpha" stdDeviation="%.4g"/>`+
 				`<feOffset dx="%.4g" dy="%.4g" result="offsetBlur"/>`+
 				`<feFlood flood-color="%s" flood-opacity="%.4g"/>`+
 				`<feComposite in2="offsetBlur" operator="in"/>`+
-				`<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>`+
 				`</filter>`,
 			filterID, stdDev, s.OffsetX, s.OffsetY,
 			shadowColorHex(s.Color), s.Color.A))
@@ -43,8 +46,9 @@ func RenderBoxShadow(shadows []style.Shadow, x, y, w, h float64, borderRadius fl
 		sw := w + s.Spread*2
 		sh := h + s.Spread*2
 
-		fmt.Fprintf(&shapes, `<rect x="%.4g" y="%.4g" width="%.4g" height="%.4g"`, sx, sy, sw, sh)
-		fmt.Fprintf(&shapes, ` fill="%s"`, shadowColorCSS(s.Color))
+		// Source rect must be fully opaque so SourceAlpha = 1 within its
+		// bounds; the flood provides the actual color and opacity.
+		fmt.Fprintf(&shapes, `<rect x="%.4g" y="%.4g" width="%.4g" height="%.4g" fill="#000000"`, sx, sy, sw, sh)
 		if borderRadius > 0 {
 			fmt.Fprintf(&shapes, ` rx="%.4g"`, borderRadius)
 		}

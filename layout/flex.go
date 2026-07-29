@@ -18,13 +18,29 @@ type flexLine struct {
 	crossOffset float64
 }
 
-func computeNode(node *Node, availableWidth, availableHeight float64) {
+// layoutRun bundles the inputs to computeNode. availableWidth/Height is the
+// space allocated to this node by the caller (used as fallback when the
+// node's own width/height is undefined). ownerWidth/Height is the parent's
+// content-box size, used as the base for resolving this node's percentage
+// dimensions. definiteWidth/Height indicates whether the size was fixed by
+// the caller (e.g. flex main axis or align-stretch); when true, the shrink-
+// to-content step is skipped.
+type layoutRun struct {
+	availableWidth  float64
+	availableHeight float64
+	ownerWidth      float64
+	ownerHeight     float64
+	definiteWidth   bool
+	definiteHeight  bool
+}
+
+func computeNode(node *Node, in layoutRun) {
 	s := &node.Style
 
-	paddingTop := resolveOr0(s.PaddingTop, availableHeight)
-	paddingRight := resolveOr0(s.PaddingRight, availableWidth)
-	paddingBottom := resolveOr0(s.PaddingBottom, availableHeight)
-	paddingLeft := resolveOr0(s.PaddingLeft, availableWidth)
+	paddingTop := resolveOr0(s.PaddingTop, in.ownerHeight)
+	paddingRight := resolveOr0(s.PaddingRight, in.ownerWidth)
+	paddingBottom := resolveOr0(s.PaddingBottom, in.ownerHeight)
+	paddingLeft := resolveOr0(s.PaddingLeft, in.ownerWidth)
 
 	node.Layout.Padding = [4]float64{paddingTop, paddingRight, paddingBottom, paddingLeft}
 	node.Layout.Border = [4]float64{s.BorderTop, s.BorderRight, s.BorderBottom, s.BorderLeft}
@@ -32,17 +48,17 @@ func computeNode(node *Node, availableWidth, availableHeight float64) {
 	bpH := paddingTop + paddingBottom + s.BorderTop + s.BorderBottom
 	bpW := paddingLeft + paddingRight + s.BorderLeft + s.BorderRight
 
-	containerWidth := resolveNodeSize(s.Width, availableWidth)
+	containerWidth := resolveNodeSize(s.Width, in.ownerWidth)
 	if math.IsNaN(containerWidth) {
-		containerWidth = availableWidth
+		containerWidth = in.availableWidth
 	}
-	containerHeight := resolveNodeSize(s.Height, availableHeight)
+	containerHeight := resolveNodeSize(s.Height, in.ownerHeight)
 	if math.IsNaN(containerHeight) {
-		containerHeight = availableHeight
+		containerHeight = in.availableHeight
 	}
 
-	containerWidth = clampSize(containerWidth, s.MinWidth, s.MaxWidth, availableWidth)
-	containerHeight = clampSize(containerHeight, s.MinHeight, s.MaxHeight, availableHeight)
+	containerWidth = clampSize(containerWidth, s.MinWidth, s.MaxWidth, in.ownerWidth)
+	containerHeight = clampSize(containerHeight, s.MinHeight, s.MaxHeight, in.ownerHeight)
 
 	if s.AspectRatio > 0 {
 		if s.Width.IsDefined() && !s.Height.IsDefined() {
@@ -189,15 +205,41 @@ func computeNode(node *Node, availableWidth, availableHeight float64) {
 			if ih < 0 {
 				ih = 0
 			}
-			computeNode(item.node, iw, ih)
 
-			if item.node.Measure != nil {
-				if align == AlignStretch {
-					if isRow && !item.node.Style.Height.IsDefined() {
-						item.node.Layout.Height = item.crossSize
-					} else if !isRow && !item.node.Style.Width.IsDefined() {
-						item.node.Layout.Width = item.crossSize
-					}
+			// Main axis is always definite in flex: item.mainSize was resolved
+			// by the flex algorithm against the parent's owner size, so the
+			// child should not shrink below it. Cross axis is definite only
+			// when the child was stretched to a parent whose cross size is
+			// also definite; otherwise the child may shrink to content.
+			var childDefW, childDefH bool
+			if isRow {
+				childDefW = true
+				childDefH = align == AlignStretch && in.definiteHeight
+			} else {
+				childDefH = true
+				childDefW = align == AlignStretch && in.definiteWidth
+			}
+			if item.node.Style.Width.IsDefined() {
+				childDefW = true
+			}
+			if item.node.Style.Height.IsDefined() {
+				childDefH = true
+			}
+
+			computeNode(item.node, layoutRun{
+				availableWidth:  iw,
+				availableHeight: ih,
+				ownerWidth:      contentWidth,
+				ownerHeight:     contentHeight,
+				definiteWidth:   childDefW,
+				definiteHeight:  childDefH,
+			})
+
+			if align == AlignStretch {
+				if isRow && !item.node.Style.Height.IsDefined() {
+					item.node.Layout.Height = item.crossSize
+				} else if !isRow && !item.node.Style.Width.IsDefined() {
+					item.node.Layout.Width = item.crossSize
 				}
 			}
 		}
@@ -209,7 +251,7 @@ func computeNode(node *Node, availableWidth, availableHeight float64) {
 
 	crossAxisAlignment(lines, crossSize, s.AlignItems, s.AlignContent, isRow)
 
-	if !s.Height.IsDefined() {
+	if !s.Height.IsDefined() && !in.definiteHeight {
 		if isRow {
 			var totalCross float64
 			for _, line := range lines {

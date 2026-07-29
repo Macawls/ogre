@@ -63,6 +63,12 @@ func TestRenderBoxShadowSimple(t *testing.T) {
 	if !strings.Contains(result, "<rect") {
 		t.Fatal("expected shadow rect")
 	}
+	if strings.Contains(result, "SourceGraphic") {
+		t.Fatalf("outset shadow must not merge SourceGraphic back into output — that draws the semi-opaque source rect over the shadow, producing a boxy tint. Got: %s", result)
+	}
+	if !strings.Contains(result, `fill="#000000"`) {
+		t.Fatalf("shadow source rect should be opaque black so SourceAlpha=1 within its bounds; the flood provides the actual shadow color/opacity. Got: %s", result)
+	}
 }
 
 func TestRenderBoxShadowWithSpread(t *testing.T) {

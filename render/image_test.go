@@ -14,7 +14,7 @@ import (
 func TestRenderImageDataURI(t *testing.T) {
 	cs := &style.ComputedStyle{ObjectFit: style.ObjectFitContain}
 	src := "data:image/png;base64,iVBORw0KGgo="
-	result := RenderImage(src, cs, 10, 20, 100, 50)
+	result := RenderImage(src, cs, 10, 20, 100, 50, testIDGen)
 
 	if !strings.Contains(result, "<image") {
 		t.Fatal("expected <image element")
@@ -36,7 +36,7 @@ func TestRenderImageHTTP(t *testing.T) {
 	defer srv.Close()
 
 	cs := &style.ComputedStyle{ObjectFit: style.ObjectFitCover}
-	result := RenderImage(srv.URL+"/test.png", cs, 0, 0, 200, 100)
+	result := RenderImage(srv.URL+"/test.png", cs, 0, 0, 200, 100, testIDGen)
 
 	expected := base64.StdEncoding.EncodeToString(imgData)
 	if !strings.Contains(result, expected) {
@@ -49,7 +49,7 @@ func TestRenderImageHTTP(t *testing.T) {
 
 func TestRenderImageBroken(t *testing.T) {
 	cs := &style.ComputedStyle{}
-	result := RenderImage("http://127.0.0.1:1/nonexistent.png", cs, 10, 20, 100, 50)
+	result := RenderImage("http://127.0.0.1:1/nonexistent.png", cs, 10, 20, 100, 50, testIDGen)
 
 	if !strings.Contains(result, "<rect") {
 		t.Fatal("expected placeholder rect for broken image")
@@ -91,7 +91,7 @@ func TestRenderImageHTTPFail(t *testing.T) {
 	defer srv.Close()
 
 	cs := &style.ComputedStyle{}
-	result := RenderImage(srv.URL+"/missing.png", cs, 0, 0, 100, 50)
+	result := RenderImage(srv.URL+"/missing.png", cs, 0, 0, 100, 50, testIDGen)
 
 	if !strings.Contains(result, "<rect") {
 		t.Fatal("expected broken image placeholder for 404")
@@ -104,9 +104,40 @@ func TestRenderImagePositionOffset(t *testing.T) {
 		ObjectPosition: "10px 5px",
 	}
 	src := "data:image/png;base64,AAAA"
-	result := RenderImage(src, cs, 100, 200, 50, 50)
+	result := RenderImage(src, cs, 100, 200, 50, 50, testIDGen)
 
 	if !strings.Contains(result, fmt.Sprintf(`x="%.4g"`, 110.0)) {
 		t.Fatalf("expected x offset of 110, got: %s", result)
+	}
+}
+
+func TestRenderImageBorderRadius(t *testing.T) {
+	cs := &style.ComputedStyle{
+		BorderTopLeftRadius:     22,
+		BorderTopRightRadius:    22,
+		BorderBottomLeftRadius:  22,
+		BorderBottomRightRadius: 22,
+	}
+	src := "data:image/png;base64,AAAA"
+	result := RenderImage(src, cs, 0, 0, 44, 44, testIDGen)
+
+	if !strings.Contains(result, "<clipPath") {
+		t.Fatalf("expected clipPath for border-radius on img, got: %s", result)
+	}
+	if !strings.Contains(result, `rx="22"`) {
+		t.Fatalf("expected rx=22 on clip rect, got: %s", result)
+	}
+	if !strings.Contains(result, `clip-path="url(#`) {
+		t.Fatalf("expected image to reference clipPath, got: %s", result)
+	}
+}
+
+func TestRenderImageNoBorderRadius(t *testing.T) {
+	cs := &style.ComputedStyle{}
+	src := "data:image/png;base64,AAAA"
+	result := RenderImage(src, cs, 0, 0, 44, 44, testIDGen)
+
+	if strings.Contains(result, "<clipPath") {
+		t.Fatalf("no clipPath expected when border-radius is 0, got: %s", result)
 	}
 }
