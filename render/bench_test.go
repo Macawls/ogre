@@ -87,6 +87,93 @@ func BenchmarkFillRect(b *testing.B) {
 	}
 }
 
+// opacityCompositeSlow is the pre-optimization inner loop, kept only in the
+// bench file so BenchmarkOpacityCompositeFast can be compared apples-to-apples.
+func opacityCompositeSlow(dst, src *image.RGBA, bounds image.Rectangle, opacity float64) {
+	for py := bounds.Min.Y; py < bounds.Max.Y; py++ {
+		for px := bounds.Min.X; px < bounds.Max.X; px++ {
+			off := src.PixOffset(px, py)
+			sa := src.Pix[off+3]
+			if sa == 0 {
+				continue
+			}
+			na := uint8(float64(sa) * opacity)
+			s := color.RGBA{R: src.Pix[off], G: src.Pix[off+1], B: src.Pix[off+2], A: na}
+			doff := dst.PixOffset(px, py)
+			dr, dg, db, da := blendOver(s.R, s.G, s.B, s.A, dst.Pix[doff], dst.Pix[doff+1], dst.Pix[doff+2], dst.Pix[doff+3])
+			dst.Pix[doff] = dr
+			dst.Pix[doff+1] = dg
+			dst.Pix[doff+2] = db
+			dst.Pix[doff+3] = da
+		}
+	}
+}
+
+func opacityCompositeFast(dst, src *image.RGBA, bounds image.Rectangle, opacity float64) {
+	stride := dst.Stride
+	srcPix := src.Pix
+	dstPix := dst.Pix
+	for py := bounds.Min.Y; py < bounds.Max.Y; py++ {
+		rowOff := py * stride
+		for px := bounds.Min.X; px < bounds.Max.X; px++ {
+			off := rowOff + px*4
+			sa := srcPix[off+3]
+			if sa == 0 {
+				continue
+			}
+			na := uint8(float64(sa) * opacity)
+			dr, dg, db, da := blendOver(
+				srcPix[off], srcPix[off+1], srcPix[off+2], na,
+				dstPix[off], dstPix[off+1], dstPix[off+2], dstPix[off+3],
+			)
+			dstPix[off] = dr
+			dstPix[off+1] = dg
+			dstPix[off+2] = db
+			dstPix[off+3] = da
+		}
+	}
+}
+
+func opacityBenchSrc() (dst, src *image.RGBA, bounds image.Rectangle) {
+	dst = image.NewRGBA(image.Rect(0, 0, 1200, 630))
+	src = image.NewRGBA(image.Rect(0, 0, 1200, 630))
+	// Fill src with a mixed alpha pattern so the fast-skip (sa==0) branch
+	// exercises both paths.
+	for y := 0; y < 630; y++ {
+		for x := 0; x < 1200; x++ {
+			off := y*src.Stride + x*4
+			src.Pix[off] = uint8(x & 0xFF)
+			src.Pix[off+1] = uint8(y & 0xFF)
+			src.Pix[off+2] = 128
+			if (x+y)&7 == 0 {
+				src.Pix[off+3] = 0
+			} else {
+				src.Pix[off+3] = 200
+			}
+		}
+	}
+	bounds = image.Rect(100, 50, 900, 580)
+	return
+}
+
+func BenchmarkOpacityCompositeSlow(b *testing.B) {
+	dst, src, bounds := opacityBenchSrc()
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		opacityCompositeSlow(dst, src, bounds, 0.5)
+	}
+}
+
+func BenchmarkOpacityCompositeFast(b *testing.B) {
+	dst, src, bounds := opacityBenchSrc()
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		opacityCompositeFast(dst, src, bounds, 0.5)
+	}
+}
+
 func BenchmarkPNGEncode(b *testing.B) {
 	img := image.NewRGBA(image.Rect(0, 0, 1200, 630))
 	for y := range 630 {

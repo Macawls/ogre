@@ -167,21 +167,28 @@ func (r *PNGRenderer) renderNode(node *layout.Node, pn *parse.Node, cs *style.Co
 		}
 		sub.renderNodeContent(node, pn, cs, absX, absY)
 		bounds := image.Rect(int(absX), int(absY), int(absX+l.Width), int(absY+l.Height)).Intersect(r.img.Bounds())
+		// tmp and r.img share bounds (both allocated for r.img.Bounds()), so
+		// stride matches and offsets computed against one apply to the other.
+		stride := r.img.Stride
+		srcPix := tmp.Pix
+		dstPix := r.img.Pix
 		for py := bounds.Min.Y; py < bounds.Max.Y; py++ {
+			rowOff := py * stride
 			for px := bounds.Min.X; px < bounds.Max.X; px++ {
-				off := tmp.PixOffset(px, py)
-				sa := tmp.Pix[off+3]
+				off := rowOff + px*4
+				sa := srcPix[off+3]
 				if sa == 0 {
 					continue
 				}
 				na := uint8(float64(sa) * opacity)
-				src := color.RGBA{R: tmp.Pix[off], G: tmp.Pix[off+1], B: tmp.Pix[off+2], A: na}
-				doff := r.img.PixOffset(px, py)
-				dr, dg, db, da := blendOver(src.R, src.G, src.B, src.A, r.img.Pix[doff], r.img.Pix[doff+1], r.img.Pix[doff+2], r.img.Pix[doff+3])
-				r.img.Pix[doff] = dr
-				r.img.Pix[doff+1] = dg
-				r.img.Pix[doff+2] = db
-				r.img.Pix[doff+3] = da
+				dr, dg, db, da := blendOver(
+					srcPix[off], srcPix[off+1], srcPix[off+2], na,
+					dstPix[off], dstPix[off+1], dstPix[off+2], dstPix[off+3],
+				)
+				dstPix[off] = dr
+				dstPix[off+1] = dg
+				dstPix[off+2] = db
+				dstPix[off+3] = da
 			}
 		}
 		return
