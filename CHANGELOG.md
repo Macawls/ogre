@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.0.1] - 2026-07-29
+
+### Bug Fixes
+
+- Percent widths, box-shadow, and img border-radius on flex children (#9)
+
+### Documentation
+
+- Update changelog for v2.0.0
+
 ## [2.0.0] - 2026-07-29
 
 ### Documentation
