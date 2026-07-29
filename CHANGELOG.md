@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [2.0.0] - 2026-07-29
+
+### Documentation
+
+- Update changelog for v1.5.1
+
+### Features
+
+- Default <div> to display: block instead of display: flex
+
 ## [1.5.1] - 2026-07-22
 
 ### Bug Fixes
