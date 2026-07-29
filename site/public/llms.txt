@@ -43,7 +43,6 @@ A public instance is available at `https://ogre-api.macawls.dev` running the lat
 
 - Docs: https://ogre.macawls.dev
 - Playground: https://ogre.macawls.dev/getting-started/playground/
-- Examples: https://ogre.macawls.dev/getting-started/examples/
 - Go API Reference: https://ogre.macawls.dev/reference/api/
 - HTTP Endpoints: https://ogre.macawls.dev/reference/http/
 - CSS Properties: https://ogre.macawls.dev/reference/css/
