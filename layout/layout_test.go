@@ -471,6 +471,48 @@ func TestPercentageWidth(t *testing.T) {
 	assertLayout(t, child, "child", 0, 0, 200, 200)
 }
 
+// Regression for the double-percent-resolution bug: a flex child with an
+// explicit Width: Pct(50) should occupy 50% of the parent, not 25%. Before
+// the fix, computeNode re-resolved s.Width against the child's already-
+// allocated slot (which was itself 50% of the parent), producing 25%.
+func TestPercentageWidthOnFlexChild(t *testing.T) {
+	left := NewNode(Style{Width: Pct(50)})
+	right := NewNode(Style{Width: Pct(50)})
+	root := NewNode(Style{
+		Width:     Pt(400),
+		Height:    Pt(200),
+		Direction: Row,
+	}, left, right)
+
+	Compute(root, 400, 200)
+
+	assertLayout(t, left, "left", 0, 0, 200, 200)
+	assertLayout(t, right, "right", 200, 0, 200, 200)
+}
+
+// Regression for the flex-child height-shrink bug: a flex-column child with
+// no explicit height should stretch to the parent's cross-axis size when
+// align-items:stretch (the default) is in effect. Before the fix, computeNode
+// shrunk Layout.Height to the sum of its children's main sizes even though
+// the parent had already stretched it.
+func TestFlexChildStretchNoShrink(t *testing.T) {
+	inner1 := NewNode(Style{Width: Pt(100), Height: Pt(50)})
+	inner2 := NewNode(Style{Width: Pt(100), Height: Pt(50)})
+	col := NewNode(Style{
+		Width:     Pct(50),
+		Direction: Column,
+	}, inner1, inner2)
+	root := NewNode(Style{
+		Width:     Pt(400),
+		Height:    Pt(400),
+		Direction: Row,
+	}, col)
+
+	Compute(root, 400, 400)
+
+	assertLayout(t, col, "col", 0, 0, 200, 400)
+}
+
 func TestPercentageHeight(t *testing.T) {
 	child := NewNode(Style{
 		FlexBasis: Pct(50),

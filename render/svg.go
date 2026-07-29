@@ -222,7 +222,8 @@ func renderNodeAt(b *strings.Builder, node *layout.Node, pn *parse.Node, cs *sty
 
 		if pn != nil && pn.Tag == "img" {
 			if src := pn.Attrs["src"]; src != "" {
-				b.WriteString(RenderImage(src, cs, absX, absY, l.Width, l.Height))
+				b.WriteString(RenderImage(src, cs, absX, absY, l.Width, l.Height,
+					func(prefix string) string { return ctx.ids.next(prefix) }))
 			}
 		} else if pn != nil && pn.Tag == "svg" {
 			b.WriteString(RenderInlineSVG(pn, absX, absY, l.Width, l.Height))

@@ -77,5 +77,12 @@ func computeAbsolute(child *Node, container *Node) {
 	child.Layout.Width = w
 	child.Layout.Height = h
 
-	computeNode(child, w, h)
+	computeNode(child, layoutRun{
+		availableWidth:  w,
+		availableHeight: h,
+		ownerWidth:      paddingBoxW,
+		ownerHeight:     paddingBoxH,
+		definiteWidth:   true,
+		definiteHeight:  true,
+	})
 }

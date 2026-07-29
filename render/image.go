@@ -17,7 +17,7 @@ var imageCache sync.Map
 
 // RenderImage generates the corresponding output format.
 // RenderImage generates SVG image element from src URL.
-func RenderImage(src string, cs *style.ComputedStyle, x, y, w, h float64) string {
+func RenderImage(src string, cs *style.ComputedStyle, x, y, w, h float64, idGen func(string) string) string {
 	dataURI, ok := resolveImageSource(src)
 	if !ok {
 		return renderBrokenImage(x, y, w, h)
@@ -29,8 +29,28 @@ func RenderImage(src string, cs *style.ComputedStyle, x, y, w, h float64) string
 	imgX := x + ox
 	imgY := y + oy
 
-	return fmt.Sprintf(`<image href="%s" x="%.4g" y="%.4g" width="%.4g" height="%.4g" preserveAspectRatio="%s"/>`,
-		xmlEscape(dataURI), imgX, imgY, w, h, par)
+	tl := cs.BorderTopLeftRadius
+	tr := cs.BorderTopRightRadius
+	bl := cs.BorderBottomLeftRadius
+	br := cs.BorderBottomRightRadius
+
+	if tl == 0 && tr == 0 && bl == 0 && br == 0 {
+		return fmt.Sprintf(`<image href="%s" x="%.4g" y="%.4g" width="%.4g" height="%.4g" preserveAspectRatio="%s"/>`,
+			xmlEscape(dataURI), imgX, imgY, w, h, par)
+	}
+
+	id := idGen("imgclip")
+	var defs strings.Builder
+	fmt.Fprintf(&defs, `<defs><clipPath id="%s">`, id)
+	if tl == tr && tr == bl && bl == br {
+		fmt.Fprintf(&defs, `<rect x="%.4g" y="%.4g" width="%.4g" height="%.4g" rx="%.4g"/>`, x, y, w, h, tl)
+	} else {
+		defs.WriteString(roundedRectPath(x, y, w, h, tl, tr, br, bl))
+	}
+	defs.WriteString("</clipPath></defs>")
+
+	return fmt.Sprintf(`%s<image href="%s" x="%.4g" y="%.4g" width="%.4g" height="%.4g" preserveAspectRatio="%s" clip-path="url(#%s)"/>`,
+		defs.String(), xmlEscape(dataURI), imgX, imgY, w, h, par, id)
 }
 
 type cachedImage struct {

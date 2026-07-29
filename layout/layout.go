@@ -193,5 +193,12 @@ func NewLeaf(style Style, measure MeasureFunc) *Node {
 
 // Compute runs the flexbox layout algorithm on the tree rooted at root.
 func Compute(root *Node, availableWidth, availableHeight float64) {
-	computeNode(root, availableWidth, availableHeight)
+	computeNode(root, layoutRun{
+		availableWidth:  availableWidth,
+		availableHeight: availableHeight,
+		ownerWidth:      availableWidth,
+		ownerHeight:     availableHeight,
+		definiteWidth:   true,
+		definiteHeight:  true,
+	})
 }
