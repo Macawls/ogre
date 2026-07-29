@@ -25,6 +25,19 @@ import (
 
 var rgbaPool sync.Pool
 
+var pngEncBufPool = &pngEncoderBufferPool{}
+
+type pngEncoderBufferPool struct{ p sync.Pool }
+
+func (pool *pngEncoderBufferPool) Get() *png.EncoderBuffer {
+	if v := pool.p.Get(); v != nil {
+		return v.(*png.EncoderBuffer)
+	}
+	return nil
+}
+
+func (pool *pngEncoderBufferPool) Put(b *png.EncoderBuffer) { pool.p.Put(b) }
+
 func acquireRGBA(r image.Rectangle) *image.RGBA {
 	if v := rgbaPool.Get(); v != nil {
 		img := v.(*image.RGBA)
@@ -95,7 +108,8 @@ func RenderPNG(tree *layout.LayoutTree, styles map[*parse.Node]*style.ComputedSt
 	}
 
 	var buf bytes.Buffer
-	if err := png.Encode(&buf, img); err != nil {
+	enc := png.Encoder{CompressionLevel: png.BestSpeed, BufferPool: pngEncBufPool}
+	if err := enc.Encode(&buf, img); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

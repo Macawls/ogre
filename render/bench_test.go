@@ -91,3 +91,45 @@ func BenchmarkPNGEncode(b *testing.B) {
 		png.Encode(&buf, img)
 	}
 }
+
+func benchImage() *image.RGBA {
+	img := image.NewRGBA(image.Rect(0, 0, 1200, 630))
+	for y := range 630 {
+		for x := range 1200 {
+			off := y*img.Stride + x*4
+			img.Pix[off] = uint8(x & 0xFF)
+			img.Pix[off+1] = uint8(y & 0xFF)
+			img.Pix[off+2] = 128
+			img.Pix[off+3] = 255
+		}
+	}
+	return img
+}
+
+func BenchmarkPNGEncodeBestSpeed(b *testing.B) {
+	img := benchImage()
+	enc := png.Encoder{CompressionLevel: png.BestSpeed, BufferPool: pngEncBufPool}
+	var buf bytes.Buffer
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		if err := enc.Encode(&buf, img); err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.ReportMetric(float64(buf.Len()), "outputBytes")
+}
+
+func BenchmarkPNGEncodeBestCompression(b *testing.B) {
+	img := benchImage()
+	enc := png.Encoder{CompressionLevel: png.BestCompression, BufferPool: pngEncBufPool}
+	var buf bytes.Buffer
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		if err := enc.Encode(&buf, img); err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.ReportMetric(float64(buf.Len()), "outputBytes")
+}
