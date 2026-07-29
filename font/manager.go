@@ -7,6 +7,7 @@ import (
 	"sort"
 	"sync"
 
+	gotextfont "github.com/go-text/typesetting/font"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
@@ -27,6 +28,13 @@ type Face struct {
 	Name    string
 	Weight  int
 	Style   string
+
+	// shapeMu guards lazy construction of gtFace. Once populated, gtFace is
+	// safe for concurrent shaping reads (go-text Face is read-only during
+	// Shape). HarfbuzzShaper itself is not safe for concurrent use, so each
+	// ShapeText call still gets its own shaper.
+	shapeMu sync.Mutex
+	gtFace  *gotextfont.Face
 }
 
 type faceKey struct {

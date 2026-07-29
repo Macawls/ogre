@@ -78,8 +78,7 @@ func ShapedTextToPath(mgr *Manager, text string, family string, weight int, styl
 		return TextToPath(mgr, text, family, weight, style, size)
 	}
 
-	shaper := NewShaper()
-	run, err := shaper.ShapeBytes(text, face.RawData, size, rtl)
+	run, err := mgr.ShapeText(face, text, size, rtl)
 	if err != nil || len(run.Glyphs) == 0 {
 		return TextToPath(mgr, text, family, weight, style, size)
 	}
