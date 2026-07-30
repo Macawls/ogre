@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [3.0.0] - 2026-07-30
+
+### Documentation
+
+- Update changelog for v2.1.0
+
+### Refactor
+
+- Remove JSX-style builder API (#13)
+
 ## [2.1.0] - 2026-07-30
 
 ### Documentation

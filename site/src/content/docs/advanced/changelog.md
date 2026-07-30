@@ -5,6 +5,16 @@ description: All notable changes to Ogre, generated from conventional commit his
 
 See [GitHub Releases](https://github.com/macawls/ogre/releases) for downloadable binaries and detailed release notes.
 
+## [3.0.0] - 2026-07-30
+
+### Documentation
+
+- Update changelog for v2.1.0
+
+### Refactor
+
+- Remove JSX-style builder API (#13)
+
 ## [2.1.0] - 2026-07-30
 
 ### Documentation
