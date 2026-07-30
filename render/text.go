@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode"
 
+	xfont "golang.org/x/image/font"
 	"golang.org/x/text/unicode/bidi"
 
 	"github.com/macawls/ogre/font"
@@ -15,6 +16,43 @@ type TextRenderResult struct {
 	Shadows     string
 	Content     string
 	Decorations string
+}
+
+func pickMeasurer(fontMgr *font.Manager, face *font.Face, ff xfont.Face, size float64, cs *style.ComputedStyle) font.TextMeasurer {
+	if face != nil && face.Variable && len(cs.FontVariationSettings) > 0 {
+		if vm, err := fontMgr.VariationMeasurer(face, size, cs.LetterSpacing, toFontVariations(cs.FontVariationSettings)); err == nil {
+			return vm
+		}
+	}
+	return font.NewMeasurer(ff, cs.LetterSpacing)
+}
+
+func measureSegment(fontMgr *font.Manager, face *font.Face, text string, size float64, cs *style.ComputedStyle) float64 {
+	if face == nil {
+		return 0
+	}
+	if face.Variable && len(cs.FontVariationSettings) > 0 {
+		if vm, err := fontMgr.VariationMeasurer(face, size, cs.LetterSpacing, toFontVariations(cs.FontVariationSettings)); err == nil {
+			return vm.StringWidth(text)
+		}
+	}
+	ff, err := fontMgr.NewFace(face, size)
+	if err != nil {
+		return 0
+	}
+	m := font.NewMeasurer(ff, cs.LetterSpacing)
+	return m.StringWidth(text)
+}
+
+func toFontVariations(axes []style.VariationAxis) []font.Variation {
+	if len(axes) == 0 {
+		return nil
+	}
+	out := make([]font.Variation, len(axes))
+	for i, a := range axes {
+		out[i] = font.Variation{Tag: a.Tag, Value: a.Value}
+	}
+	return out
 }
 
 // gradientClipOrigin anchors a background-clip:text gradient to the box of the
@@ -70,11 +108,7 @@ func RenderTextWithIDGen(lines []font.TextLine, cs *style.ComputedStyle, boxX, b
 		}
 		face := fontMgr.Resolve(family, weight, fontStyle)
 		if face != nil {
-			ff, err := fontMgr.NewFace(face, size)
-			if err == nil {
-				ascent = font.Ascent(ff)
-				descent = font.Descent(ff)
-			}
+			ascent, descent = fontMgr.AscentDescent(face, size, toFontVariations(cs.FontVariationSettings))
 		}
 	}
 
@@ -124,7 +158,7 @@ func RenderTextWithIDGen(lines []font.TextLine, cs *style.ComputedStyle, boxX, b
 				if fontStyle == "" {
 					fontStyle = "normal"
 				}
-				pathD, _ := font.TextToPath(fontMgr, text, family, weight, fontStyle, size)
+				pathD, _ := font.TextToPathVariations(fontMgr, text, family, weight, fontStyle, size, toFontVariations(cs.FontVariationSettings))
 				if pathD != "" {
 					if s.Blur > 0 && idGen != nil {
 						filterID := idGen("tshadow")
@@ -155,6 +189,9 @@ func RenderTextWithIDGen(lines []font.TextLine, cs *style.ComputedStyle, boxX, b
 					if cs.LetterSpacing != 0 {
 						fmt.Fprintf(&shadows, ` letter-spacing="%.4g"`, cs.LetterSpacing)
 					}
+					if vs := style.FormatFontVariationSettings(cs.FontVariationSettings); vs != "" {
+						fmt.Fprintf(&shadows, ` font-variation-settings="%s"`, xmlEscape(vs))
+					}
 					shadows.WriteString(">")
 					shadows.WriteString(xmlEscape(text))
 					shadows.WriteString("</text>")
@@ -167,6 +204,9 @@ func RenderTextWithIDGen(lines []font.TextLine, cs *style.ComputedStyle, boxX, b
 					fmt.Fprintf(&shadows, ` fill="%s"`, shadowFill)
 					if cs.LetterSpacing != 0 {
 						fmt.Fprintf(&shadows, ` letter-spacing="%.4g"`, cs.LetterSpacing)
+					}
+					if vs := style.FormatFontVariationSettings(cs.FontVariationSettings); vs != "" {
+						fmt.Fprintf(&shadows, ` font-variation-settings="%s"`, xmlEscape(vs))
 					}
 					shadows.WriteString(">")
 					shadows.WriteString(xmlEscape(text))
@@ -198,11 +238,7 @@ func RenderTextWithIDGen(lines []font.TextLine, cs *style.ComputedStyle, boxX, b
 					if fontMgr != nil {
 						face := fontMgr.Resolve(family, weight, cs.FontStyle)
 						if face != nil {
-							ff, err := fontMgr.NewFace(face, size)
-							if err == nil {
-								m := font.NewMeasurer(ff, cs.LetterSpacing)
-								cx += m.StringWidth(seg.Text)
-							}
+							cx += measureSegment(fontMgr, face, seg.Text, size, cs)
 						}
 					}
 				}
@@ -321,11 +357,12 @@ func appendGlyphClip(b *strings.Builder, text string, x, y float64, family strin
 		fontStyle = "normal"
 	}
 	rtl := cs.Direction == "rtl"
+	vars := toFontVariations(cs.FontVariationSettings)
 	var pathD string
 	if rtl || needsShaping(text) {
-		pathD, _ = font.ShapedTextToPath(fontMgr, text, family, weight, fontStyle, size, rtl)
+		pathD, _ = font.ShapedTextToPathVariations(fontMgr, text, family, weight, fontStyle, size, rtl, vars)
 	} else {
-		pathD, _ = font.TextToPath(fontMgr, text, family, weight, fontStyle, size)
+		pathD, _ = font.TextToPathVariations(fontMgr, text, family, weight, fontStyle, size, vars)
 	}
 	if pathD != "" {
 		fmt.Fprintf(b, `<path d="%s" transform="translate(%.4g,%.4g)"/>`, pathD, x, y)
@@ -340,11 +377,12 @@ func renderTextSegment(content *strings.Builder, text string, x, y float64, fami
 		if fontStyle == "" {
 			fontStyle = "normal"
 		}
+		vars := toFontVariations(cs.FontVariationSettings)
 		var pathD string
 		if rtl || needsShaping(text) {
-			pathD, _ = font.ShapedTextToPath(fontMgr, text, family, weight, fontStyle, size, rtl)
+			pathD, _ = font.ShapedTextToPathVariations(fontMgr, text, family, weight, fontStyle, size, rtl, vars)
 		} else {
-			pathD, _ = font.TextToPath(fontMgr, text, family, weight, fontStyle, size)
+			pathD, _ = font.TextToPathVariations(fontMgr, text, family, weight, fontStyle, size, vars)
 		}
 		if pathD != "" {
 			fmt.Fprintf(content, `<path d="%s" fill="%s" transform="translate(%.4g,%.4g)"/>`,
@@ -361,6 +399,9 @@ func renderTextSegment(content *strings.Builder, text string, x, y float64, fami
 		fmt.Fprintf(content, ` fill="%s"`, fill)
 		if cs.LetterSpacing != 0 {
 			fmt.Fprintf(content, ` letter-spacing="%.4g"`, cs.LetterSpacing)
+		}
+		if vs := style.FormatFontVariationSettings(cs.FontVariationSettings); vs != "" {
+			fmt.Fprintf(content, ` font-variation-settings="%s"`, xmlEscape(vs))
 		}
 		content.WriteString(">")
 		content.WriteString(xmlEscape(text))

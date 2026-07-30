@@ -26,6 +26,8 @@ type WrapConfig struct {
 	WordBreak     int
 	LineClamp     int
 	TextOverflow  string
+	Face          *Face
+	Variations    []Variation
 }
 
 const (
@@ -48,7 +50,15 @@ func WrapText(text string, cfg WrapConfig) []TextLine {
 		return nil
 	}
 
-	m := NewMeasurer(cfg.FontFace, cfg.LetterSpacing)
+	var m TextMeasurer
+	if cfg.Face != nil && cfg.Face.Variable && len(cfg.Variations) > 0 {
+		if gtFace, err := cfg.Face.shaperFace(cfg.Variations); err == nil {
+			m = NewVariationMeasurer(gtFace, cfg.FontSize, cfg.LetterSpacing)
+		}
+	}
+	if m == nil {
+		m = NewMeasurer(cfg.FontFace, cfg.LetterSpacing)
+	}
 
 	collapseWS := cfg.WhiteSpace == wsNormal || cfg.WhiteSpace == wsNowrap || cfg.WhiteSpace == wsPreLine
 	preserveNL := cfg.WhiteSpace == wsPre || cfg.WhiteSpace == wsPreWrap || cfg.WhiteSpace == wsPreLine
@@ -106,7 +116,7 @@ func WrapText(text string, cfg WrapConfig) []TextLine {
 	return lines
 }
 
-func truncateLineWithEllipsis(m *Measurer, line TextLine, maxWidth float64) TextLine {
+func truncateLineWithEllipsis(m TextMeasurer, line TextLine, maxWidth float64) TextLine {
 	const ellipsisStr = "..."
 	ellipsisWidth := m.StringWidth(ellipsisStr)
 	available := maxWidth - ellipsisWidth
@@ -121,7 +131,7 @@ func truncateLineWithEllipsis(m *Measurer, line TextLine, maxWidth float64) Text
 		rw := m.RuneWidth(r)
 		spacing := float64(0)
 		if i > 0 {
-			spacing = m.spacing
+			spacing = m.LetterSpacing()
 		}
 		if width+spacing+rw > available {
 			break
@@ -156,7 +166,7 @@ func collapseWhitespace(s string) string {
 	return strings.TrimSpace(b.String())
 }
 
-func wrapParagraph(m *Measurer, text string, maxWidth float64, allowWrap bool, wordBreak int, collapsed bool) []TextLine {
+func wrapParagraph(m TextMeasurer, text string, maxWidth float64, allowWrap bool, wordBreak int, collapsed bool) []TextLine {
 	if !allowWrap || maxWidth <= 0 {
 		w := m.StringWidth(text)
 		return []TextLine{{Text: text, Width: w}}
@@ -172,7 +182,7 @@ func wrapParagraph(m *Measurer, text string, maxWidth float64, allowWrap bool, w
 	return wrapPreserved(m, text, maxWidth, wordBreak)
 }
 
-func wrapCollapsed(m *Measurer, text string, maxWidth float64, wordBreak int) []TextLine {
+func wrapCollapsed(m TextMeasurer, text string, maxWidth float64, wordBreak int) []TextLine {
 	words := strings.Fields(text)
 	if len(words) == 0 {
 		return []TextLine{{Text: "", Width: 0}}
@@ -238,7 +248,7 @@ func wrapCollapsed(m *Measurer, text string, maxWidth float64, wordBreak int) []
 	return lines
 }
 
-func wrapPreserved(m *Measurer, text string, maxWidth float64, wordBreak int) []TextLine {
+func wrapPreserved(m TextMeasurer, text string, maxWidth float64, wordBreak int) []TextLine {
 	type segment struct {
 		text    string
 		isSpace bool
@@ -311,7 +321,7 @@ func wrapPreserved(m *Measurer, text string, maxWidth float64, wordBreak int) []
 	return lines
 }
 
-func wrapBreakAll(m *Measurer, text string, maxWidth float64) []TextLine {
+func wrapBreakAll(m TextMeasurer, text string, maxWidth float64) []TextLine {
 	var lines []TextLine
 	var current strings.Builder
 	var currentWidth float64
@@ -320,7 +330,7 @@ func wrapBreakAll(m *Measurer, text string, maxWidth float64) []TextLine {
 		rw := m.RuneWidth(r)
 		spacing := float64(0)
 		if current.Len() > 0 {
-			spacing = m.spacing
+			spacing = m.LetterSpacing()
 		}
 
 		if currentWidth+spacing+rw > maxWidth && current.Len() > 0 {
@@ -341,7 +351,7 @@ func wrapBreakAll(m *Measurer, text string, maxWidth float64) []TextLine {
 	return lines
 }
 
-func breakChars(m *Measurer, word string, maxWidth float64) []TextLine {
+func breakChars(m TextMeasurer, word string, maxWidth float64) []TextLine {
 	var lines []TextLine
 	var current strings.Builder
 	var currentWidth float64
@@ -350,7 +360,7 @@ func breakChars(m *Measurer, word string, maxWidth float64) []TextLine {
 		rw := m.RuneWidth(r)
 		spacing := float64(0)
 		if current.Len() > 0 {
-			spacing = m.spacing
+			spacing = m.LetterSpacing()
 		}
 
 		if currentWidth+spacing+rw > maxWidth && current.Len() > 0 {

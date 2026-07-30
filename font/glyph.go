@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	gotextfont "github.com/go-text/typesetting/font"
+	ot "github.com/go-text/typesetting/font/opentype"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
@@ -70,32 +72,48 @@ func GlyphToPath(f *opentype.Font, r rune, size float64) (GlyphPath, error) {
 	}, nil
 }
 
-// TextToPath converts a text string to an SVG path using the resolved font.
-// TextToPath converts a text string to SVG path data using the font manager.
 func ShapedTextToPath(mgr *Manager, text string, family string, weight int, style string, size float64, rtl bool) (string, float64) {
+	return ShapedTextToPathVariations(mgr, text, family, weight, style, size, rtl, nil)
+}
+
+func ShapedTextToPathVariations(mgr *Manager, text string, family string, weight int, style string, size float64, rtl bool, vars []Variation) (string, float64) {
 	face := mgr.Resolve(family, weight, style)
 	if face == nil || len(face.RawData) == 0 {
-		return TextToPath(mgr, text, family, weight, style, size)
+		return TextToPathVariations(mgr, text, family, weight, style, size, vars)
 	}
 
-	run, err := mgr.ShapeText(face, text, size, rtl)
+	run, err := mgr.ShapeTextWithVariations(face, text, size, rtl, vars)
 	if err != nil || len(run.Glyphs) == 0 {
-		return TextToPath(mgr, text, family, weight, style, size)
+		return TextToPathVariations(mgr, text, family, weight, style, size, vars)
 	}
 
+	if face.Variable && len(vars) > 0 {
+		gtFace, err := face.shaperFace(vars)
+		if err == nil {
+			return shapedRunToPathVariations(gtFace, run, size), run.Advance
+		}
+	}
 	path := ShapedRunToPath(face.Font, run, size)
 	return path, run.Advance
 }
 
 func TextToPath(mgr *Manager, text string, family string, weight int, style string, size float64) (string, float64) {
+	return TextToPathVariations(mgr, text, family, weight, style, size, nil)
+}
+
+func TextToPathVariations(mgr *Manager, text string, family string, weight int, style string, size float64, vars []Variation) (string, float64) {
 	face := mgr.Resolve(family, weight, style)
 	if face == nil {
 		return "", 0
 	}
+	if face.Variable && len(vars) > 0 {
+		if path, adv, ok := textToPathVariable(mgr, face, text, size, vars, 0); ok {
+			return path, adv
+		}
+	}
 	return textToPathCached(mgr, face.Name, face.Font, text, size, 0)
 }
 
-// TextToPathWithFont converts text to an SVG path using a specific font and letter spacing.
 func TextToPathWithFont(f *opentype.Font, text string, size float64, letterSpacing float64) (string, float64) {
 	return textToPathCached(nil, "", f, text, size, letterSpacing)
 }
@@ -275,4 +293,117 @@ func ShapedRunToPath(f *opentype.Font, run *ShapedRun, size float64) string {
 
 func fix(v fixed.Int26_6) float64 {
 	return float64(v) / 64.0
+}
+
+func textToPathVariable(mgr *Manager, face *Face, text string, size float64, vars []Variation, letterSpacing float64) (string, float64, bool) {
+	gtFace, err := face.shaperFace(vars)
+	if err != nil {
+		return "", 0, false
+	}
+	upem := float64(gtFace.Font.Upem())
+	if upem == 0 {
+		return "", 0, false
+	}
+	scale := size / upem
+
+	varKey := variationKey(vars)
+	var combined strings.Builder
+	var cursor float64
+	runes := []rune(text)
+	for i, r := range runes {
+		gp, ok := cachedVariationGlyph(mgr, face.Name, r, size, varKey, gtFace, scale)
+		if !ok {
+			return "", 0, false
+		}
+		if gp.D != "" {
+			combined.WriteString(translatePath(gp.D, cursor, 0))
+		}
+		cursor += gp.Advance
+		if i < len(runes)-1 {
+			cursor += letterSpacing
+		}
+	}
+	return combined.String(), cursor, true
+}
+
+func cachedVariationGlyph(mgr *Manager, fontName string, r rune, size float64, varKey string, gtFace *gotextfont.Face, scale float64) (GlyphPath, bool) {
+	if mgr != nil {
+		if p, ok := mgr.glyphs.Get(fontName, r, size, varKey); ok {
+			return p, true
+		}
+	}
+	gid, ok := gtFace.NominalGlyph(r)
+	if !ok {
+		return GlyphPath{}, false
+	}
+	gp, ok := glyphOutlineToPath(gtFace, gid, scale)
+	if !ok {
+		return GlyphPath{}, false
+	}
+	if mgr != nil {
+		mgr.glyphs.Set(fontName, r, size, varKey, gp)
+	}
+	return gp, true
+}
+
+// glyphOutlineToPath emits the path in Y-down (screen) orientation. go-text
+// segments are in font units with OpenType Y-up, so Y is negated here.
+func glyphOutlineToPath(gtFace *gotextfont.Face, gid ot.GID, scale float64) (GlyphPath, bool) {
+	data := gtFace.GlyphData(gid)
+	outline, ok := data.(gotextfont.GlyphOutline)
+	if !ok {
+		return GlyphPath{}, false
+	}
+	var b strings.Builder
+	for _, seg := range outline.Segments {
+		switch seg.Op {
+		case ot.SegmentOpMoveTo:
+			fmt.Fprintf(&b, "M%.4g %.4g",
+				float64(seg.Args[0].X)*scale,
+				-float64(seg.Args[0].Y)*scale)
+		case ot.SegmentOpLineTo:
+			fmt.Fprintf(&b, "L%.4g %.4g",
+				float64(seg.Args[0].X)*scale,
+				-float64(seg.Args[0].Y)*scale)
+		case ot.SegmentOpQuadTo:
+			fmt.Fprintf(&b, "Q%.4g %.4g %.4g %.4g",
+				float64(seg.Args[0].X)*scale, -float64(seg.Args[0].Y)*scale,
+				float64(seg.Args[1].X)*scale, -float64(seg.Args[1].Y)*scale)
+		case ot.SegmentOpCubeTo:
+			fmt.Fprintf(&b, "C%.4g %.4g %.4g %.4g %.4g %.4g",
+				float64(seg.Args[0].X)*scale, -float64(seg.Args[0].Y)*scale,
+				float64(seg.Args[1].X)*scale, -float64(seg.Args[1].Y)*scale,
+				float64(seg.Args[2].X)*scale, -float64(seg.Args[2].Y)*scale)
+		}
+	}
+	if b.Len() > 0 {
+		b.WriteString("Z")
+	}
+	advance := float64(gtFace.HorizontalAdvance(gid)) * scale
+	return GlyphPath{D: b.String(), Advance: advance}, true
+}
+
+func shapedRunToPathVariations(gtFace *gotextfont.Face, run *ShapedRun, size float64) string {
+	upem := float64(gtFace.Font.Upem())
+	if upem == 0 {
+		return ""
+	}
+	scale := size / upem
+	var combined strings.Builder
+	var cursor float64
+	for _, g := range run.Glyphs {
+		gid := ot.GID(g.GlyphID)
+		gp, ok := glyphOutlineToPath(gtFace, gid, scale)
+		if !ok {
+			cursor += g.Advance
+			continue
+		}
+		x := cursor + g.XOffset
+		y := g.YOffset
+		if gp.D != "" {
+			combined.WriteString(translatePath(gp.D, x, y))
+		}
+		cursor += g.Advance
+	}
+	return combined.String()
 }

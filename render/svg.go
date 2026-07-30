@@ -281,11 +281,7 @@ func renderTextAt(b *strings.Builder, l layout.Layout, pn *parse.Node, cs *style
 		}
 		face := fontMgr.Resolve(family, weight, fontStyle)
 		if face != nil {
-			ff, err := fontMgr.NewFace(face, size)
-			if err == nil {
-				ascent = font.Ascent(ff)
-				descent = font.Descent(ff)
-			}
+			ascent, descent = fontMgr.AscentDescent(face, size, toFontVariations(cs.FontVariationSettings))
 		}
 	}
 	halfLeading := (l.Height - (ascent + descent)) / 2
@@ -297,11 +293,12 @@ func renderTextAt(b *strings.Builder, l layout.Layout, pn *parse.Node, cs *style
 			fontStyle = "normal"
 		}
 		rtl := cs.Direction == "rtl"
+		vars := toFontVariations(cs.FontVariationSettings)
 		var pathD string
 		if rtl || needsShaping(pn.Text) {
-			pathD, _ = font.ShapedTextToPath(fontMgr, pn.Text, family, weight, fontStyle, size, rtl)
+			pathD, _ = font.ShapedTextToPathVariations(fontMgr, pn.Text, family, weight, fontStyle, size, rtl, vars)
 		} else {
-			pathD, _ = font.TextToPath(fontMgr, pn.Text, family, weight, fontStyle, size)
+			pathD, _ = font.TextToPathVariations(fontMgr, pn.Text, family, weight, fontStyle, size, vars)
 		}
 		if pathD != "" {
 			fmt.Fprintf(b, `<path d="%s" fill="%s" transform="translate(%.4g,%.4g)"/>`,
@@ -314,6 +311,9 @@ func renderTextAt(b *strings.Builder, l layout.Layout, pn *parse.Node, cs *style
 		l.X, y, xmlEscape(family), size, weight, fill)
 	if cs.LetterSpacing > 0 {
 		fmt.Fprintf(b, ` letter-spacing="%.4gpx"`, cs.LetterSpacing)
+	}
+	if vs := style.FormatFontVariationSettings(cs.FontVariationSettings); vs != "" {
+		fmt.Fprintf(b, ` font-variation-settings="%s"`, xmlEscape(vs))
 	}
 	fmt.Fprintf(b, ">")
 	b.WriteString(xmlEscape(pn.Text))

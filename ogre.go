@@ -13,6 +13,17 @@ import (
 	"github.com/macawls/ogre/style"
 )
 
+func toFontVariations(axes []style.VariationAxis) []font.Variation {
+	if len(axes) == 0 {
+		return nil
+	}
+	out := make([]font.Variation, len(axes))
+	for i, a := range axes {
+		out[i] = font.Variation{Tag: a.Tag, Value: a.Value}
+	}
+	return out
+}
+
 // Format specifies the output image format.
 type Format string
 
@@ -184,6 +195,8 @@ func (r *Renderer) Render(html string, opts Options) (*Result, error) {
 			WordBreak:     int(cs.WordBreak),
 			LineClamp:     cs.LineClamp,
 			TextOverflow:  cs.TextOverflow,
+			Face:          face,
+			Variations:    toFontVariations(cs.FontVariationSettings),
 		}
 
 		lines := font.WrapText(text, cfg)

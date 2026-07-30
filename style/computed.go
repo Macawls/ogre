@@ -63,10 +63,11 @@ type ComputedStyle struct {
 	BackgroundRepeat   string
 	BackgroundClip     string
 
-	FontFamily          string
-	FontSize            float64
-	FontWeight          int
-	FontStyle           string
+	FontFamily           string
+	FontSize             float64
+	FontWeight           int
+	FontStyle            string
+	FontVariationSettings []VariationAxis
 	Color               Color
 	LineHeight          float64
 	LetterSpacing       float64

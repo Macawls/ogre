@@ -398,8 +398,7 @@ func (r *PNGRenderer) renderTextNode(l layout.Layout, pn *parse.Node, cs *style.
 	if lineHeight == 0 {
 		lineHeight = size * 1.2
 	}
-	ascent := fontpkg.Ascent(ff)
-	descent := fontpkg.Descent(ff)
+	ascent, descent := r.fonts.AscentDescent(face, size, toFontVariations(cs.FontVariationSettings))
 	halfLeading := (lineHeight - (ascent + descent)) / 2
 
 	if cs.BackgroundClip == "text" && cs.BackgroundImage != "" {
@@ -491,7 +490,7 @@ func (r *PNGRenderer) rasterizeShapedPath(dst draw.Image, src image.Image, text 
 	if !rtl && !needsShaping(text) {
 		return false
 	}
-	pathD, _ := fontpkg.ShapedTextToPath(r.fonts, text, family, cs.FontWeight, fstyle, size, rtl)
+	pathD, _ := fontpkg.ShapedTextToPathVariations(r.fonts, text, family, cs.FontWeight, fstyle, size, rtl, toFontVariations(cs.FontVariationSettings))
 	if pathD == "" {
 		return false
 	}
@@ -562,7 +561,16 @@ func (r *PNGRenderer) drawTextWithEmoji(text string, x, y, ascent, size float64,
 
 	segments := fontpkg.SplitEmoji(text)
 	cx := x
-	m := fontpkg.NewMeasurer(ff, cs.LetterSpacing)
+	family := cs.FontFamily
+	if family == "" {
+		family = "default"
+	}
+	fstyle := cs.FontStyle
+	if fstyle == "" {
+		fstyle = "normal"
+	}
+	face := r.fonts.Resolve(family, cs.FontWeight, fstyle)
+	m := pickMeasurer(r.fonts, face, ff, size, cs)
 
 	for _, seg := range segments {
 		if seg.IsEmoji {

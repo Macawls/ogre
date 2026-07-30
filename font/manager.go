@@ -2,12 +2,14 @@
 package font
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"sort"
 	"sync"
 
 	gotextfont "github.com/go-text/typesetting/font"
+	ot "github.com/go-text/typesetting/font/opentype"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
@@ -21,20 +23,19 @@ type FontSource struct {
 	URL    string
 }
 
-// Face holds a parsed OpenType font along with its name, weight, and style.
 type Face struct {
-	Font    *opentype.Font
-	RawData []byte
-	Name    string
-	Weight  int
-	Style   string
+	Font     *opentype.Font
+	RawData  []byte
+	Name     string
+	Weight   int
+	Style    string
+	Variable bool
 
-	// shapeMu guards lazy construction of gtFace. Once populated, gtFace is
-	// safe for concurrent shaping reads (go-text Face is read-only during
-	// Shape). HarfbuzzShaper itself is not safe for concurrent use, so each
-	// ShapeText call still gets its own shaper.
+	// gtFaces is keyed by variationKey; go-text Face state (SetCoords) can't
+	// be shared between callers with distinct axes.
 	shapeMu sync.Mutex
-	gtFace  *gotextfont.Face
+	gtFaces map[string]*gotextfont.Face
+	gtFont  *gotextfont.Font
 }
 
 type faceKey struct {
@@ -92,11 +93,12 @@ func (m *Manager) LoadFont(src FontSource) error {
 	}
 
 	face := &Face{
-		Font:    f,
-		RawData: data,
-		Name:    src.Name,
-		Weight:  weight,
-		Style:   style,
+		Font:     f,
+		RawData:  data,
+		Name:     src.Name,
+		Weight:   weight,
+		Style:    style,
+		Variable: hasFvar(data),
 	}
 
 	m.mu.Lock()
@@ -229,15 +231,27 @@ func (m *Manager) NewFace(f *Face, size float64) (font.Face, error) {
 }
 
 func (m *Manager) CachedGlyphPath(fontName string, r rune, size float64, f *opentype.Font) (GlyphPath, error) {
-	if p, ok := m.glyphs.Get(fontName, r, size); ok {
+	if p, ok := m.glyphs.Get(fontName, r, size, ""); ok {
 		return p, nil
 	}
 	p, err := GlyphToPath(f, r, size)
 	if err != nil {
 		return p, err
 	}
-	m.glyphs.Set(fontName, r, size, p)
+	m.glyphs.Set(fontName, r, size, "", p)
 	return p, nil
+}
+
+func hasFvar(data []byte) bool {
+	ld, err := ot.NewLoader(bytes.NewReader(data))
+	if err != nil {
+		return false
+	}
+	raw, err := ld.RawTable(ot.MustNewTag("fvar"))
+	if err != nil {
+		return false
+	}
+	return len(raw) > 0
 }
 
 // HasFamily reports whether a font family with the given name is loaded.

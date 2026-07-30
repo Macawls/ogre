@@ -50,14 +50,15 @@ func (s *Shaper) ShapeBytes(text string, fontData []byte, size float64, rtl bool
 	return s.shape(text, face, size, rtl), nil
 }
 
-// ShapeText shapes text using the given Face, reusing a lazily-built go-text
-// face cached on the Face itself. Avoids re-parsing font data (Loader + Font +
-// Face construction) on every shape call, which dominated i18n/RTL renders.
 func (m *Manager) ShapeText(f *Face, text string, size float64, rtl bool) (*ShapedRun, error) {
+	return m.ShapeTextWithVariations(f, text, size, rtl, nil)
+}
+
+func (m *Manager) ShapeTextWithVariations(f *Face, text string, size float64, rtl bool, vars []Variation) (*ShapedRun, error) {
 	if f == nil || len(f.RawData) == 0 {
 		return nil, fmt.Errorf("face has no raw data for shaping")
 	}
-	gtFace, err := f.shaperFace()
+	gtFace, err := f.shaperFace(vars)
 	if err != nil {
 		return nil, err
 	}
@@ -65,22 +66,37 @@ func (m *Manager) ShapeText(f *Face, text string, size float64, rtl bool) (*Shap
 	return s.shape(text, gtFace, size, rtl), nil
 }
 
-func (f *Face) shaperFace() (*gotextfont.Face, error) {
+func (f *Face) shaperFace(vars []Variation) (*gotextfont.Face, error) {
+	if !f.Variable {
+		vars = nil
+	}
+	key := variationKey(vars)
+
 	f.shapeMu.Lock()
 	defer f.shapeMu.Unlock()
-	if f.gtFace != nil {
-		return f.gtFace, nil
+	if f.gtFaces == nil {
+		f.gtFaces = make(map[string]*gotextfont.Face)
 	}
-	ld, err := ot.NewLoader(bytes.NewReader(f.RawData))
-	if err != nil {
-		return nil, err
+	if face, ok := f.gtFaces[key]; ok {
+		return face, nil
 	}
-	ft, err := gotextfont.NewFont(ld)
-	if err != nil {
-		return nil, err
+	if f.gtFont == nil {
+		ld, err := ot.NewLoader(bytes.NewReader(f.RawData))
+		if err != nil {
+			return nil, err
+		}
+		ft, err := gotextfont.NewFont(ld)
+		if err != nil {
+			return nil, err
+		}
+		f.gtFont = ft
 	}
-	f.gtFace = gotextfont.NewFace(ft)
-	return f.gtFace, nil
+	face := gotextfont.NewFace(f.gtFont)
+	if len(vars) > 0 {
+		face.SetVariations(toGoTextVariations(vars))
+	}
+	f.gtFaces[key] = face
+	return face, nil
 }
 
 func (s *Shaper) shape(text string, face *gotextfont.Face, size float64, rtl bool) *ShapedRun {

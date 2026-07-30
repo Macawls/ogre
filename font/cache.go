@@ -14,6 +14,7 @@ type glyphKey struct {
 	fontName string
 	r        rune
 	size     float64
+	varKey   string
 }
 
 type glyphEntry struct {
@@ -34,10 +35,10 @@ func newGlyphCache() *glyphCache {
 	}
 }
 
-func (c *glyphCache) Get(fontName string, r rune, size float64) (GlyphPath, bool) {
+func (c *glyphCache) Get(fontName string, r rune, size float64, varKey string) (GlyphPath, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	el, ok := c.index[glyphKey{fontName, r, size}]
+	el, ok := c.index[glyphKey{fontName, r, size, varKey}]
 	if !ok {
 		return GlyphPath{}, false
 	}
@@ -45,8 +46,8 @@ func (c *glyphCache) Get(fontName string, r rune, size float64) (GlyphPath, bool
 	return el.Value.(*glyphEntry).path, true
 }
 
-func (c *glyphCache) Set(fontName string, r rune, size float64, path GlyphPath) {
-	key := glyphKey{fontName, r, size}
+func (c *glyphCache) Set(fontName string, r rune, size float64, varKey string, path GlyphPath) {
+	key := glyphKey{fontName, r, size, varKey}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if el, ok := c.index[key]; ok {

@@ -1,6 +1,7 @@
 package font
 
 import (
+	gotextfont "github.com/go-text/typesetting/font"
 	"golang.org/x/image/font"
 )
 
@@ -40,6 +41,34 @@ func Ascent(face font.Face) float64 {
 // Descent returns the descent metric of the font face in pixels.
 func Descent(face font.Face) float64 {
 	return float64(face.Metrics().Descent) / 64.0
+}
+
+func (m *Manager) AscentDescent(f *Face, size float64, vars []Variation) (float64, float64) {
+	if f != nil && f.Variable && len(vars) > 0 {
+		gtFace, err := f.shaperFace(vars)
+		if err == nil {
+			ext, ok := gtFace.FontHExtents()
+			upem := float64(gtFace.Font.Upem())
+			if ok && upem != 0 {
+				scale := size / upem
+				return float64(ext.Ascender) * scale, float64(-ext.Descender) * scale
+			}
+		}
+	}
+	if f == nil {
+		return size * 0.8, size * 0.2
+	}
+	ff, err := m.NewFace(f, size)
+	if err != nil {
+		return size * 0.8, size * 0.2
+	}
+	return Ascent(ff), Descent(ff)
+}
+
+type TextMeasurer interface {
+	RuneWidth(r rune) float64
+	StringWidth(s string) float64
+	LetterSpacing() float64
 }
 
 // Measurer caches per-rune widths for efficient text measurement.
@@ -83,3 +112,62 @@ func (m *Measurer) StringWidth(s string) float64 {
 	}
 	return total
 }
+
+func (m *Measurer) LetterSpacing() float64 { return m.spacing }
+
+type VariationMeasurer struct {
+	face    *gotextfont.Face
+	scale   float64
+	spacing float64
+	cache   map[rune]float64
+}
+
+func (m *Manager) VariationMeasurer(f *Face, size, letterSpacing float64, vars []Variation) (*VariationMeasurer, error) {
+	gtFace, err := f.shaperFace(vars)
+	if err != nil {
+		return nil, err
+	}
+	return NewVariationMeasurer(gtFace, size, letterSpacing), nil
+}
+
+func NewVariationMeasurer(gtFace *gotextfont.Face, size, letterSpacing float64) *VariationMeasurer {
+	upem := float64(gtFace.Font.Upem())
+	scale := 0.0
+	if upem != 0 {
+		scale = size / upem
+	}
+	return &VariationMeasurer{
+		face:    gtFace,
+		scale:   scale,
+		spacing: letterSpacing,
+		cache:   make(map[rune]float64),
+	}
+}
+
+func (m *VariationMeasurer) RuneWidth(r rune) float64 {
+	if w, ok := m.cache[r]; ok {
+		return w
+	}
+	gid, ok := m.face.NominalGlyph(r)
+	if !ok {
+		return 0
+	}
+	w := float64(m.face.HorizontalAdvance(gid)) * m.scale
+	m.cache[r] = w
+	return w
+}
+
+func (m *VariationMeasurer) StringWidth(s string) float64 {
+	var total float64
+	count := 0
+	for _, r := range s {
+		total += m.RuneWidth(r)
+		count++
+	}
+	if count > 1 {
+		total += m.spacing * float64(count-1)
+	}
+	return total
+}
+
+func (m *VariationMeasurer) LetterSpacing() float64 { return m.spacing }
