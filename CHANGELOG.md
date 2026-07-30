@@ -1,24 +1,23 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-
-## [Unreleased]
-
 ## [3.1.0] - 2026-07-30
-
-### Features
-
-- `font-variation-settings` CSS support (#12). Variable fonts (fonts with an `fvar` table) are detected at load time; the property is parsed, inherited, plumbed through the render pipeline, and applied via go-text/typesetting's variable-font APIs so glyph outlines, advances, ascent/descent, and wrap widths all reflect the requested axis values. Any OpenType axis (wght, wdth, opsz, slnt, ital, and custom axes like SOFT/WONK) is honoured. SVG `<text>` fallback output carries the property as an attribute.
-- Tailwind v4 opt-in via `Options.TailwindVersion` (default remains v3). Supports v4's renamed shadow/blur/radius scales, OKLCH color palette, `bg-linear-to-*` gradient utilities, `shrink`/`grow` flex utilities, `bg-(--var)` arbitrary-value shortcut, and `text-ellipsis`. HTTP requests accept a `tailwindVersion` field; the CLI accepts `--tailwind-version v4`.
-- OKLCH color function support in the CSS color parser.
-
-### Performance
-
-- `font.GlyphDataOutline` is called directly (via a `tables.GlyphID` cast) instead of routing through `Face.GlyphData`, skipping color/bitmap/SVG type checks per glyph.
 
 ### Documentation
 
-- Add "Variable fonts" section to the fonts guide and `font-variation-settings` to the CSS reference table.
+- Update changelog for v3.1.0
+- Document font-variation-settings + variable font support
+- Add Images guide covering <img> and background-image usage
+- Update changelog for v3.0.0
+
+### Features
+
+- Respect font-variation-settings on variable fonts (#12)
+- Add Tailwind v4 opt-in via Options.TailwindVersion
+
+### Performance
+
+- Call GlyphDataOutline directly, add variation benches
 
 ## [3.0.0] - 2026-07-30
 

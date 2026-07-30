@@ -5,6 +5,24 @@ description: All notable changes to Ogre, generated from conventional commit his
 
 See [GitHub Releases](https://github.com/macawls/ogre/releases) for downloadable binaries and detailed release notes.
 
+## [3.1.0] - 2026-07-30
+
+### Documentation
+
+- Update changelog for v3.1.0
+- Document font-variation-settings + variable font support
+- Add Images guide covering <img> and background-image usage
+- Update changelog for v3.0.0
+
+### Features
+
+- Respect font-variation-settings on variable fonts (#12)
+- Add Tailwind v4 opt-in via Options.TailwindVersion
+
+### Performance
+
+- Call GlyphDataOutline directly, add variation benches
+
 ## [3.0.0] - 2026-07-30
 
 ### Documentation
