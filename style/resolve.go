@@ -11,10 +11,11 @@ const defaultRootFontSize = 16.0
 
 var inheritedProperties = map[string]bool{
 	"color":                 true,
-	"font-family":           true,
-	"font-size":             true,
-	"font-weight":           true,
-	"font-style":            true,
+	"font-family":            true,
+	"font-size":              true,
+	"font-weight":            true,
+	"font-style":             true,
+	"font-variation-settings": true,
 	"line-height":           true,
 	"letter-spacing":        true,
 	"text-align":            true,
@@ -155,16 +156,17 @@ var tagDefaults = map[string]map[string]string{
 	},
 }
 
-// Resolve computes styles for every node in the tree, applying inheritance and Tailwind classes.
-// Resolve walks the node tree and produces computed styles for each node.
-func Resolve(root *parse.Node, viewportWidth, viewportHeight float64) map[*parse.Node]*ComputedStyle {
+// Resolve computes styles for every node in the tree, applying inheritance
+// and Tailwind classes under the given Tailwind version's semantics.
+func Resolve(root *parse.Node, viewportWidth, viewportHeight float64, twVersion TailwindVersion) map[*parse.Node]*ComputedStyle {
+	twVersion = normalizeVersion(twVersion)
 	result := make(map[*parse.Node]*ComputedStyle)
-	resolveNode(root, nil, nil, defaultRootFontSize, viewportWidth, viewportHeight, result)
+	resolveNode(root, nil, nil, defaultRootFontSize, viewportWidth, viewportHeight, twVersion, result)
 	return result
 }
 
-func resolveNode(node *parse.Node, parent *ComputedStyle, parentVars map[string]string, rootFontSize, viewportWidth, viewportHeight float64, result map[*parse.Node]*ComputedStyle) {
-	props := mergeProps(node)
+func resolveNode(node *parse.Node, parent *ComputedStyle, parentVars map[string]string, rootFontSize, viewportWidth, viewportHeight float64, twVersion TailwindVersion, result map[*parse.Node]*ComputedStyle) {
+	props := mergeProps(node, twVersion)
 	vars, resolved := resolveVariables(props, parentVars)
 	cs := resolveStyle(resolved, parent, rootFontSize, viewportWidth, viewportHeight)
 	if parent != nil && parent.BackgroundClip == "text" && cs.BackgroundClip == "" && cs.BackgroundImage == "" {
@@ -174,7 +176,7 @@ func resolveNode(node *parse.Node, parent *ComputedStyle, parentVars map[string]
 	result[node] = cs
 
 	for _, child := range node.Children {
-		resolveNode(child, cs, vars, rootFontSize, viewportWidth, viewportHeight, result)
+		resolveNode(child, cs, vars, rootFontSize, viewportWidth, viewportHeight, twVersion, result)
 	}
 }
 
@@ -243,7 +245,7 @@ func resolveVar(value string, vars map[string]string) string {
 	}
 }
 
-func mergeProps(node *parse.Node) map[string]string {
+func mergeProps(node *parse.Node, twVersion TailwindVersion) map[string]string {
 	props := make(map[string]string)
 
 	props["display"] = "block"
@@ -257,7 +259,7 @@ func mergeProps(node *parse.Node) map[string]string {
 	}
 
 	if len(node.Classes) > 0 {
-		tw := ResolveTailwind(node.Classes)
+		tw := ResolveTailwind(node.Classes, twVersion)
 		for k, v := range tw {
 			props[k] = v
 		}
@@ -404,6 +406,9 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 	if v, ok := props["font-style"]; ok {
 		cs.FontStyle = v
 	}
+	if v, ok := props["font-variation-settings"]; ok {
+		cs.FontVariationSettings = ParseFontVariationSettings(v)
+	}
 
 	if v, ok := props["color"]; ok {
 		c, err := ParseColor(v)
@@ -493,6 +498,8 @@ func inheritProperty(cs *ComputedStyle, parent *ComputedStyle, prop string) {
 		cs.FontWeight = parent.FontWeight
 	case "font-style":
 		cs.FontStyle = parent.FontStyle
+	case "font-variation-settings":
+		cs.FontVariationSettings = parent.FontVariationSettings
 	case "line-height":
 		cs.LineHeight = parent.LineHeight
 	case "letter-spacing":

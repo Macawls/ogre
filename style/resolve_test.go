@@ -17,7 +17,7 @@ func TestDefaultDiv(t *testing.T) {
 		Tag:   "div",
 		Style: map[string]string{},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	if cs.Display != DisplayBlock {
@@ -53,7 +53,7 @@ func TestDefaultP(t *testing.T) {
 			},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	p := result[root.Children[0]]
 
 	if p.Display != DisplayBlock {
@@ -80,7 +80,7 @@ func TestDefaultH1(t *testing.T) {
 			},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	h1 := result[root.Children[0]]
 
 	if !approxEqual(h1.FontSize, 32, 0.01) {
@@ -91,6 +91,37 @@ func TestDefaultH1(t *testing.T) {
 	}
 	if !approxEqual(h1.MarginTop.Raw, 32*0.67, 0.01) {
 		t.Errorf("h1 margin-top: got %v, want %v", h1.MarginTop.Raw, 32*0.67)
+	}
+}
+
+func TestFontVariationSettingsResolve(t *testing.T) {
+	root := &parse.Node{
+		Type: parse.ElementNode,
+		Tag:  "div",
+		Style: map[string]string{
+			"font-variation-settings": `'wght' 900, 'SOFT' 0, 'WONK' 1`,
+		},
+		Children: []*parse.Node{
+			{
+				Type:  parse.ElementNode,
+				Tag:   "span",
+				Style: map[string]string{},
+			},
+		},
+	}
+	result := Resolve(root, 1200, 630, TailwindV3)
+
+	cs := result[root]
+	if len(cs.FontVariationSettings) != 3 {
+		t.Fatalf("root font-variation-settings: got %d axes, want 3", len(cs.FontVariationSettings))
+	}
+	if cs.FontVariationSettings[0].Tag != "wght" || cs.FontVariationSettings[0].Value != 900 {
+		t.Errorf("root axis 0: got %+v, want wght=900", cs.FontVariationSettings[0])
+	}
+
+	child := result[root.Children[0]]
+	if len(child.FontVariationSettings) != 3 {
+		t.Errorf("child inherits font-variation-settings: got %d axes, want 3", len(child.FontVariationSettings))
 	}
 }
 
@@ -107,7 +138,7 @@ func TestInheritance(t *testing.T) {
 			},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	child := result[root.Children[0]]
 
 	expected := Color{255, 0, 0, 1}
@@ -124,7 +155,7 @@ func TestShorthandExpansionAndResolution(t *testing.T) {
 			"margin": "10px 20px",
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	if !approxEqual(cs.MarginTop.Raw, 10, 0.01) {
@@ -150,7 +181,7 @@ func TestUnitResolutionEm(t *testing.T) {
 			"padding":   "2em",
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	if !approxEqual(cs.PaddingTop, 40, 0.01) {
@@ -167,7 +198,7 @@ func TestUnitResolutionRem(t *testing.T) {
 			"padding":   "2rem",
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	if !approxEqual(cs.PaddingTop, 32, 0.01) {
@@ -183,7 +214,7 @@ func TestUnitResolutionPercent(t *testing.T) {
 			"width": "50%",
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	if cs.Width.Unit != UnitPercent {
@@ -203,7 +234,7 @@ func TestOverrideDefault(t *testing.T) {
 			"flex-direction":  "column",
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	if cs.Display != DisplayNone {
@@ -227,7 +258,7 @@ func TestOverrideInherited(t *testing.T) {
 			},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	child := result[root.Children[0]]
 
 	expected := Color{0, 0, 255, 1}
@@ -245,7 +276,7 @@ func TestCSSVariableBasic(t *testing.T) {
 			"color":     "var(--primary)",
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	expected := Color{255, 0, 0, 1}
@@ -262,7 +293,7 @@ func TestCSSVariableFallback(t *testing.T) {
 			"color": "var(--missing, blue)",
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	expected := Color{0, 0, 255, 1}
@@ -287,7 +318,7 @@ func TestCSSVariableInheritance(t *testing.T) {
 		},
 		Children: []*parse.Node{child},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[child]
 
 	expected := Color{0, 128, 0, 1}
@@ -313,7 +344,7 @@ func TestCSSVariableOverride(t *testing.T) {
 		},
 		Children: []*parse.Node{child},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[child]
 
 	expected := Color{0, 0, 255, 1}
@@ -331,7 +362,7 @@ func TestCSSVariableNested(t *testing.T) {
 			"padding":  "var(--size)",
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
 	if !approxEqual(cs.PaddingTop, 20, 0.01) {
@@ -372,7 +403,7 @@ func TestHTMLDefaultA(t *testing.T) {
 			{Type: parse.ElementNode, Tag: "a", Style: map[string]string{}},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	a := result[root.Children[0]]
 
 	expected := Color{0, 0, 238, 1}
@@ -393,7 +424,7 @@ func TestHTMLDefaultBlockquote(t *testing.T) {
 			{Type: parse.ElementNode, Tag: "blockquote", Style: map[string]string{}},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	bq := result[root.Children[0]]
 
 	if !approxEqual(bq.MarginLeft.Raw, 40, 0.01) {
@@ -413,7 +444,7 @@ func TestHTMLDefaultUL(t *testing.T) {
 			{Type: parse.ElementNode, Tag: "ul", Style: map[string]string{}},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	ul := result[root.Children[0]]
 
 	if !approxEqual(ul.PaddingLeft, 40, 0.01) {
@@ -430,7 +461,7 @@ func TestHTMLDefaultSummary(t *testing.T) {
 			{Type: parse.ElementNode, Tag: "summary", Style: map[string]string{}},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	s := result[root.Children[0]]
 
 	if s.FontWeight != 700 {
@@ -447,7 +478,7 @@ func TestHTMLDefaultSup(t *testing.T) {
 			{Type: parse.ElementNode, Tag: "sup", Style: map[string]string{}},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	sup := result[root.Children[0]]
 
 	if !approxEqual(sup.FontSize, 16*0.83, 0.1) {
@@ -464,7 +495,7 @@ func TestHTMLDefaultCenter(t *testing.T) {
 			{Type: parse.ElementNode, Tag: "center", Style: map[string]string{}},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	c := result[root.Children[0]]
 
 	if c.TextAlign != TextAlignCenter {
@@ -481,7 +512,7 @@ func TestHTMLDefaultDel(t *testing.T) {
 			{Type: parse.ElementNode, Tag: "del", Style: map[string]string{}},
 		},
 	}
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	del := result[root.Children[0]]
 
 	if del.TextDecorationLine != TextDecorationLineThrough {

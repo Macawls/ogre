@@ -15,13 +15,14 @@ type HandlerConfig struct {
 }
 
 type renderPayload struct {
-	HTML     string         `json:"html"`
-	Template string         `json:"template"`
-	Data     map[string]any `json:"data"`
-	Width    int            `json:"width"`
-	Height   int            `json:"height"`
-	Format   string         `json:"format"`
-	Quality  int            `json:"quality"`
+	HTML            string         `json:"html"`
+	Template        string         `json:"template"`
+	Data            map[string]any `json:"data"`
+	Width           int            `json:"width"`
+	Height          int            `json:"height"`
+	Format          string         `json:"format"`
+	Quality         int            `json:"quality"`
+	TailwindVersion string         `json:"tailwindVersion,omitempty"`
 }
 
 func (r *Renderer) Handler(cfg HandlerConfig) http.Handler {
@@ -80,10 +81,11 @@ func (r *Renderer) Handler(cfg HandlerConfig) http.Handler {
 		}
 
 		result, err := r.Render(html, Options{
-			Width:   width,
-			Height:  height,
-			Format:  format,
-			Quality: quality,
+			Width:           width,
+			Height:          height,
+			Format:          format,
+			Quality:         quality,
+			TailwindVersion: TailwindVersion(p.TailwindVersion),
 		})
 		if err != nil {
 			jsonError(w, "render failed: "+err.Error(), http.StatusInternalServerError)

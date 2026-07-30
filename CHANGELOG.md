@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [Unreleased]
+
+### Features
+
+- Tailwind v4 opt-in via `Options.TailwindVersion` (default remains v3). Supports v4's renamed shadow/blur/radius scales, OKLCH color palette, `bg-linear-to-*` gradient utilities, `shrink`/`grow` flex utilities, `bg-(--var)` arbitrary-value shortcut, and `text-ellipsis`. HTTP requests accept a `tailwindVersion` field; the CLI accepts `--tailwind-version v4`.
+- OKLCH color function support in the CSS color parser.
+
 ## [3.0.0] - 2026-07-30
 
 ### Documentation

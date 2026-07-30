@@ -13,7 +13,7 @@ Ogre is designed as a Go-native alternative to [Satori](https://github.com/verce
 | Output formats | SVG, PNG, JPEG | SVG only |
 | Dependencies | stdlib + golang.org/x | yoga-wasm + others |
 | Deployment | Single static binary | Node.js runtime |
-| Tailwind support | Built-in (v3) | Via plugin |
+| Tailwind support | Built-in (v3 default, v4 opt-in) | Via plugin |
 | PNG output | Built-in | Requires resvg |
 | Layout engine | Custom flexbox (W3C) | Yoga (via WASM) |
 | HTTP server | Built-in with caching | BYO |

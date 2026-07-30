@@ -62,6 +62,10 @@ func ParseColor(s string) (Color, error) {
 		return parseHSL(s)
 	}
 
+	if strings.HasPrefix(lower, "oklch") {
+		return parseOKLCH(s)
+	}
+
 	return Color{}, fmt.Errorf("unsupported color: %q", s)
 }
 
@@ -244,6 +248,127 @@ func parseHSL(s string) (Color, error) {
 		B: clampByte(b * 255),
 		A: a,
 	}, nil
+}
+
+func parseOKLCH(s string) (Color, error) {
+	lower := strings.ToLower(s)
+	inner, err := extractFuncArgs(lower, "oklch")
+	if err != nil {
+		return Color{}, err
+	}
+
+	parts, alpha := splitColorArgs(inner)
+	if len(parts) != 3 {
+		return Color{}, fmt.Errorf("oklch() requires 3 components, got %d", len(parts))
+	}
+
+	l, err := parseOKLCHLightness(parts[0])
+	if err != nil {
+		return Color{}, fmt.Errorf("invalid oklch lightness: %w", err)
+	}
+	c, err := parseOKLCHChroma(parts[1])
+	if err != nil {
+		return Color{}, fmt.Errorf("invalid oklch chroma: %w", err)
+	}
+	h, err := parseOKLCHHue(parts[2])
+	if err != nil {
+		return Color{}, fmt.Errorf("invalid oklch hue: %w", err)
+	}
+
+	r, g, b := oklchToSRGB(l, c, h)
+
+	a := 1.0
+	if alpha != "" {
+		a, err = parseAlpha(alpha)
+		if err != nil {
+			return Color{}, err
+		}
+	}
+
+	return Color{
+		R: clampByte(r * 255),
+		G: clampByte(g * 255),
+		B: clampByte(b * 255),
+		A: a,
+	}, nil
+}
+
+func parseOKLCHLightness(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	if s == "none" {
+		return 0, nil
+	}
+	if strings.HasSuffix(s, "%") {
+		v, err := strconv.ParseFloat(s[:len(s)-1], 64)
+		if err != nil {
+			return 0, err
+		}
+		return clampFloat(v/100, 0, 1), nil
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, err
+	}
+	return clampFloat(v, 0, 1), nil
+}
+
+func parseOKLCHChroma(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	if s == "none" {
+		return 0, nil
+	}
+	if strings.HasSuffix(s, "%") {
+		v, err := strconv.ParseFloat(s[:len(s)-1], 64)
+		if err != nil {
+			return 0, err
+		}
+		return v / 100 * 0.4, nil
+	}
+	return strconv.ParseFloat(s, 64)
+}
+
+func parseOKLCHHue(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	if s == "none" {
+		return 0, nil
+	}
+	s = strings.TrimSuffix(s, "deg")
+	return strconv.ParseFloat(s, 64)
+}
+
+// oklchToSRGB converts OKLCH (L in 0-1, C, H in degrees) to gamma-encoded sRGB
+// (each channel in 0-1, clamped).
+func oklchToSRGB(l, c, h float64) (float64, float64, float64) {
+	rad := h * math.Pi / 180
+	a := c * math.Cos(rad)
+	b := c * math.Sin(rad)
+
+	lp := l + 0.3963377774*a + 0.2158037573*b
+	mp := l - 0.1055613458*a - 0.0638541728*b
+	sp := l - 0.0894841775*a - 1.2914855480*b
+
+	lc := lp * lp * lp
+	mc := mp * mp * mp
+	sc := sp * sp * sp
+
+	rl := 4.0767416621*lc - 3.3077115913*mc + 0.2309699292*sc
+	gl := -1.2684380046*lc + 2.6097574011*mc - 0.3413193965*sc
+	bl := -0.0041960863*lc - 0.7034186147*mc + 1.7076147010*sc
+
+	return linearToSRGB(rl), linearToSRGB(gl), linearToSRGB(bl)
+}
+
+func linearToSRGB(v float64) float64 {
+	if v <= 0 {
+		return 0
+	}
+	if v >= 1 {
+		return 1
+	}
+	if v <= 0.0031308 {
+		return v * 12.92
+	}
+	return 1.055*math.Pow(v, 1.0/2.4) - 0.055
 }
 
 func extractFuncArgs(s string, names ...string) (string, error) {

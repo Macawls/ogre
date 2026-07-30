@@ -1,9 +1,9 @@
 ---
 title: Tailwind CSS
-description: Using Tailwind v3 utility classes in Ogre templates.
+description: Using Tailwind v3 and v4 utility classes in Ogre templates.
 ---
 
-Ogre resolves Tailwind CSS v3 utility classes directly at render time. No Tailwind CLI, no build step, no configuration.
+Ogre resolves Tailwind CSS utility classes directly at render time. No Tailwind CLI, no build step, no configuration. Both Tailwind v3 (default) and v4 are supported — pick one via `Options.TailwindVersion`.
 
 ## Basic usage
 
@@ -13,6 +13,52 @@ Ogre resolves Tailwind CSS v3 utility classes directly at render time. No Tailwi
   <div class="text-xl text-slate-400 mt-4">A subtitle here</div>
 </div>
 ```
+
+## Selecting v3 or v4
+
+v3 is the default; passing an empty string preserves that. To opt into v4 semantics (renamed shadow/radius/blur scales, OKLCH palette, `bg-linear-to-*` gradients, `shrink`/`grow` utilities, `bg-(--var)` shortcut):
+
+```go
+result, _ := ogre.Render(html, ogre.Options{
+    Width:           1200,
+    Height:          630,
+    TailwindVersion: ogre.TailwindV4,
+})
+```
+
+Over HTTP:
+
+```json
+{
+  "html": "<div class=\"bg-blue-500 shadow-sm rounded-sm\">...</div>",
+  "tailwindVersion": "v4"
+}
+```
+
+CLI:
+
+```bash
+ogre --tailwind-version v4 --html '...' --output og.png --format png
+```
+
+### Which name means what?
+
+Some class names moved tiers in v4. Pick the version that matches your source.
+
+| Class         | v3 output           | v4 output           |
+| ------------- | ------------------- | ------------------- |
+| `shadow-sm`   | subtle 1px shadow   | v3's `shadow` value |
+| `shadow-xs`   | (not supported)     | v3's `shadow-sm`    |
+| `shadow-2xs`  | (not supported)     | new tiny shadow     |
+| `rounded-sm`  | 2px                 | 4px                 |
+| `rounded-xs`  | (not supported)     | 2px                 |
+| `blur-sm`     | 4px                 | 8px                 |
+| `blur-xs`     | (not supported)     | 4px                 |
+| `shrink`, `grow`               | (v3 uses `flex-shrink`/`flex-grow`) | supported |
+| `bg-linear-to-*`               | (v3 uses `bg-gradient-to-*`)        | supported |
+| `text-ellipsis`                | (v3 uses `overflow-ellipsis`)       | supported |
+
+v4 also uses the OKLCH color palette, so `bg-blue-500` (and every other palette shade) resolves to a slightly different color than in v3.
 
 ## Mixing with inline styles
 
@@ -31,6 +77,14 @@ Use bracket notation for values outside the default scale:
 ```html
 <div class="text-[32px] bg-[#ff5500] w-[200px] p-[20px] rounded-[12px] gap-[8px] leading-[1.5] tracking-[0.05em]">
   Custom values
+</div>
+```
+
+In v4, the parentheses shortcut for CSS variables works too:
+
+```html
+<div class="bg-(--brand) w-(--card-w) p-(--card-p)">
+  Uses var(--brand), var(--card-w), var(--card-p)
 </div>
 ```
 

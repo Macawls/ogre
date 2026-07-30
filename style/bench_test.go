@@ -17,7 +17,7 @@ func BenchmarkResolveTailwind(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		m := ResolveTailwind(realisticCard)
+		m := ResolveTailwind(realisticCard, TailwindV3)
 		if len(m) == 0 {
 			b.Fatal("empty result")
 		}

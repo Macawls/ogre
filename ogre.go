@@ -25,16 +25,30 @@ const (
 	FormatJPEG Format = "jpeg"
 )
 
+// TailwindVersion selects the Tailwind CSS version whose semantics govern
+// class resolution. Zero value defaults to v3.
+type TailwindVersion = style.TailwindVersion
+
+const (
+	// TailwindV3 selects Tailwind v3 semantics (the default).
+	TailwindV3 = style.TailwindV3
+	// TailwindV4 selects Tailwind v4 semantics — renamed shadow/blur/radius
+	// scales, OKLCH palette, bg-linear-to-* gradients, shrink/grow flex
+	// utilities, and the bg-(--var) arbitrary-value shortcut.
+	TailwindV4 = style.TailwindV4
+)
+
 // Options configures a render operation including dimensions, format, and fonts.
 type Options struct {
-	Width         int
-	Height        int
-	Format        Format
-	Quality       int
-	Fonts         []FontSource
-	Debug         bool
-	EmojiProvider string // "twemoji" (default), "none"
-	MaxElements   int
+	Width           int
+	Height          int
+	Format          Format
+	Quality         int
+	Fonts           []FontSource
+	Debug           bool
+	EmojiProvider   string // "twemoji" (default), "none"
+	MaxElements     int
+	TailwindVersion TailwindVersion // "" or "v3" → v3 (default); "v4" → v4
 }
 
 // FontSource describes a font to load, either from raw bytes or a URL.
@@ -122,7 +136,7 @@ func (r *Renderer) Render(html string, opts Options) (*Result, error) {
 	w := float64(opts.Width)
 	h := float64(opts.Height)
 
-	styles := style.Resolve(root, w, h)
+	styles := style.Resolve(root, w, h, opts.TailwindVersion)
 
 	if r.fontCache == nil {
 		cacheDir := filepath.Join(os.TempDir(), "ogre-font-cache")

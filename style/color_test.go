@@ -158,6 +158,57 @@ func TestParseHSL(t *testing.T) {
 	}
 }
 
+func TestParseOKLCH(t *testing.T) {
+	// Chromatic anchors verified against Tailwind v4's palette (converted from
+	// their published OKLCH definitions). Tolerance of ±3 per channel absorbs
+	// gamma-encoding rounding variance across implementations.
+	tests := []struct {
+		input   string
+		wantR   uint8
+		wantG   uint8
+		wantB   uint8
+		wantA   float64
+		wantErr bool
+	}{
+		{input: "oklch(100% 0 0)", wantR: 255, wantG: 255, wantB: 255, wantA: 1},
+		{input: "oklch(0% 0 0)", wantR: 0, wantG: 0, wantB: 0, wantA: 1},
+		{input: "oklch(55.6% 0 none)", wantR: 115, wantG: 115, wantB: 115, wantA: 1}, // v4 neutral-500
+		{input: "oklch(62.3% 0.214 259.815)", wantR: 43, wantG: 127, wantB: 255, wantA: 1}, // v4 blue-500
+		{input: "oklch(63.7% 0.237 25.331)", wantR: 251, wantG: 44, wantB: 54, wantA: 1},   // v4 red-500
+		{input: "oklch(72.3% 0.219 149.579)", wantR: 0, wantG: 201, wantB: 80, wantA: 1},   // v4 green-500
+		{input: "oklch(55.4% 0.046 257.417 / 0.5)", wantR: 98, wantG: 116, wantB: 142, wantA: 0.5}, // v4 slate-500
+		{input: "oklch(0.554 0.046 257.417)", wantR: 98, wantG: 116, wantB: 142, wantA: 1},
+	}
+	for _, tt := range tests {
+		got, err := ParseColor(tt.input)
+		if tt.wantErr {
+			if err == nil {
+				t.Errorf("ParseColor(%q) expected error, got %v", tt.input, got)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("ParseColor(%q) error: %v", tt.input, err)
+			continue
+		}
+		if !nearU8(got.R, tt.wantR, 3) || !nearU8(got.G, tt.wantG, 3) || !nearU8(got.B, tt.wantB, 3) {
+			t.Errorf("ParseColor(%q) = rgb(%d,%d,%d), want ~rgb(%d,%d,%d)",
+				tt.input, got.R, got.G, got.B, tt.wantR, tt.wantG, tt.wantB)
+		}
+		if math.Abs(got.A-tt.wantA) > 0.01 {
+			t.Errorf("ParseColor(%q) alpha = %g, want %g", tt.input, got.A, tt.wantA)
+		}
+	}
+}
+
+func nearU8(a, b, tol uint8) bool {
+	d := int(a) - int(b)
+	if d < 0 {
+		d = -d
+	}
+	return d <= int(tol)
+}
+
 func TestColorString(t *testing.T) {
 	c := Color{255, 0, 0, 1}
 	if s := c.String(); s != "rgba(255,0,0,1)" {

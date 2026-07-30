@@ -19,6 +19,7 @@ func main() {
 	width := flag.Int("width", 1200, "canvas width")
 	height := flag.Int("height", 630, "canvas height")
 	format := flag.String("format", "svg", "output format: svg, png, or jpeg")
+	twVersion := flag.String("tailwind-version", "v3", "Tailwind CSS version: v3 or v4")
 
 	flag.Parse()
 
@@ -26,9 +27,9 @@ func main() {
 	case *serve:
 		runServer(*port)
 	case *render != "":
-		runRender(*render, *output, *width, *height, *format)
+		runRender(*render, *output, *width, *height, *format, *twVersion)
 	case *html != "":
-		runHTML(*html, *output, *width, *height, *format)
+		runHTML(*html, *output, *width, *height, *format, *twVersion)
 	default:
 		flag.Usage()
 		os.Exit(1)
@@ -48,20 +49,20 @@ func runServer(port int) {
 	}
 }
 
-func runRender(path, output string, width, height int, format string) {
+func runRender(path, output string, width, height int, format, twVersion string) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error reading file: %v\n", err)
 		os.Exit(1)
 	}
-	renderAndWrite(string(data), output, width, height, format)
+	renderAndWrite(string(data), output, width, height, format, twVersion)
 }
 
-func runHTML(html, output string, width, height int, format string) {
-	renderAndWrite(html, output, width, height, format)
+func runHTML(html, output string, width, height int, format, twVersion string) {
+	renderAndWrite(html, output, width, height, format, twVersion)
 }
 
-func renderAndWrite(html, output string, width, height int, format string) {
+func renderAndWrite(html, output string, width, height int, format, twVersion string) {
 	f := ogre.Format(strings.ToLower(format))
 	if f != ogre.FormatSVG && f != ogre.FormatPNG && f != ogre.FormatJPEG {
 		fmt.Fprintf(os.Stderr, "unsupported format: %s\n", format)
@@ -73,10 +74,17 @@ func renderAndWrite(html, output string, width, height int, format string) {
 		os.Exit(1)
 	}
 
+	tv := ogre.TailwindVersion(strings.ToLower(twVersion))
+	if tv != "" && tv != ogre.TailwindV3 && tv != ogre.TailwindV4 {
+		fmt.Fprintf(os.Stderr, "unsupported tailwind version: %s (want v3 or v4)\n", twVersion)
+		os.Exit(1)
+	}
+
 	result, err := ogre.Render(html, ogre.Options{
-		Width:  width,
-		Height: height,
-		Format: f,
+		Width:           width,
+		Height:          height,
+		Format:          f,
+		TailwindVersion: tv,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "render error: %v\n", err)

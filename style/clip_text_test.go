@@ -7,12 +7,12 @@ import (
 )
 
 func TestTailwindBackgroundClipText(t *testing.T) {
-	result := ResolveTailwind([]string{"bg-clip-text"})
+	result := ResolveTailwind([]string{"bg-clip-text"}, TailwindV3)
 	if result["background-clip"] != "text" {
 		t.Errorf("bg-clip-text: got %q, want %q", result["background-clip"], "text")
 	}
 
-	result = ResolveTailwind([]string{"text-transparent"})
+	result = ResolveTailwind([]string{"text-transparent"}, TailwindV3)
 	if result["color"] != "transparent" {
 		t.Errorf("text-transparent color: got %q, want transparent", result["color"])
 	}
@@ -30,7 +30,7 @@ func TestBackgroundClipTextPropagatesToTextNode(t *testing.T) {
 		Children: []*parse.Node{text},
 	}
 
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 
 	elem := result[root]
 	if elem.BackgroundClip != "text" {
@@ -59,7 +59,7 @@ func TestBackgroundClipTextPropagatesThroughWrapperElement(t *testing.T) {
 		Children: []*parse.Node{span},
 	}
 
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 
 	elem := result[root]
 	if got := result[span]; got.BackgroundClip != "text" || got.BackgroundImage != elem.BackgroundImage {
@@ -90,7 +90,7 @@ func TestBackgroundClipTextRespectsChildOverride(t *testing.T) {
 		Children: []*parse.Node{span},
 	}
 
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 
 	if got := result[span].BackgroundImage; got != "linear-gradient(to right,#0f0,#0ff)" {
 		t.Errorf("span with own background-image should not be overridden by parent clip: got %q", got)
@@ -108,7 +108,7 @@ func TestBackgroundImageNotInheritedWithoutClipText(t *testing.T) {
 		Children: []*parse.Node{text},
 	}
 
-	result := Resolve(root, 1200, 630)
+	result := Resolve(root, 1200, 630, TailwindV3)
 	if result[text].BackgroundImage != "" {
 		t.Errorf("text node BackgroundImage leaked without clip: got %q", result[text].BackgroundImage)
 	}

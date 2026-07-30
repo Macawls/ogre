@@ -1,9 +1,9 @@
 ---
 title: Tailwind Classes Reference
-description: Complete list of supported Tailwind v3 utility classes.
+description: Complete list of supported Tailwind v3 and v4 utility classes.
 ---
 
-Ogre resolves these Tailwind v3 classes at render time with no build step.
+Ogre resolves Tailwind utility classes at render time with no build step. The tables below list v3 (default) mappings; the [v4 differences](#v4-differences) section at the bottom notes what changes when you pass `TailwindVersion: TailwindV4`.
 
 ## Layout
 
@@ -215,3 +215,41 @@ Use bracket notation for any property:
 <div class="text-[32px] bg-[#ff5500] w-[200px] p-[20px] rounded-[12px] gap-[8px] leading-[1.5] tracking-[0.05em] rotate-[15deg] blur-[2px] scale-[1.2]">
 </div>
 ```
+
+In v4, the parentheses shortcut resolves the token as a CSS variable:
+
+```html
+<div class="bg-(--brand) w-(--card-w) p-(--card-p)">
+  <!-- expands to background-color: var(--brand); width: var(--card-w); padding: var(--card-p) -->
+</div>
+```
+
+## v4 differences
+
+Set `Options.TailwindVersion = ogre.TailwindV4` (or send `"tailwindVersion": "v4"` over HTTP, or `--tailwind-version v4` on the CLI) to opt in.
+
+**Renamed scales.** These class names carry different values under v4:
+
+| Class         | v3 value              | v4 value              |
+| ------------- | --------------------- | --------------------- |
+| `shadow-sm`   | 1px subtle shadow     | 1px+3px shadow (v3's `shadow`) |
+| `shadow-xs`   | *(unsupported)*       | 1px subtle shadow     |
+| `shadow-2xs`  | *(unsupported)*       | new tiny shadow       |
+| `rounded-sm`  | `2px`                 | `4px`                 |
+| `rounded-xs`  | *(unsupported)*       | `2px`                 |
+| `blur-sm`     | `blur(4px)`           | `blur(8px)`           |
+| `blur-xs`     | *(unsupported)*       | `blur(4px)`           |
+
+**New v4-only class names.**
+
+| Class                            | CSS                                        |
+| -------------------------------- | ------------------------------------------ |
+| `shrink`, `shrink-0`             | `flex-shrink: 1` / `0`                     |
+| `grow`, `grow-0`                 | `flex-grow: 1` / `0`                       |
+| `bg-linear-to-{t,tr,r,br,b,bl,l,tl}` | `linear-gradient(...)` direction        |
+| `text-ellipsis`                  | `text-overflow: ellipsis`                  |
+| `bg-(--var)`, `w-(--var)`, etc.  | `background-color: var(--var)`, etc.       |
+
+**OKLCH palette.** All `bg-*`, `text-*`, `border-*`, `from-*`, `via-*`, `to-*` colors resolve to `oklch(...)` strings taken from Tailwind v4's `theme.css`. The color parser converts them to sRGB at rasterization time.
+
+**Legacy v3 classes still recognized in v4 mode** (harmless fallthroughs): `flex-shrink`, `flex-grow`, `bg-gradient-to-*`, bare `shadow` / `rounded` / `blur`. These aren't defined by v4, but Ogre still resolves them so mixed-source markup renders instead of silently doing nothing.

@@ -25,7 +25,7 @@
 
 - HTML + inline CSS to SVG, PNG, or JPEG
 - Inline `<svg>` elements and SVG data URI rasterization
-- Tailwind CSS v3 utility classes including gradients (no build step)
+- Tailwind CSS v3 (default) or v4 utility classes including gradients (no build step)
 - Flexbox layout engine (W3C spec)
 - Complex script rendering via pure Go HarfBuzz port (Arabic, Hebrew, Devanagari, Thai)
 - RTL text support with Unicode bidi algorithm
@@ -285,7 +285,7 @@ Configurable via `CORS_ORIGIN` env var. Supports `*`, single origin, or comma-se
 
 ## Tailwind Support
 
-Ogre resolves Tailwind CSS v3 utility classes directly. No build step or Tailwind CLI needed.
+Ogre resolves Tailwind CSS utility classes directly. No build step or Tailwind CLI needed. Both v3 (default) and v4 are supported — set `Options.TailwindVersion = ogre.TailwindV4` to opt into v4 (renamed shadow/blur/radius scales, OKLCH palette, `bg-linear-to-*` gradients, `shrink`/`grow` utilities, `bg-(--var)` shortcut). See the [Tailwind reference](https://ogre.macawls.dev/reference/tailwind/) for the full class list and v3/v4 differences.
 
 ### Supported Utility Categories
 
@@ -331,7 +331,7 @@ Use bracket notation for custom values:
 | Output formats   | SVG, PNG, JPEG            | SVG only          |
 | Dependencies     | stdlib + golang.org/x + go-text | yoga-wasm, others |
 | Binary size      | Single static binary      | Node.js runtime   |
-| Tailwind support | Built-in (v3)             | Via plugin        |
+| Tailwind support | Built-in (v3 default, v4 opt-in) | Via plugin |
 | Font embedding   | SVG paths                 | SVG paths         |
 | Layout engine    | Custom flexbox (W3C spec) | Yoga (via WASM)   |
 | Emoji            | Twemoji CDN               | Twemoji CDN       |

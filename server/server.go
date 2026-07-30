@@ -160,23 +160,25 @@ type fontRequest struct {
 }
 
 type renderRequest struct {
-	HTML     string         `json:"html"`
-	Width    int            `json:"width,omitempty"`
-	Height   int            `json:"height,omitempty"`
-	Format   string         `json:"format,omitempty"`
-	Quality  int            `json:"quality,omitempty"`
-	Template string         `json:"template,omitempty"`
-	Data     map[string]any `json:"data,omitempty"`
-	Fonts    []fontRequest  `json:"fonts,omitempty"`
+	HTML            string         `json:"html"`
+	Width           int            `json:"width,omitempty"`
+	Height          int            `json:"height,omitempty"`
+	Format          string         `json:"format,omitempty"`
+	Quality         int            `json:"quality,omitempty"`
+	Template        string         `json:"template,omitempty"`
+	Data            map[string]any `json:"data,omitempty"`
+	Fonts           []fontRequest  `json:"fonts,omitempty"`
+	TailwindVersion string         `json:"tailwindVersion,omitempty"`
 }
 
 type templateRequest struct {
-	Template string         `json:"template"`
-	Data     map[string]any `json:"data"`
-	Width    int            `json:"width"`
-	Height   int            `json:"height"`
-	Format   string         `json:"format"`
-	Quality  int            `json:"quality"`
+	Template        string         `json:"template"`
+	Data            map[string]any `json:"data"`
+	Width           int            `json:"width"`
+	Height          int            `json:"height"`
+	Format          string         `json:"format"`
+	Quality         int            `json:"quality"`
+	TailwindVersion string         `json:"tailwindVersion,omitempty"`
 }
 
 // New creates a Server with the given configuration and registers routes.
@@ -386,7 +388,7 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.renderAndRespond(w, r, req.HTML, req.Width, req.Height, req.Format, req.Quality, fonts)
+	s.renderAndRespond(w, r, req.HTML, req.Width, req.Height, req.Format, req.Quality, fonts, req.TailwindVersion)
 }
 
 func parseFontRequests(reqs []fontRequest) ([]ogre.FontSource, error) {
@@ -443,16 +445,16 @@ func (s *Server) handleRenderTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.renderAndRespond(w, r, buf.String(), req.Width, req.Height, req.Format, req.Quality, nil)
+	s.renderAndRespond(w, r, buf.String(), req.Width, req.Height, req.Format, req.Quality, nil, req.TailwindVersion)
 }
 
-func (s *Server) renderAndRespond(w http.ResponseWriter, r *http.Request, html string, width, height int, format string, quality int, fonts []ogre.FontSource) {
+func (s *Server) renderAndRespond(w http.ResponseWriter, r *http.Request, html string, width, height int, format string, quality int, fonts []ogre.FontSource, twVersion string) {
 	start := time.Now()
 	if format == "" {
 		format = "svg"
 	}
 
-	key := cacheKey(html, width, height, format)
+	key := cacheKey(html, width, height, format, twVersion)
 
 	if data, ok := s.cache.Get(key); ok {
 		elapsed := time.Since(start)
@@ -486,12 +488,13 @@ func (s *Server) renderAndRespond(w http.ResponseWriter, r *http.Request, html s
 	ch := make(chan renderResult, 1)
 	go func() {
 		res, err := s.renderer.Render(html, ogre.Options{
-			Width:       width,
-			Height:      height,
-			Format:      ogre.Format(format),
-			Quality:     quality,
-			Fonts:       fonts,
-			MaxElements: s.cfg.MaxElements,
+			Width:           width,
+			Height:          height,
+			Format:          ogre.Format(format),
+			Quality:         quality,
+			Fonts:           fonts,
+			MaxElements:     s.cfg.MaxElements,
+			TailwindVersion: ogre.TailwindVersion(twVersion),
 		})
 		ch <- renderResult{res, err}
 	}()
@@ -541,9 +544,9 @@ func (s *Server) renderAndRespond(w http.ResponseWriter, r *http.Request, html s
 	}
 }
 
-func cacheKey(html string, width, height int, format string) string {
+func cacheKey(html string, width, height int, format, twVersion string) string {
 	h := sha256.New()
-	fmt.Fprintf(h, "%s\x00%d\x00%d\x00%s", html, width, height, format)
+	fmt.Fprintf(h, "%s\x00%d\x00%d\x00%s\x00%s", html, width, height, format, twVersion)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
