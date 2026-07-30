@@ -50,6 +50,7 @@ export default defineConfig({
 				{
 					label: 'Features',
 					items: [
+						{ label: 'Images', slug: 'guides/images' },
 						{ label: 'Tailwind CSS', slug: 'guides/tailwind' },
 						{ label: 'Custom Fonts', slug: 'guides/fonts' },
 						{ label: 'Emoji & RTL', slug: 'getting-started/emoji-and-rtl' },

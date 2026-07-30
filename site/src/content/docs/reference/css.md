@@ -80,6 +80,8 @@ Ogre supports a subset of CSS designed for image generation. All properties can 
 | `background-position` | Position value |
 | `background-repeat` | Repeat value |
 
+See [Images](/guides/images/) for `<img>` tags and `background-image: url(...)` usage.
+
 ## Visual
 
 | Property | Values |
