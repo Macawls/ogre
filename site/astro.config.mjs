@@ -44,7 +44,6 @@ export default defineConfig({
 						{ label: 'Go Library', slug: 'guides/library' },
 						{ label: 'CLI', slug: 'guides/cli' },
 						{ label: 'HTTP Server', slug: 'guides/server' },
-						{ label: 'JSX Builder', slug: 'guides/jsx' },
 						{ label: 'Docker', slug: 'guides/docker' },
 					],
 				},

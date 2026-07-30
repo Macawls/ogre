@@ -48,16 +48,6 @@ mux.Handle("POST /og", r.Handler(ogre.HandlerConfig{
 log.Fatal(http.ListenAndServe(":8080", mux))
 ```
 
-### JSX-style builder
-
-```go
-card := ogre.Div(ogre.Props{Class: "flex flex-col w-full h-full bg-slate-950 p-16"},
-    ogre.Div(ogre.Props{Class: "text-6xl font-extrabold text-white"}, "Hello World"),
-    ogre.P(ogre.Props{Class: "text-2xl text-slate-400 mt-4"}, "Built with Ogre"),
-)
-result, _ := card.Render(ogre.Options{Width: 1200, Height: 630})
-```
-
 ### Types
 
 ```go
@@ -275,7 +265,6 @@ Pipeline: HTML → Parse → Style → Layout → Render
 ```
 ogre.go          # Public API: Render(), NewRenderer()
 handler.go       # HTTP handler: Renderer.Handler()
-jsx.go           # JSX-style builder: Div(), Span(), etc.
 cmd/ogre/        # CLI entry point
 parse/           # HTML parsing → node tree
 style/           # CSS properties, Tailwind resolver, inheritance

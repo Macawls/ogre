@@ -35,7 +35,6 @@
 - Linear RGB gradient interpolation with ordered dithering
 - HTTP server with LRU caching, rate limiting, templates
 - Go library with `http.Handler` integration
-- JSX-style Go builder API
 - Tailwind filter and transform classes (blur, scale, rotate, etc.)
 - 95%+ pixel accuracy vs Satori across 25 test fixtures
 
