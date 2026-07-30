@@ -20,7 +20,6 @@ Ogre converts HTML and CSS to images in pure Go. No Chrome, no Node, no CGo. Sin
 - Emoji rendering (Twemoji, OpenMoji, Noto)
 - RTL / bidirectional text (Arabic, Hebrew)
 - HTTP server with LRU caching, rate limiting, templates, wildcard CORS
-- JSX-style Go builder API
 - `net/http` handler integration
 - Environment variable configuration
 - Pure Go — no CGo, no external binaries, `CGO_ENABLED=0`
