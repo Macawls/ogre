@@ -5,6 +5,17 @@ description: All notable changes to Ogre, generated from conventional commit his
 
 See [GitHub Releases](https://github.com/macawls/ogre/releases) for downloadable binaries and detailed release notes.
 
+## [2.1.0] - 2026-07-30
+
+### Documentation
+
+- Auto-sync changelog from CHANGELOG.md, remove Examples page (#10)
+- Update changelog for v2.0.1
+
+### Performance
+
+- V2.1.0 batch — 9 measured perf improvements across render, font, and style (#11)
+
 ## [2.0.1] - 2026-07-29
 
 ### Bug Fixes
