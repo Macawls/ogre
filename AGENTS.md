@@ -24,7 +24,6 @@ Instructions for AI agents and contributors working on this codebase.
 ```
 ogre.go          # Public API: Render(), NewRenderer()
 handler.go       # HTTP handler: Renderer.Handler()
-jsx.go           # JSX-style builder: Div(), Span(), etc.
 cmd/ogre/        # CLI entry point
 parse/           # HTML parsing → node tree
 style/           # CSS properties, Tailwind resolver, inheritance
