@@ -81,6 +81,18 @@ result, _ := r.Render(html, ogre.Options{Width: 1200, Height: 630})
 
 WOFF2 is not supported. Convert WOFF2 fonts to TTF or OTF before loading them.
 
+## Variable fonts
+
+Ogre detects variable fonts (those with an `fvar` table) at load time and honours the `font-variation-settings` CSS property. Glyph outlines, advances, and metrics all reflect the axis values.
+
+```html
+<span style="font-family: Fraunces; font-variation-settings: 'wght' 900, 'SOFT' 0, 'WONK' 1">
+  Snazzy
+</span>
+```
+
+Any OpenType axis is supported — `wght`, `wdth`, `opsz`, `slnt`, `ital`, and custom axes like `SOFT` or `WONK`. Load the font once; different axis values on different elements reuse the same file.
+
 ## Font rendering
 
 In SVG output, font glyphs are converted to path data. This makes SVGs self-contained — they render correctly without the font installed. In PNG/JPEG output, fonts are rasterized directly.

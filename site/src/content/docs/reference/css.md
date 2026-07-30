@@ -56,6 +56,7 @@ Ogre supports a subset of CSS designed for image generation. All properties can 
 | `font-size` | Length |
 | `font-weight` | `100`-`900`, `normal`, `bold` |
 | `font-style` | `normal`, `italic` |
+| `font-variation-settings` | `normal` or comma list of `<tag> <number>` (e.g. `'wght' 900, 'opsz' 72`) |
 | `color` | Color value |
 | `line-height` | Number or length |
 | `letter-spacing` | Length |
