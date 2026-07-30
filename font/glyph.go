@@ -7,6 +7,7 @@ import (
 
 	gotextfont "github.com/go-text/typesetting/font"
 	ot "github.com/go-text/typesetting/font/opentype"
+	"github.com/go-text/typesetting/font/opentype/tables"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
@@ -349,8 +350,7 @@ func cachedVariationGlyph(mgr *Manager, fontName string, r rune, size float64, v
 // glyphOutlineToPath emits the path in Y-down (screen) orientation. go-text
 // segments are in font units with OpenType Y-up, so Y is negated here.
 func glyphOutlineToPath(gtFace *gotextfont.Face, gid ot.GID, scale float64) (GlyphPath, bool) {
-	data := gtFace.GlyphData(gid)
-	outline, ok := data.(gotextfont.GlyphOutline)
+	outline, ok := gtFace.GlyphDataOutline(tables.GlyphID(gid))
 	if !ok {
 		return GlyphPath{}, false
 	}

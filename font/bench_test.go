@@ -1,8 +1,13 @@
 package font
 
 import (
+	"os"
 	"testing"
 )
+
+func readTestFontBench() ([]byte, error) {
+	return os.ReadFile("testdata/Estedad-VF.ttf")
+}
 
 func BenchmarkTextToPath(b *testing.B) {
 	mgr := NewManager()
@@ -60,6 +65,80 @@ func BenchmarkShapeTextWarm(b *testing.B) {
 
 // BenchmarkShapeBytesUncached measures the legacy Shaper.ShapeBytes path,
 // which re-parses the font on every call. This is the pre-change baseline.
+func BenchmarkTextToPathVariable(b *testing.B) {
+	mgr := loadVariableFontBench(b)
+	const text = "The quick brown fox jumps over the lazy dog"
+	vars := []Variation{{Tag: "wght", Value: 700}}
+	if p, _ := TextToPathVariations(mgr, text, "Estedad", 400, "normal", 16, vars); p == "" {
+		b.Fatal("empty path (setup)")
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		path, adv := TextToPathVariations(mgr, text, "Estedad", 400, "normal", 16, vars)
+		if path == "" || adv <= 0 {
+			b.Fatal("empty path")
+		}
+	}
+}
+
+func BenchmarkTextToPathVariableNoVars(b *testing.B) {
+	mgr := loadVariableFontBench(b)
+	const text = "The quick brown fox jumps over the lazy dog"
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		path, adv := TextToPathVariations(mgr, text, "Estedad", 400, "normal", 16, nil)
+		if path == "" || adv <= 0 {
+			b.Fatal("empty path")
+		}
+	}
+}
+
+func BenchmarkShaperFaceLookup(b *testing.B) {
+	mgr := loadVariableFontBench(b)
+	face := mgr.Resolve("Estedad", 400, "normal")
+	vars := []Variation{{Tag: "wght", Value: 700}}
+	if _, err := face.shaperFace(vars); err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		if _, err := face.shaperFace(vars); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkVariationKey(b *testing.B) {
+	vars := []Variation{
+		{Tag: "wght", Value: 900},
+		{Tag: "SOFT", Value: 0},
+		{Tag: "WONK", Value: 1},
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		if variationKey(vars) == "" {
+			b.Fatal("empty key")
+		}
+	}
+}
+
+func loadVariableFontBench(b *testing.B) *Manager {
+	b.Helper()
+	data, err := readTestFontBench()
+	if err != nil {
+		b.Fatalf("read test font: %v", err)
+	}
+	mgr := NewManager()
+	if err := mgr.LoadFont(FontSource{Name: "Estedad", Weight: 400, Style: "normal", Data: data}); err != nil {
+		b.Fatalf("load font: %v", err)
+	}
+	return mgr
+}
+
 func BenchmarkShapeBytesUncached(b *testing.B) {
 	mgr := NewManager()
 	if err := mgr.LoadDefaults(); err != nil {
