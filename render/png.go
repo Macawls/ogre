@@ -25,6 +25,19 @@ import (
 
 var rgbaPool sync.Pool
 
+var pngEncBufPool = &pngEncoderBufferPool{}
+
+type pngEncoderBufferPool struct{ p sync.Pool }
+
+func (pool *pngEncoderBufferPool) Get() *png.EncoderBuffer {
+	if v := pool.p.Get(); v != nil {
+		return v.(*png.EncoderBuffer)
+	}
+	return nil
+}
+
+func (pool *pngEncoderBufferPool) Put(b *png.EncoderBuffer) { pool.p.Put(b) }
+
 func acquireRGBA(r image.Rectangle) *image.RGBA {
 	if v := rgbaPool.Get(); v != nil {
 		img := v.(*image.RGBA)
@@ -42,6 +55,27 @@ func acquireRGBA(r image.Rectangle) *image.RGBA {
 
 func releaseRGBA(img *image.RGBA) {
 	rgbaPool.Put(img)
+}
+
+var alphaPool sync.Pool
+
+func acquireAlpha(r image.Rectangle) *image.Alpha {
+	if v := alphaPool.Get(); v != nil {
+		img := v.(*image.Alpha)
+		need := r.Dx() * r.Dy()
+		if cap(img.Pix) >= need {
+			img.Pix = img.Pix[:need]
+			img.Stride = r.Dx()
+			img.Rect = r
+			clear(img.Pix)
+			return img
+		}
+	}
+	return image.NewAlpha(r)
+}
+
+func releaseAlpha(img *image.Alpha) {
+	alphaPool.Put(img)
 }
 
 type PNGRenderer struct {
@@ -95,7 +129,8 @@ func RenderPNG(tree *layout.LayoutTree, styles map[*parse.Node]*style.ComputedSt
 	}
 
 	var buf bytes.Buffer
-	if err := png.Encode(&buf, img); err != nil {
+	enc := png.Encoder{CompressionLevel: png.BestSpeed, BufferPool: pngEncBufPool}
+	if err := enc.Encode(&buf, img); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
@@ -132,21 +167,28 @@ func (r *PNGRenderer) renderNode(node *layout.Node, pn *parse.Node, cs *style.Co
 		}
 		sub.renderNodeContent(node, pn, cs, absX, absY)
 		bounds := image.Rect(int(absX), int(absY), int(absX+l.Width), int(absY+l.Height)).Intersect(r.img.Bounds())
+		// tmp and r.img share bounds (both allocated for r.img.Bounds()), so
+		// stride matches and offsets computed against one apply to the other.
+		stride := r.img.Stride
+		srcPix := tmp.Pix
+		dstPix := r.img.Pix
 		for py := bounds.Min.Y; py < bounds.Max.Y; py++ {
+			rowOff := py * stride
 			for px := bounds.Min.X; px < bounds.Max.X; px++ {
-				off := tmp.PixOffset(px, py)
-				sa := tmp.Pix[off+3]
+				off := rowOff + px*4
+				sa := srcPix[off+3]
 				if sa == 0 {
 					continue
 				}
 				na := uint8(float64(sa) * opacity)
-				src := color.RGBA{R: tmp.Pix[off], G: tmp.Pix[off+1], B: tmp.Pix[off+2], A: na}
-				doff := r.img.PixOffset(px, py)
-				dr, dg, db, da := blendOver(src.R, src.G, src.B, src.A, r.img.Pix[doff], r.img.Pix[doff+1], r.img.Pix[doff+2], r.img.Pix[doff+3])
-				r.img.Pix[doff] = dr
-				r.img.Pix[doff+1] = dg
-				r.img.Pix[doff+2] = db
-				r.img.Pix[doff+3] = da
+				dr, dg, db, da := blendOver(
+					srcPix[off], srcPix[off+1], srcPix[off+2], na,
+					dstPix[off], dstPix[off+1], dstPix[off+2], dstPix[off+3],
+				)
+				dstPix[off] = dr
+				dstPix[off+1] = dg
+				dstPix[off+2] = db
+				dstPix[off+3] = da
 			}
 		}
 		return
@@ -884,7 +926,7 @@ func (r *PNGRenderer) renderOutsetShadow(absX, absY, w, h float64, s style.Shado
 		return
 	}
 
-	alpha := image.NewAlpha(image.Rect(0, 0, tw, th))
+	alpha := acquireAlpha(image.Rect(0, 0, tw, th))
 	for py := pad; py < pad+sh; py++ {
 		for px := pad; px < pad+sw; px++ {
 			alpha.SetAlpha(px, py, color.Alpha{A: sc.A})
@@ -892,6 +934,8 @@ func (r *PNGRenderer) renderOutsetShadow(absX, absY, w, h float64, s style.Shado
 	}
 
 	blurred := boxBlurAlpha(alpha, blur)
+	releaseAlpha(alpha)
+	defer releaseAlpha(blurred)
 
 	ox := sx - pad
 	oy := sy - pad
@@ -922,19 +966,26 @@ func (r *PNGRenderer) renderOutsetShadow(absX, absY, w, h float64, s style.Shado
 	}
 }
 
+// boxBlurAlpha runs a 2-pass separable box blur (H,V,H,V) on src and returns
+// a fresh alpha image. Intermediates come from alphaPool. The returned image
+// is pool-owned; callers should releaseAlpha it when done. If radius <= 0,
+// src is returned unchanged (caller owns it and must not double-release).
 func boxBlurAlpha(src *image.Alpha, radius int) *image.Alpha {
 	if radius <= 0 {
 		return src
 	}
 	b := src.Bounds()
-	tmp := image.NewAlpha(b)
-	dst := image.NewAlpha(b)
+	tmp := acquireAlpha(b)
+	dst := acquireAlpha(b)
 	boxBlurH(src, tmp, b, radius)
 	boxBlurV(tmp, dst, b, radius)
-	tmp2 := image.NewAlpha(b)
+	releaseAlpha(tmp)
+	tmp2 := acquireAlpha(b)
 	boxBlurH(dst, tmp2, b, radius)
-	dst2 := image.NewAlpha(b)
+	releaseAlpha(dst)
+	dst2 := acquireAlpha(b)
 	boxBlurV(tmp2, dst2, b, radius)
+	releaseAlpha(tmp2)
 	return dst2
 }
 
@@ -967,8 +1018,36 @@ func boxBlurH(src, dst *image.Alpha, b image.Rectangle, r int) {
 
 func blurHRows(src, dst *image.Alpha, b image.Rectangle, r, y0, y1 int) {
 	w := b.Dx()
-	div := float64(2*r + 1)
 	stride := dst.Stride
+	if r == 1 {
+		// Fast path for shadow-sm and similar thin blurs: integer-only
+		// moving sum of 3 pixels, avoiding float64 conversion and
+		// math.Round per pixel. (sum+1)/3 matches math.Round(sum/3) for
+		// all uint8 accumulator values.
+		p1Idx := 1
+		if p1Idx > w-1 {
+			p1Idx = w - 1
+		}
+		for y := y0; y < y1; y++ {
+			rowOff := y * stride
+			p0 := int(src.Pix[rowOff])
+			sum := p0 + p0 + int(src.Pix[rowOff+p1Idx])
+			for x := b.Min.X; x < b.Max.X; x++ {
+				dst.Pix[rowOff+x] = uint8((sum + 1) / 3)
+				nx := x + 2
+				if nx > w-1 {
+					nx = w - 1
+				}
+				ox := x - 1
+				if ox < 0 {
+					ox = 0
+				}
+				sum += int(src.Pix[rowOff+nx]) - int(src.Pix[rowOff+ox])
+			}
+		}
+		return
+	}
+	div := float64(2*r + 1)
 	for y := y0; y < y1; y++ {
 		sum := 0.0
 		for x := -r; x <= r; x++ {
@@ -1013,8 +1092,31 @@ func boxBlurV(src, dst *image.Alpha, b image.Rectangle, r int) {
 
 func blurVCols(src, dst *image.Alpha, b image.Rectangle, r, x0, x1 int) {
 	h := b.Dy()
-	div := float64(2*r + 1)
 	stride := dst.Stride
+	if r == 1 {
+		p1RowIdx := 1
+		if p1RowIdx > h-1 {
+			p1RowIdx = h - 1
+		}
+		for x := x0; x < x1; x++ {
+			p0 := int(src.Pix[x])
+			sum := p0 + p0 + int(src.Pix[p1RowIdx*stride+x])
+			for y := b.Min.Y; y < b.Max.Y; y++ {
+				dst.Pix[y*stride+x] = uint8((sum + 1) / 3)
+				ny := y + 2
+				if ny > h-1 {
+					ny = h - 1
+				}
+				oy := y - 1
+				if oy < 0 {
+					oy = 0
+				}
+				sum += int(src.Pix[ny*stride+x]) - int(src.Pix[oy*stride+x])
+			}
+		}
+		return
+	}
+	div := float64(2*r + 1)
 	for x := x0; x < x1; x++ {
 		sum := 0.0
 		for y := -r; y <= r; y++ {

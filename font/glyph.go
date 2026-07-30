@@ -2,6 +2,7 @@ package font
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"golang.org/x/image/font/opentype"
@@ -77,8 +78,7 @@ func ShapedTextToPath(mgr *Manager, text string, family string, weight int, styl
 		return TextToPath(mgr, text, family, weight, style, size)
 	}
 
-	shaper := NewShaper()
-	run, err := shaper.ShapeBytes(text, face.RawData, size, rtl)
+	run, err := mgr.ShapeText(face, text, size, rtl)
 	if err != nil || len(run.Glyphs) == 0 {
 		return TextToPath(mgr, text, family, weight, style, size)
 	}
@@ -138,39 +138,35 @@ func translatePath(d string, dx, dy float64) string {
 	}
 
 	var result strings.Builder
+	result.Grow(len(d))
 	i := 0
-	runes := []rune(d)
-
-	for i < len(runes) {
-		ch := runes[i]
+	for i < len(d) {
+		ch := d[i]
 		switch ch {
 		case 'M', 'L':
-			result.WriteRune(ch)
+			result.WriteByte(ch)
 			i++
-			x, y, next := parseTwoFloats(runes, i)
+			x, y, next := parseTwoFloats(d, i)
 			fmt.Fprintf(&result, "%.4g %.4g", x+dx, y+dy)
 			i = next
 		case 'Q':
-			result.WriteRune(ch)
+			result.WriteByte(ch)
 			i++
-			cx, cy, next := parseTwoFloats(runes, i)
-			x, y, next2 := parseTwoFloats(runes, next)
+			cx, cy, next := parseTwoFloats(d, i)
+			x, y, next2 := parseTwoFloats(d, next)
 			fmt.Fprintf(&result, "%.4g %.4g %.4g %.4g", cx+dx, cy+dy, x+dx, y+dy)
 			i = next2
 		case 'C':
-			result.WriteRune(ch)
+			result.WriteByte(ch)
 			i++
-			cx1, cy1, next := parseTwoFloats(runes, i)
-			cx2, cy2, next2 := parseTwoFloats(runes, next)
-			x, y, next3 := parseTwoFloats(runes, next2)
+			cx1, cy1, next := parseTwoFloats(d, i)
+			cx2, cy2, next2 := parseTwoFloats(d, next)
+			x, y, next3 := parseTwoFloats(d, next2)
 			fmt.Fprintf(&result, "%.4g %.4g %.4g %.4g %.4g %.4g",
 				cx1+dx, cy1+dy, cx2+dx, cy2+dy, x+dx, y+dy)
 			i = next3
-		case 'Z':
-			result.WriteRune(ch)
-			i++
 		default:
-			result.WriteRune(ch)
+			result.WriteByte(ch)
 			i++
 		}
 	}
@@ -178,36 +174,37 @@ func translatePath(d string, dx, dy float64) string {
 	return result.String()
 }
 
-func parseTwoFloats(runes []rune, start int) (float64, float64, int) {
-	x, next := parseFloat(runes, start)
-	y, next2 := parseFloat(runes, next)
+func parseTwoFloats(s string, start int) (float64, float64, int) {
+	x, next := parseFloat(s, start)
+	y, next2 := parseFloat(s, next)
 	return x, y, next2
 }
 
-func parseFloat(runes []rune, start int) (float64, int) {
-	for start < len(runes) && runes[start] == ' ' {
+// parseFloat scans an ASCII SVG-path number out of s starting at start. SVG
+// path syntax is ASCII-only, so byte indexing is safe and faster than []rune.
+func parseFloat(s string, start int) (float64, int) {
+	for start < len(s) && s[start] == ' ' {
 		start++
 	}
 
 	end := start
-	if end < len(runes) && (runes[end] == '-' || runes[end] == '+') {
+	if end < len(s) && (s[end] == '-' || s[end] == '+') {
 		end++
 	}
-	for end < len(runes) && ((runes[end] >= '0' && runes[end] <= '9') || runes[end] == '.') {
+	for end < len(s) && ((s[end] >= '0' && s[end] <= '9') || s[end] == '.') {
 		end++
 	}
-	if end < len(runes) && (runes[end] == 'e' || runes[end] == 'E') {
+	if end < len(s) && (s[end] == 'e' || s[end] == 'E') {
 		end++
-		if end < len(runes) && (runes[end] == '-' || runes[end] == '+') {
+		if end < len(s) && (s[end] == '-' || s[end] == '+') {
 			end++
 		}
-		for end < len(runes) && runes[end] >= '0' && runes[end] <= '9' {
+		for end < len(s) && s[end] >= '0' && s[end] <= '9' {
 			end++
 		}
 	}
 
-	var val float64
-	fmt.Sscanf(string(runes[start:end]), "%g", &val)
+	val, _ := strconv.ParseFloat(s[start:end], 64)
 	return val, end
 }
 

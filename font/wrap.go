@@ -178,10 +178,17 @@ func wrapCollapsed(m *Measurer, text string, maxWidth float64, wordBreak int) []
 		return []TextLine{{Text: "", Width: 0}}
 	}
 
-	var lines []TextLine
-	var currentText string
+	lines := make([]TextLine, 0, len(words)/8+1)
+	var current strings.Builder
+	current.Grow(len(text))
 	var currentWidth float64
 	spaceWidth := m.RuneWidth(' ')
+
+	setCurrent := func(s string, w float64) {
+		current.Reset()
+		current.WriteString(s)
+		currentWidth = w
+	}
 
 	for i, word := range words {
 		wordWidth := m.StringWidth(word)
@@ -193,13 +200,11 @@ func wrapCollapsed(m *Measurer, text string, maxWidth float64, wordBreak int) []
 					if j < len(broken)-1 {
 						lines = append(lines, bl)
 					} else {
-						currentText = bl.Text
-						currentWidth = bl.Width
+						setCurrent(bl.Text, bl.Width)
 					}
 				}
 			} else {
-				currentText = word
-				currentWidth = wordWidth
+				setCurrent(word, wordWidth)
 			}
 			continue
 		}
@@ -208,10 +213,11 @@ func wrapCollapsed(m *Measurer, text string, maxWidth float64, wordBreak int) []
 		newWidth := currentWidth + sep + wordWidth
 
 		if newWidth <= maxWidth {
-			currentText += " " + word
+			current.WriteByte(' ')
+			current.WriteString(word)
 			currentWidth = newWidth
 		} else {
-			lines = append(lines, TextLine{Text: currentText, Width: currentWidth})
+			lines = append(lines, TextLine{Text: current.String(), Width: currentWidth})
 
 			if wordBreak == wbBreakWord && wordWidth > maxWidth {
 				broken := breakChars(m, word, maxWidth)
@@ -219,18 +225,16 @@ func wrapCollapsed(m *Measurer, text string, maxWidth float64, wordBreak int) []
 					if j < len(broken)-1 {
 						lines = append(lines, bl)
 					} else {
-						currentText = bl.Text
-						currentWidth = bl.Width
+						setCurrent(bl.Text, bl.Width)
 					}
 				}
 			} else {
-				currentText = word
-				currentWidth = wordWidth
+				setCurrent(word, wordWidth)
 			}
 		}
 	}
 
-	lines = append(lines, TextLine{Text: currentText, Width: currentWidth})
+	lines = append(lines, TextLine{Text: current.String(), Width: currentWidth})
 	return lines
 }
 

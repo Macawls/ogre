@@ -2,6 +2,7 @@ package font
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/go-text/typesetting/di"
 	gotextfont "github.com/go-text/typesetting/font"
@@ -47,6 +48,39 @@ func (s *Shaper) ShapeBytes(text string, fontData []byte, size float64, rtl bool
 	face := gotextfont.NewFace(ft)
 
 	return s.shape(text, face, size, rtl), nil
+}
+
+// ShapeText shapes text using the given Face, reusing a lazily-built go-text
+// face cached on the Face itself. Avoids re-parsing font data (Loader + Font +
+// Face construction) on every shape call, which dominated i18n/RTL renders.
+func (m *Manager) ShapeText(f *Face, text string, size float64, rtl bool) (*ShapedRun, error) {
+	if f == nil || len(f.RawData) == 0 {
+		return nil, fmt.Errorf("face has no raw data for shaping")
+	}
+	gtFace, err := f.shaperFace()
+	if err != nil {
+		return nil, err
+	}
+	s := &Shaper{}
+	return s.shape(text, gtFace, size, rtl), nil
+}
+
+func (f *Face) shaperFace() (*gotextfont.Face, error) {
+	f.shapeMu.Lock()
+	defer f.shapeMu.Unlock()
+	if f.gtFace != nil {
+		return f.gtFace, nil
+	}
+	ld, err := ot.NewLoader(bytes.NewReader(f.RawData))
+	if err != nil {
+		return nil, err
+	}
+	ft, err := gotextfont.NewFont(ld)
+	if err != nil {
+		return nil, err
+	}
+	f.gtFace = gotextfont.NewFace(ft)
+	return f.gtFace, nil
 }
 
 func (s *Shaper) shape(text string, face *gotextfont.Face, size float64, rtl bool) *ShapedRun {
