@@ -16,7 +16,7 @@ head:
       content: 'Open-source, pure Go renderer for HTML and CSS. Generate OpenGraph images and presentation slides as SVG, PNG, or JPEG from a single static binary.'
 ---
 
-Ogre is a pure Go renderer that converts HTML and CSS into SVG, PNG, and JPEG images. It compiles to a single static binary and works as a Go library, CLI, or HTTP server — designed for generating OpenGraph images, social cards, presentation slides, and dynamic image content from templates.
+Ogre is a renderer that converts HTML and CSS into SVG, PNG, and JPEG images. It compiles to a single static binary and works as a Go library, CLI, or HTTP server — designed for generating OpenGraph images, social cards, presentation slides, and dynamic image content from templates.
 
 ## What is this for?
 
