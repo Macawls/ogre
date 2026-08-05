@@ -42,14 +42,15 @@ result, err := r.Render(html, ogre.Options{
 
 ```go
 type Options struct {
-    Width         int          // Canvas width (default 1200)
-    Height        int          // Canvas height (default 630)
-    Format        Format       // "svg" (default), "png", or "jpeg"
-    Quality       int          // JPEG quality 1-100 (default 90)
-    Fonts         []FontSource // Custom fonts to load for this render
-    Debug         bool         // Enable debug output
-    EmojiProvider string       // "twemoji" (default) or "none"
-    MaxElements   int          // Maximum HTML element count (0 = unlimited)
+    Width           int             // Canvas width (default 1200)
+    Height          int             // Canvas height (default 630)
+    Format          Format          // "svg" (default), "png", or "jpeg"
+    Quality         int             // JPEG quality 1-100 (default 90)
+    Fonts           []FontSource    // Custom fonts to load for this render
+    Debug           bool            // Enable debug output
+    EmojiProvider   string          // "twemoji" (default) or "none"
+    MaxElements     int             // Maximum HTML element count (0 = unlimited)
+    TailwindVersion TailwindVersion // "" or "v3" → v3 (default); "v4" → v4
 }
 ```
 
@@ -89,7 +90,7 @@ mux.Handle("POST /og", r.Handler(ogre.HandlerConfig{
 log.Fatal(http.ListenAndServe(":8080", mux))
 ```
 
-The handler accepts the same JSON body as the [HTTP server](/guides/server/):
+The handler accepts a JSON body similar to the [HTTP server](/guides/server/), minus the per-request `fonts` array — pre-load fonts on the renderer with `LoadFont` instead:
 
 ```bash
 curl -X POST http://localhost:8080/og \
@@ -100,14 +101,15 @@ curl -X POST http://localhost:8080/og \
   -o og.png
 ```
 
-Request fields (`width`, `height`, `format`) override the defaults from `HandlerConfig` when provided. The handler also supports `template` + `data` fields for Go template rendering.
+Request fields (`width`, `height`, `format`, `quality`, `tailwindVersion`) override the defaults from `HandlerConfig` when provided. The handler also supports `template` + `data` fields for Go template rendering. Responses set `Content-Type` and `Cache-Control: public, max-age=3600`.
 
 ### HandlerConfig
 
 ```go
 type HandlerConfig struct {
-    Width  int    // Default canvas width (default 1200)
-    Height int    // Default canvas height (default 630)
-    Format Format // Default output format (default FormatPNG)
+    Width   int    // Default canvas width (default 1200)
+    Height  int    // Default canvas height (default 630)
+    Format  Format // Default output format (default FormatPNG)
+    Quality int    // Default JPEG quality 1-100
 }
 ```

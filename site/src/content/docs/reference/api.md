@@ -45,7 +45,7 @@ Registers a font for use in subsequent renders. If `FontSource.URL` is set and `
 func (r *Renderer) Handler(cfg HandlerConfig) http.Handler
 ```
 
-Returns an `http.Handler` that accepts JSON POST requests and renders images. Uses the renderer's shared font manager. The handler accepts `html`, `template`/`data`, `width`, `height`, and `format` fields in the JSON body. Fields in the request override the defaults from `HandlerConfig`.
+Returns an `http.Handler` that accepts JSON POST requests and renders images. Uses the renderer's shared font manager. The handler accepts `html`, `template`/`data`, `width`, `height`, `format`, `quality`, and `tailwindVersion` fields in the JSON body. Fields in the request override the defaults from `HandlerConfig`. The response sets `Content-Type` and `Cache-Control: public, max-age=3600`.
 
 ```go
 type HandlerConfig struct {
@@ -62,16 +62,30 @@ type HandlerConfig struct {
 
 ```go
 type Options struct {
-    Width         int          // Canvas width in pixels. Default: 1200.
-    Height        int          // Canvas height in pixels. Default: 630.
-    Format        Format       // Output format. Default: FormatSVG.
-    Quality       int          // JPEG quality 1-100. Default: 90. Only used with FormatJPEG.
-    Fonts         []FontSource // Fonts to load for this render.
-    Debug         bool         // Enable debug logging.
-    EmojiProvider string       // "twemoji" (default) or "none".
-    MaxElements   int          // Max HTML elements allowed. 0 = unlimited.
+    Width           int             // Canvas width in pixels. Default: 1200.
+    Height          int             // Canvas height in pixels. Default: 630.
+    Format          Format          // Output format. Default: FormatSVG.
+    Quality         int             // JPEG quality 1-100. Default: 90. Only used with FormatJPEG.
+    Fonts           []FontSource    // Fonts to load for this render.
+    Debug           bool            // Enable debug logging.
+    EmojiProvider   string          // "twemoji" (default) or "none".
+    MaxElements     int             // Max HTML elements allowed. 0 = unlimited.
+    TailwindVersion TailwindVersion // "" or "v3" → v3 (default); "v4" → v4.
 }
 ```
+
+### TailwindVersion
+
+```go
+type TailwindVersion string
+
+const (
+    TailwindV3 TailwindVersion = "v3"
+    TailwindV4 TailwindVersion = "v4"
+)
+```
+
+The zero value normalises to `TailwindV3`.
 
 ### FontSource
 
@@ -122,13 +136,13 @@ Creates a server with routes registered.
 
 ```go
 type Config struct {
-    Addr          string        // Listen address. Default: ":3000".
+    Addr          string        // Listen address. Zero value → ":8080" in New(); ConfigFromEnv defaults to ":3000".
     CacheBytes    int64         // LRU cache size in bytes. Default: 64 MB.
     Fonts         []ogre.FontSource // Pre-loaded fonts for all renders.
     RateLimit     float64       // Requests per second per IP. 0 = no limit.
     RenderTimeout time.Duration // Per-render timeout. Default: 10s.
     MaxElements   int           // Max HTML elements per render. Default: 1000.
-    CORSOrigin    string        // Allowed CORS origin. Default: "*".
+    CORSOrigin    string        // Allowed CORS origin(s), comma-separated, supports wildcards. Default: "*".
 }
 ```
 

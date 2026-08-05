@@ -52,15 +52,22 @@ log.Fatal(http.ListenAndServe(":8080", mux))
 
 ```go
 type Options struct {
-    Width         int          // Default: 1200
-    Height        int          // Default: 630
-    Format        Format       // "svg" (default), "png", or "jpeg"
-    Quality       int          // JPEG quality 1-100 (default 90)
-    Fonts         []FontSource // Custom fonts
-    Debug         bool         // Enable debug logging
-    EmojiProvider string       // "twemoji" (default) or "none"
-    MaxElements   int          // Max HTML elements (0 = unlimited)
+    Width           int             // Default: 1200
+    Height          int             // Default: 630
+    Format          Format          // "svg" (default), "png", or "jpeg"
+    Quality         int             // JPEG quality 1-100 (default 90)
+    Fonts           []FontSource    // Custom fonts
+    Debug           bool            // Enable debug logging
+    EmojiProvider   string          // "twemoji" (default) or "none"
+    MaxElements     int             // Max HTML elements (0 = unlimited)
+    TailwindVersion TailwindVersion // "" or "v3" → v3 (default); "v4" → v4
 }
+
+type TailwindVersion string
+const (
+    TailwindV3 TailwindVersion = "v3"
+    TailwindV4 TailwindVersion = "v4"
+)
 
 type FontSource struct {
     Name   string // Font family name
@@ -94,7 +101,7 @@ ogre --html '<div class="flex w-full h-full bg-blue-500"><div class="text-white 
 ogre --serve --port 3000
 ```
 
-Flags: --render, --html, --output, --width (1200), --height (630), --format (svg/png/jpeg), --serve, --port (3000).
+Flags: --render, --html, --output, --width (1200), --height (630), --format (svg/png/jpeg), --tailwind-version (v3/v4), --serve, --port (3000).
 
 ## HTTP Server
 
@@ -147,6 +154,7 @@ CORS_ORIGIN="https://*.example.com,http://localhost:*" ogre --serve
   "height": 630,
   "format": "png",
   "quality": 90,
+  "tailwindVersion": "v3",
   "fonts": [
     {
       "name": "Inter",
@@ -161,7 +169,7 @@ CORS_ORIGIN="https://*.example.com,http://localhost:*" ogre --serve
 Returns image bytes with appropriate Content-Type header.
 
 Response headers:
-- ETag: SHA-256 hash of input
+- ETag: SHA-256 of HTML + dimensions + format + Tailwind version
 - X-Cache: HIT or MISS
 - Cache-Control: public, max-age=86400 (hits) or max-age=3600 (misses)
 
@@ -171,11 +179,16 @@ Response headers:
 {
   "template": "<div class=\"text-4xl\">{{.Title}}</div>",
   "data": {"Title": "Hello"},
-  "format": "png"
+  "format": "png",
+  "tailwindVersion": "v3"
 }
 ```
 
-Uses Go html/template syntax.
+Uses Go html/template syntax. Accepts the same `width`, `height`, `format`, `quality`, and `tailwindVersion` fields as `/render`.
+
+### GET /
+
+Returns a plain-text banner listing the available endpoints.
 
 ### GET /health
 
@@ -220,9 +233,9 @@ Visual: opacity, box-shadow, transform, transform-origin, filter (blur, grayscal
 
 Note: <div> defaults to display: block (browser behavior). Set display: flex explicitly to opt into flexbox layout. Because the engine is flex-only, block containers are laid out as flex-direction: column with align-items: stretch.
 
-## Tailwind v3 Support
+## Tailwind Support
 
-Ogre resolves Tailwind CSS v3 utility classes at render time with no build step. Supported categories: layout, alignment, spacing, sizing, typography, colors (all palettes + shades), borders, shadows, opacity, position, filters (blur, brightness, grayscale), transforms (rotate, scale, translate, skew). Arbitrary values with bracket notation: `text-[32px] bg-[#ff5500]`.
+Ogre resolves Tailwind CSS utility classes at render time with no build step. Both v3 (default) and v4 are supported — set `Options.TailwindVersion = ogre.TailwindV4`, send `"tailwindVersion": "v4"` over HTTP, or pass `--tailwind-version v4` on the CLI. v4 changes: renamed shadow/blur/radius scales, OKLCH palette, `bg-linear-to-*` gradients, `shrink`/`grow` utilities, `bg-(--var)` shortcut. Supported categories: layout, alignment, spacing, sizing, typography, colors (all palettes + shades), borders, shadows, opacity, position, filters (blur, brightness, grayscale), transforms (rotate, scale, translate, skew). Arbitrary values with bracket notation: `text-[32px] bg-[#ff5500]`.
 
 ## Font Support
 
@@ -231,6 +244,7 @@ Ogre resolves Tailwind CSS v3 utility classes at render time with no build step.
 - Custom fonts from file data (TTF/OTF/WOFF)
 - Custom fonts from URL (auto-cached on disk)
 - WOFF2 not supported (convert to TTF/OTF first)
+- Variable fonts: `font-variation-settings` is honoured for any OpenType axis (wght, wdth, opsz, slnt, ital, or custom axes)
 
 ## Emoji Support
 

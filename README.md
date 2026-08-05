@@ -67,6 +67,7 @@ CLI flags:
 | `--width`  | 1200    | Canvas width in pixels                                         |
 | `--height` | 630     | Canvas height in pixels                                        |
 | `--format` | svg     | Output format: `svg`, `png`, or `jpeg`                         |
+| `--tailwind-version` | v3 | Tailwind CSS version: `v3` or `v4`                        |
 
 ### As a Go Library
 
@@ -127,13 +128,15 @@ result, _ := ogre.Render(html, ogre.Options{
 
 ```go
 type Options struct {
-    Width         int          // Canvas width (default 1200)
-    Height        int          // Canvas height (default 630)
-    Format        Format       // "svg" (default), "png", or "jpeg"
-    Quality       int          // JPEG quality 1-100 (default 90)
-    Fonts         []FontSource // Custom fonts to load
-    Debug         bool
-    EmojiProvider string       // "twemoji" (default), "none"
+    Width           int             // Canvas width (default 1200)
+    Height          int             // Canvas height (default 630)
+    Format          Format          // "svg" (default), "png", or "jpeg"
+    Quality         int             // JPEG quality 1-100 (default 90)
+    Fonts           []FontSource    // Custom fonts to load
+    Debug           bool
+    EmojiProvider   string          // "twemoji" (default), "none"
+    MaxElements     int             // Max HTML elements allowed (0 = unlimited)
+    TailwindVersion TailwindVersion // "" or "v3" → v3 (default); "v4" → v4
 }
 
 type FontSource struct {
@@ -158,6 +161,7 @@ type Result struct {
 - `ogre.NewRenderer() *Renderer` -- Creates a shared renderer with pre-loaded default fonts.
 - `(*Renderer).Render(html string, opts Options) (*Result, error)` -- Render with shared font manager. Thread-safe.
 - `(*Renderer).LoadFont(src FontSource) error` -- Pre-load a font into the shared manager.
+- `(*Renderer).Handler(cfg HandlerConfig) http.Handler` -- Returns an `http.Handler` that accepts JSON POST bodies (`html` or `template`+`data`, plus `width`, `height`, `format`, `quality`, `tailwindVersion`).
 
 ## HTTP API
 
@@ -173,11 +177,13 @@ Request body (JSON):
   "width": 1200,
   "height": 630,
   "format": "svg",
-  "quality": 90
+  "quality": 90,
+  "tailwindVersion": "v3",
+  "fonts": []
 }
 ```
 
-The `quality` field (1-100) controls JPEG compression. Ignored for SVG and PNG. Default 90.
+The `quality` field (1-100) controls JPEG compression. Ignored for SVG and PNG. Default 90. `tailwindVersion` is `"v3"` (default) or `"v4"`. `fonts` is an optional array of `{name, weight, style, url}` or `{name, weight, style, data}` (base64) objects; up to 5 per request, 5 MB each.
 
 Response: image bytes with appropriate `Content-Type` header (`image/svg+xml`, `image/png`, or `image/jpeg`).
 
@@ -195,7 +201,9 @@ Request body (JSON):
   "data": { "Title": "Hello World" },
   "width": 1200,
   "height": 630,
-  "format": "svg"
+  "format": "svg",
+  "quality": 90,
+  "tailwindVersion": "v3"
 }
 ```
 
@@ -205,14 +213,27 @@ Response: same as `/render`.
 
 Returns `{"status":"ok"}`.
 
+### GET /metrics
+
+Returns render counters as JSON: `render_total`, `render_errors`, `cache_hits`, `cache_misses`, `total_duration_ms`.
+
+### GET /
+
+Returns a plain-text banner listing the available endpoints.
+
 ### CORS
 
-Configurable via `CORS_ORIGIN` env var. Supports `*`, single origin, or comma-separated origins.
+Configurable via `CORS_ORIGIN` env var. Supports `*`, single origin, or comma-separated origins (each may contain a `*` wildcard).
 
 ### Limits
 
 - Max request body size: 10 MB
-- Default cache size: 64 MB (LRU, keyed by SHA-256 of input)
+- Max fonts per request: 5
+- Max font size: 5 MB
+- Default cache size: 64 MB (LRU, keyed by SHA-256 of HTML + dimensions + format + Tailwind version)
+- Default render timeout: 10 seconds
+- Default max elements per render: 1000
+- Default rate limit: unlimited (`RATE_LIMIT=0`)
 
 ## Supported CSS Properties
 

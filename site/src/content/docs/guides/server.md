@@ -79,7 +79,9 @@ Request fields:
 | `width` | int | 1200 | Canvas width |
 | `height` | int | 630 | Canvas height |
 | `format` | string | `"svg"` | `"svg"`, `"png"`, or `"jpeg"` |
+| `quality` | int | 90 | JPEG quality (1-100). Ignored for SVG/PNG. |
 | `fonts` | array | `[]` | Custom fonts (see below) |
+| `tailwindVersion` | string | `"v3"` | `"v3"` (default) or `"v4"` |
 
 ### POST /render/template
 
@@ -97,6 +99,12 @@ curl -X POST http://localhost:3000/render/template \
   }' \
   -o output.png
 ```
+
+Fields: `template` (required), `data` (object), `width`, `height`, `format`, `quality`, `tailwindVersion` — same defaults as `/render`.
+
+### GET /
+
+Returns a plain-text banner listing the available endpoints.
 
 ### GET /health
 
@@ -138,7 +146,7 @@ Fonts can be provided as a URL or base64-encoded data. Limits: 5 fonts per reque
 
 ## Caching
 
-Responses are cached in an LRU cache keyed by SHA-256 of the input (HTML + dimensions + format). Cache headers:
+Responses are cached in an LRU cache keyed by SHA-256 of HTML + dimensions + format + Tailwind version. Cache headers:
 
 - `ETag`: SHA-256 hash of the input
 - `X-Cache`: `HIT` or `MISS`
@@ -146,7 +154,7 @@ Responses are cached in an LRU cache keyed by SHA-256 of the input (HTML + dimen
 
 ## CORS
 
-All endpoints return `Access-Control-Allow-Origin: *`.
+Configured via `CORS_ORIGIN` (default `*`). Accepts `*`, a single origin, or a comma-separated list; each entry may include a `*` wildcard. When the value is not `*`, matched origins are echoed back with a `Vary: Origin` header.
 
 ## Limits
 

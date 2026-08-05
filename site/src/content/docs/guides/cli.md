@@ -17,6 +17,7 @@ The `ogre` CLI renders HTML files or inline HTML strings to images.
 | `--width` | `1200` | Canvas width in pixels |
 | `--height` | `630` | Canvas height in pixels |
 | `--format` | `svg` | Output format: `svg`, `png`, or `jpeg` |
+| `--tailwind-version` | `v3` | Tailwind CSS version: `v3` or `v4` |
 
 ## Rendering a file
 

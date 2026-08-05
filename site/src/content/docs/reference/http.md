@@ -27,6 +27,7 @@ Render HTML to an image.
 | `format` | string | no | `"svg"` | `"svg"`, `"png"`, or `"jpeg"` |
 | `quality` | int | no | 90 | JPEG compression quality (1-100). Ignored for SVG/PNG. |
 | `fonts` | array | no | `[]` | Custom fonts |
+| `tailwindVersion` | string | no | `"v3"` | `"v3"` (default) or `"v4"` |
 
 ### Font objects
 
@@ -57,7 +58,7 @@ Image bytes with headers:
 | Header | Value |
 |--------|-------|
 | `Content-Type` | `image/svg+xml`, `image/png`, or `image/jpeg` |
-| `ETag` | SHA-256 hash of the input |
+| `ETag` | SHA-256 of HTML + dimensions + format + Tailwind version |
 | `X-Cache` | `HIT` or `MISS` |
 | `Cache-Control` | `public, max-age=86400` (hit) or `public, max-age=3600` (miss) |
 
@@ -85,10 +86,15 @@ Render a Go `html/template` with data substitution.
 | `height` | int | no | 630 |
 | `format` | string | no | `"svg"` |
 | `quality` | int | no | 90 |
+| `tailwindVersion` | string | no | `"v3"` |
 
 ### Response
 
 Same as `/render`.
+
+## GET /
+
+Returns a plain-text banner listing the available endpoints. Useful as a smoke test.
 
 ## GET /health
 
@@ -127,7 +133,7 @@ All errors return JSON:
 
 ## CORS
 
-All endpoints return `Access-Control-Allow-Origin: *`.
+Configured via the `CORS_ORIGIN` env var (default `*`). Accepts `*`, a single origin, or a comma-separated list; each entry may include a `*` wildcard (e.g. `https://*.example.com`).
 
 ## Limits
 
