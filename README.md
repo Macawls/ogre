@@ -5,8 +5,8 @@
 <h1 align="center">Ogre</h1>
 
 <p align="center">
-  Pure Go HTML/CSS to SVG/PNG/JPEG renderer for OpenGraph images.<br>
-  Vercel Satori alternative. No CGo.
+  Pure Go HTML/CSS to SVG/PNG/JPEG renderer for OpenGraph images and presentation slides.<br>
+  Single static binary. Library, CLI, or HTTP server. No Chrome, no Node, no CGo.
 </p>
 
 <p align="center">
@@ -323,7 +323,7 @@ Use bracket notation for custom values:
 ></div>
 ```
 
-## Comparison with Satori
+## How Ogre compares to Satori
 
 | Feature          | Ogre                      | Satori            |
 | ---------------- | ------------------------- | ----------------- |

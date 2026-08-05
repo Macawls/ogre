@@ -1,10 +1,10 @@
 # Ogre — Full Documentation for LLMs
 
-> Pure Go HTML/CSS to SVG/PNG/JPEG renderer. Open-source Vercel Satori alternative.
+> Pure Go HTML/CSS to SVG/PNG/JPEG renderer. Single static binary — library, CLI, or HTTP server.
 
 ## What is Ogre?
 
-Ogre converts HTML and CSS to images (SVG, PNG, JPEG) in pure Go. It is designed for generating OpenGraph images, social cards, and dynamic image content from templates. It is a drop-in alternative to Vercel's Satori that runs natively in Go with no JavaScript runtime required. No CGo, no external binaries — compiles to a single static binary with `CGO_ENABLED=0`.
+Ogre converts HTML and CSS to images (SVG, PNG, JPEG) in pure Go. It is designed for generating OpenGraph images, social cards, presentation slides, and dynamic image content from templates. The same code runs as a Go library, a CLI, or an HTTP server with a JSON API. No Chrome, no Node, no CGo — compiles to a single static binary with `CGO_ENABLED=0`.
 
 ## Installation
 

@@ -1,6 +1,6 @@
 # Ogre
 
-> Pure Go HTML/CSS to SVG/PNG/JPEG renderer. Open-source Vercel Satori alternative.
+> Pure Go HTML/CSS to SVG/PNG/JPEG renderer. Single static binary — library, CLI, or HTTP server.
 
 Ogre converts HTML and CSS to images in pure Go. No Chrome, no Node, no CGo. Single static binary.
 
