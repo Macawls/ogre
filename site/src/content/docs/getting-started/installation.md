@@ -5,27 +5,38 @@ description: Install Ogre from a prebuilt binary, via `go install`, or as a Dock
 
 ## Download prebuilt binary
 
-Every release ships static binaries for Linux, macOS, and Windows (amd64 and arm64) at [github.com/Macawls/ogre/releases/latest](https://github.com/Macawls/ogre/releases/latest). Archives are named `ogre_{version}_{os}_{arch}.{ext}` — `.tar.gz` for Linux and macOS, `.zip` for Windows.
+Every release ships static binaries at [github.com/Macawls/ogre/releases/latest](https://github.com/Macawls/ogre/releases/latest). Pick the archive for your OS and architecture:
 
-### Linux
+| OS | File pattern |
+|---|---|
+| Linux | `ogre_<version>_linux_amd64.tar.gz` (or `_arm64`) |
+| macOS (Apple Silicon) | `ogre_<version>_darwin_arm64.tar.gz` |
+| macOS (Intel) | `ogre_<version>_darwin_amd64.tar.gz` |
+| Windows | `ogre_<version>_windows_amd64.zip` (or `_arm64`) |
+
+Each archive contains a single `ogre` binary (or `ogre.exe` on Windows). Extract it, put it on your `PATH`, and you're done.
+
+### Linux and macOS
+
+Extract the downloaded archive:
 
 ```bash
-VERSION=3.1.0
-ARCH=amd64  # or arm64
-curl -L "https://github.com/Macawls/ogre/releases/download/v${VERSION}/ogre_${VERSION}_linux_${ARCH}.tar.gz" | tar -xz
+tar -xzf ogre_*.tar.gz
+```
+
+Move the binary somewhere on your `PATH`. `/usr/local/bin` is the usual choice for a system-wide install:
+
+```bash
 sudo mv ogre /usr/local/bin/
 ```
 
-### macOS
+Check it works:
 
 ```bash
-VERSION=3.1.0
-ARCH=arm64  # or amd64 for Intel Macs
-curl -L "https://github.com/Macawls/ogre/releases/download/v${VERSION}/ogre_${VERSION}_darwin_${ARCH}.tar.gz" | tar -xz
-sudo mv ogre /usr/local/bin/
+ogre --help
 ```
 
-macOS may quarantine the downloaded binary. If you see "cannot be opened because the developer cannot be verified," run:
+**macOS only:** the first run may show "cannot be opened because the developer cannot be verified." Clear the quarantine flag once:
 
 ```bash
 xattr -d com.apple.quarantine /usr/local/bin/ogre
@@ -33,14 +44,15 @@ xattr -d com.apple.quarantine /usr/local/bin/ogre
 
 ### Windows
 
-Download `ogre_<version>_windows_amd64.zip` (or `_arm64.zip`) from the [releases page](https://github.com/Macawls/ogre/releases/latest), extract, and place `ogre.exe` somewhere on your `PATH`.
+1. Download the `.zip` from the releases page and unzip it — you'll get a single `ogre.exe`.
+2. Move `ogre.exe` to a folder that's already on your `PATH` (e.g. `C:\Windows\System32`), or create a new folder like `C:\Users\<you>\bin` and add it to `PATH` via **System Properties → Environment Variables**.
+3. Open a new PowerShell or Command Prompt window and run `ogre --help` to verify.
 
-### Verify checksum
+### Verifying the download (optional)
 
-Every release publishes a `checksums.txt` alongside the archives:
+Every release ships a `checksums.txt`. Download it from the same release page and compare:
 
 ```bash
-curl -LO "https://github.com/Macawls/ogre/releases/download/v${VERSION}/checksums.txt"
 sha256sum -c checksums.txt --ignore-missing
 ```
 
