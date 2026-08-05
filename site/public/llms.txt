@@ -23,7 +23,7 @@ Ogre converts HTML and CSS to images in pure Go. No Chrome, no Node, no CGo. Sin
 - `net/http` handler integration
 - Environment variable configuration
 - Pure Go — no CGo, no external binaries, `CGO_ENABLED=0`
-- 95%+ pixel accuracy vs Satori
+- 98%+ pixel accuracy vs Satori
 
 ## Dependencies
 

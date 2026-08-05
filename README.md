@@ -36,7 +36,7 @@
 - HTTP server with LRU caching, rate limiting, templates
 - Go library with `http.Handler` integration
 - Tailwind filter and transform classes (blur, scale, rotate, etc.)
-- 95%+ pixel accuracy vs Satori across 25 test fixtures
+- 98%+ pixel accuracy vs Satori across 25 test fixtures
 
 ## Quick Start
 

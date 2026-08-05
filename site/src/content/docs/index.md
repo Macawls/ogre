@@ -51,17 +51,7 @@ Dynamic image generation (OG cards, social previews, certificates, invoices, pre
 - **Agent-friendly.** One-command install, JSON HTTP API, `llms.txt` + `llms-full.txt` served alongside the docs, and a [public instance](https://ogre-api.macawls.dev) for experiments. Feed HTML in, get bytes out — no browser fleet to manage.
 - **Tailwind built-in.** Utility classes resolve directly (v3 default, v4 opt-in). No build step, no Tailwind CLI.
 
-How Ogre compares to Satori:
-
-| | Ogre | Satori |
-|---|---|---|
-| Binary | 11 MB static binary | JavaScript runtime required |
-| Simple render | 0.03–0.08 ms | 0.3–2.5 ms |
-| Complex render | 3–8 ms | 4–17 ms |
-| Output | SVG, PNG, JPEG | SVG only |
-| Use as library | `go get`, one function | npm package |
-
-Render times measured on AMD Ryzen 5 5600H, 1200x630 renders, both producing SVG. Full benchmark data in [Satori Comparison](/advanced/satori-comparison/).
+For a side-by-side with Satori — feature matrix, benchmark numbers, and pixel-accuracy scores — see the [Satori Comparison](/advanced/satori-comparison/) page.
 
 ## Design goals
 
