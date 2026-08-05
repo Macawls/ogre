@@ -24,7 +24,7 @@ Ogre and [Satori](https://github.com/vercel/satori) solve the same problem — H
 
 ## Render performance
 
-Measured on AMD Ryzen 5 5600H, 1200×630 SVG output, 25 fixtures in `test/fixtures/`. Ogre numbers from `go test -bench=BenchmarkRenderSVG`; Satori numbers from `test/satori-reference/bench.ts` (20 iterations per fixture, warm renderer).
+Measured on AMD Ryzen 5 5600H, 1200×630 SVG output, 25 fixtures in `test/fixtures/`. Ogre numbers from `go test -bench=BenchmarkRenderSVG`; Satori numbers from `test/satori-reference/bench.ts` (20 iterations per fixture, warm renderer). For Ogre's PNG numbers, memory characteristics, and how to reproduce on your own hardware, see the [Performance](/reference/performance/) page.
 
 **Summary:** Ogre is faster than Satori on every fixture. Median ratio ~5×, range 2.2× to 26×.
 

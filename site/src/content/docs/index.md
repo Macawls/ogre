@@ -51,7 +51,7 @@ Dynamic image generation (OG cards, social previews, certificates, invoices, pre
 - **Agent-friendly.** One-command install, JSON HTTP API, `llms.txt` + `llms-full.txt` served alongside the docs, and a [public instance](https://ogre-api.macawls.dev) for experiments. Feed HTML in, get bytes out — no browser fleet to manage.
 - **Tailwind built-in.** Utility classes resolve directly (v3 default, v4 opt-in). No build step, no Tailwind CLI.
 
-For a side-by-side with Satori — feature matrix, benchmark numbers, and pixel-accuracy scores — see the [Satori Comparison](/advanced/satori-comparison/) page.
+See [Performance](/reference/performance/) for render times and memory numbers, or [Satori Comparison](/advanced/satori-comparison/) for a side-by-side with Satori.
 
 ## Design goals
 

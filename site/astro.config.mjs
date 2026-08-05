@@ -63,6 +63,7 @@ export default defineConfig({
 						{ label: 'HTTP Endpoints', slug: 'reference/http' },
 						{ label: 'CSS Properties', slug: 'reference/css' },
 						{ label: 'Tailwind Classes', slug: 'reference/tailwind' },
+						{ label: 'Performance', slug: 'reference/performance' },
 						{ label: 'Architecture', slug: 'advanced/architecture' },
 						{ label: 'Satori Comparison', slug: 'advanced/satori-comparison' },
 						{ label: 'Changelog', slug: 'advanced/changelog' },
