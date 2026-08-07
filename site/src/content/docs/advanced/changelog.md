@@ -5,6 +5,23 @@ description: All notable changes to Ogre, generated from conventional commit his
 
 See [GitHub Releases](https://github.com/macawls/ogre/releases) for downloadable binaries and detailed release notes.
 
+## [3.2.0] - 2026-08-07
+
+### Documentation
+
+- Add WebAssembly guide with live demo
+- Make install page easier to skim
+- Per-OS install sections and soften intro identity
+- Add dedicated Performance page under Reference
+- Refresh Satori comparison with re-measured benchmarks
+- Sync API contracts with code
+- Reposition around Ogre's own strengths and add slides use case
+- Update changelog for v3.1.0
+
+### Features
+
+- Ship ogre.wasm as release artifact
+
 ## [3.1.0] - 2026-07-30
 
 ### Documentation
