@@ -25,3 +25,40 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  changelog:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync CHANGELOG to site
+        run: |
+          {
+            printf -- '---\n'
+            printf 'title: Changelog\n'
+            printf 'description: All notable changes to Ogre, generated from conventional commit history.\n'
+            printf -- '---\n\n'
+            printf 'See [GitHub Releases](https://github.com/macawls/ogre/releases) for downloadable binaries and detailed release notes.\n\n'
+            tail -n +4 CHANGELOG.md
+          } > site/src/content/docs/advanced/changelog.md
+
+      - name: Commit changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md site/src/content/docs/advanced/changelog.md
+          git diff --cached --quiet && exit 0
+          git commit -m "docs: update changelog for ${GITHUB_REF_NAME}"
+          git push origin HEAD:main
