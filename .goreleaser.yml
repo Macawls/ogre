@@ -1,3 +1,4 @@
+version: 2
 project_name: ogre
 
 builds:
@@ -16,13 +17,35 @@ builds:
       - amd64
       - arm64
 
+  - id: wasm
+    main: ./cmd/wasm
+    binary: ogre
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+    goos:
+      - js
+    goarch:
+      - wasm
+
 archives:
   - id: default
-    format: tar.gz
+    ids:
+      - ogre
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: wasm
+    ids:
+      - wasm
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_wasm"
+    files:
+      - none*
 
 checksum:
   name_template: checksums.txt
