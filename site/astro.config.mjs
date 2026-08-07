@@ -45,6 +45,7 @@ export default defineConfig({
 						{ label: 'CLI', slug: 'guides/cli' },
 						{ label: 'HTTP Server', slug: 'guides/server' },
 						{ label: 'Docker', slug: 'guides/docker' },
+						{ label: 'WebAssembly', slug: 'guides/wasm', badge: { text: 'WIP', variant: 'caution' } },
 					],
 				},
 				{

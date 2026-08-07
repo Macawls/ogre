@@ -1,0 +1,480 @@
+---
+---
+
+<div class="not-content wd-root">
+	<div class="wd-options">
+		<div class="wd-row">
+			<label class="wd-label">Background</label>
+			<div class="wd-seg" id="wd-swatches">
+				<button
+					type="button"
+					class="wd-seg-btn wd-seg-btn--active"
+					data-g="linear-gradient(135deg,#0d1117,#161b22)"
+					aria-label="GitHub dark"
+				>
+					<span class="wd-swatch" style="background:linear-gradient(135deg,#0d1117,#161b22)"></span>
+				</button>
+				<button
+					type="button"
+					class="wd-seg-btn"
+					data-g="linear-gradient(135deg,#1a0b2e,#2d1b69)"
+					aria-label="Deep purple"
+				>
+					<span class="wd-swatch" style="background:linear-gradient(135deg,#1a0b2e,#2d1b69)"></span>
+				</button>
+				<button
+					type="button"
+					class="wd-seg-btn"
+					data-g="linear-gradient(135deg,#0f172a,#1e3a8a)"
+					aria-label="Deep blue"
+				>
+					<span class="wd-swatch" style="background:linear-gradient(135deg,#0f172a,#1e3a8a)"></span>
+				</button>
+				<button
+					type="button"
+					class="wd-seg-btn"
+					data-g="linear-gradient(135deg,#052e16,#14532d)"
+					aria-label="Forest"
+				>
+					<span class="wd-swatch" style="background:linear-gradient(135deg,#052e16,#14532d)"></span>
+				</button>
+				<button
+					type="button"
+					class="wd-seg-btn"
+					data-g="linear-gradient(135deg,#1c0d0f,#4c0519)"
+					aria-label="Rose"
+				>
+					<span class="wd-swatch" style="background:linear-gradient(135deg,#1c0d0f,#4c0519)"></span>
+				</button>
+			</div>
+			<div class="wd-fields">
+				<label class="wd-field">
+					<span class="wd-field-label">W</span>
+					<input id="wd-width" type="number" value="1200" min="100" max="4096" class="wd-input" />
+				</label>
+				<span class="wd-times">&times;</span>
+				<label class="wd-field">
+					<span class="wd-field-label">H</span>
+					<input id="wd-height" type="number" value="630" min="100" max="4096" class="wd-input" />
+				</label>
+			</div>
+			<button id="wd-download" class="wd-btn" disabled>Download PNG</button>
+		</div>
+	</div>
+
+	<div class="wd-split">
+		<div class="wd-editor-pane">
+			<div class="wd-inputs">
+				<label class="wd-input-label">
+					<span>Title</span>
+					<input
+						id="wd-title"
+						type="text"
+						value="The React Framework for the Web"
+						class="wd-text"
+					/>
+				</label>
+				<label class="wd-input-label">
+					<span>Subtitle</span>
+					<input
+						id="wd-subtitle"
+						type="text"
+						value="Used by some of the world's largest companies, Next.js enables you to create full-stack web applications."
+						class="wd-text"
+					/>
+				</label>
+			</div>
+			<div class="wd-meta" id="wd-meta">Loading WebAssembly…</div>
+		</div>
+		<div class="wd-preview-pane">
+			<div class="wd-preview-inner">
+				<div class="wd-img-container" id="wd-preview">
+					<div class="wd-placeholder">Waiting for renderer…</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="/playground/wasm_exec.js" is:inline></script>
+<script is:inline>
+	(function () {
+		const preview = document.getElementById("wd-preview");
+		const meta = document.getElementById("wd-meta");
+		const downloadBtn = document.getElementById("wd-download");
+		const titleInput = document.getElementById("wd-title");
+		const subtitleInput = document.getElementById("wd-subtitle");
+		const widthInput = document.getElementById("wd-width");
+		const heightInput = document.getElementById("wd-height");
+		const swatches = document.getElementById("wd-swatches");
+
+		let ready = false;
+		let gradient = "linear-gradient(135deg,#0d1117,#161b22)";
+
+		function template(title, subtitle, grad) {
+			const safe = (s) =>
+				s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+			return `<div style="display:flex;flex-direction:column;width:100%;height:100%;background-image:${grad};padding:56px 64px;justify-content:space-between">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:16px">
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='22' fill='%23000000'/%3E%3Cpath fill='%23ffffff' d='M22 12 L34 32 L10 32 Z'/%3E%3C/svg%3E" style="width:44px;height:44px;border-radius:22px" />
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:20px;color:#58a6ff">vercel</div>
+        <div style="font-size:20px;color:#8b949e">/</div>
+        <div style="font-size:20px;font-weight:700;color:#f0f6fc">next.js</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:6px;background-color:#21262d;padding:8px 14px;border-radius:6px;border:1px solid #30363d">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e3b341' d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z'/%3E%3C/svg%3E" style="width:16px;height:16px" />
+        <div style="color:#c9d1d9;font-size:14px;font-weight:500">128k</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;background-color:#21262d;padding:8px 14px;border-radius:6px;border:1px solid #30363d">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238b949e' d='M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm12 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm-6 12a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM6 9v1.5A4.5 4.5 0 0 0 10.5 15h3a4.5 4.5 0 0 0 4.5-4.5V9'/%3E%3C/svg%3E" style="width:16px;height:16px" />
+        <div style="color:#c9d1d9;font-size:14px;font-weight:500">14.2k</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column">
+    <div style="font-size:44px;font-weight:700;color:#f0f6fc;line-height:1.15">${safe(title)}</div>
+    <div style="font-size:18px;color:#8b949e;margin-top:14px;line-height:1.5">${safe(subtitle)}</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:24px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:14px;height:14px;border-radius:7px;background-color:#3178c6"></div>
+      <div style="color:#8b949e;font-size:15px">TypeScript</div>
+    </div>
+    <div style="color:#8b949e;font-size:15px">MIT License</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:8px;height:8px;border-radius:4px;background-color:#3fb950"></div>
+      <div style="color:#8b949e;font-size:15px">Updated 2 hours ago</div>
+    </div>
+  </div>
+</div>`;
+		}
+
+
+		function dims() {
+			return {
+				w: Math.max(100, parseInt(widthInput.value, 10) || 1200),
+				h: Math.max(100, parseInt(heightInput.value, 10) || 630),
+			};
+		}
+
+		function render() {
+			if (!ready) return;
+			const { w, h } = dims();
+			const html = template(
+				titleInput.value || " ",
+				subtitleInput.value || " ",
+				gradient
+			);
+			const start = performance.now();
+			let result;
+			try {
+				result = window.Ogre.render(html, { width: w, height: h, format: "svg" });
+			} catch (e) {
+				meta.textContent = "render threw: " + e.message;
+				return;
+			}
+			const elapsed = (performance.now() - start).toFixed(1);
+			if (!result || result.error) {
+				const msg = (result && result.error) || "no result";
+				preview.innerHTML = `<div class="wd-error">${msg}</div>`;
+				meta.textContent = "error";
+				return;
+			}
+			const blob = new Blob([result.svg], { type: "image/svg+xml" });
+			const url = URL.createObjectURL(blob);
+			const prevUrl = preview.dataset.blobUrl;
+			preview.innerHTML = `<img class="wd-img" src="${url}" alt="preview" />`;
+			preview.dataset.blobUrl = url;
+			if (prevUrl) URL.revokeObjectURL(prevUrl);
+			meta.textContent = `${elapsed} ms · ${(blob.size / 1024).toFixed(1)} KB SVG · ${w}×${h}`;
+		}
+
+		function downloadPng() {
+			if (!ready) return;
+			const { w, h } = dims();
+			const html = template(titleInput.value, subtitleInput.value, gradient);
+			const result = window.Ogre.render(html, { width: w, height: h, format: "png" });
+			if (!result || result.error) {
+				meta.textContent = "png: " + ((result && result.error) || "no result");
+				return;
+			}
+			const blob = new Blob([result.bytes], { type: "image/png" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = "ogre-card.png";
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			URL.revokeObjectURL(url);
+			meta.textContent = `${(blob.size / 1024).toFixed(1)} KB PNG downloaded`;
+		}
+
+		titleInput.addEventListener("input", render);
+		subtitleInput.addEventListener("input", render);
+		widthInput.addEventListener("input", render);
+		heightInput.addEventListener("input", render);
+		swatches.addEventListener("click", (e) => {
+			const btn = e.target.closest(".wd-seg-btn");
+			if (!btn) return;
+			swatches
+				.querySelectorAll(".wd-seg-btn")
+				.forEach((el) => el.classList.remove("wd-seg-btn--active"));
+			btn.classList.add("wd-seg-btn--active");
+			gradient = btn.dataset.g;
+			render();
+		});
+		downloadBtn.addEventListener("click", downloadPng);
+
+		async function boot() {
+			try {
+				const go = new Go();
+				const response = await fetch("/playground/ogre.wasm");
+				if (!response.ok) throw new Error("HTTP " + response.status);
+				const buf = await response.arrayBuffer();
+				const { instance } = await WebAssembly.instantiate(buf, go.importObject);
+				go.run(instance);
+				for (let i = 0; i < 100 && !window.Ogre; i++) {
+					await new Promise((resolve) => setTimeout(resolve, 10));
+				}
+				if (!window.Ogre) throw new Error("Ogre global not registered");
+				ready = true;
+				downloadBtn.disabled = false;
+				render();
+			} catch (e) {
+				meta.textContent = "failed to load: " + e.message;
+			}
+		}
+
+		boot();
+	})();
+</script>
+
+<style>
+	.wd-root {
+		max-width: 100%;
+		margin: 1rem 0 1.5rem;
+		font-family: var(--sl-font-system);
+	}
+	.wd-root *,
+	.wd-root *::before,
+	.wd-root *::after {
+		box-sizing: border-box;
+	}
+
+	.wd-options {
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 10px;
+		background: var(--sl-color-gray-6);
+		padding: 12px 16px;
+		margin-bottom: 10px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.wd-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex-wrap: wrap;
+	}
+	.wd-label {
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--sl-color-gray-3);
+		width: 64px;
+		flex-shrink: 0;
+	}
+
+	.wd-seg {
+		display: inline-flex;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 8px;
+		overflow: hidden;
+		background: var(--sl-color-black);
+	}
+	.wd-seg-btn {
+		appearance: none;
+		border: none;
+		background: transparent;
+		padding: 6px 10px;
+		cursor: pointer;
+		transition: background 0.12s;
+		border-right: 1px solid var(--sl-color-hairline-light);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.wd-seg-btn:last-child { border-right: none; }
+	.wd-seg-btn:hover { background: var(--sl-color-gray-5); }
+	.wd-seg-btn--active { background: var(--sl-color-accent-low); }
+	.wd-swatch {
+		display: block;
+		width: 26px;
+		height: 16px;
+		border-radius: 3px;
+	}
+
+	.wd-fields {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-left: 4px;
+	}
+	.wd-field {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.wd-field-label {
+		font-size: 0.68rem;
+		font-weight: 600;
+		color: var(--sl-color-gray-3);
+		text-transform: uppercase;
+		letter-spacing: 0.3px;
+	}
+	.wd-input {
+		width: 60px;
+		font-family: var(--sl-font-system-mono);
+		font-size: 0.78rem;
+		padding: 4px 8px;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 6px;
+		background: var(--sl-color-black);
+		color: var(--sl-color-white);
+		outline: none;
+		transition: border-color 0.12s;
+		-moz-appearance: textfield;
+	}
+	.wd-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+	.wd-input:focus { border-color: var(--sl-color-accent); }
+	.wd-times { font-size: 0.72rem; color: var(--sl-color-gray-3); }
+
+	.wd-btn {
+		appearance: none;
+		border: 1px solid var(--sl-color-hairline-light);
+		background: var(--sl-color-black);
+		font-family: var(--sl-font-system-mono);
+		font-size: 0.72rem;
+		font-weight: 500;
+		padding: 6px 12px;
+		border-radius: 6px;
+		color: var(--sl-color-gray-2);
+		cursor: pointer;
+		margin-left: auto;
+		transition: color 0.12s, border-color 0.12s;
+	}
+	.wd-btn:hover:not(:disabled) {
+		color: var(--sl-color-white);
+		border-color: var(--sl-color-gray-3);
+	}
+	.wd-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+	.wd-split {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 10px;
+		overflow: hidden;
+	}
+	.wd-editor-pane {
+		border-bottom: 1px solid var(--sl-color-hairline-light);
+		padding: 12px 16px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		background: var(--sl-color-black);
+	}
+	.wd-inputs {
+		display: grid;
+		grid-template-columns: 1fr 2fr;
+		gap: 12px;
+	}
+	@media (max-width: 640px) {
+		.wd-inputs {
+			grid-template-columns: 1fr;
+		}
+	}
+	.wd-input-label {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.wd-input-label span {
+		font-size: 0.68rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.4px;
+		color: var(--sl-color-gray-3);
+	}
+	.wd-text {
+		font-family: var(--sl-font-system);
+		font-size: 0.85rem;
+		padding: 8px 10px;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 6px;
+		background: var(--sl-color-gray-6);
+		color: var(--sl-color-white);
+		outline: none;
+		transition: border-color 0.12s;
+	}
+	.wd-text:focus { border-color: var(--sl-color-accent); }
+
+	.wd-meta {
+		font-family: var(--sl-font-system-mono);
+		font-size: 0.72rem;
+		color: var(--sl-color-gray-3);
+	}
+
+	.wd-preview-pane {
+		background: var(--sl-color-gray-6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 16px;
+		height: 280px;
+		overflow: hidden;
+	}
+	.wd-preview-inner {
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.wd-img-container {
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.wd-img-container :global(.wd-img) {
+		display: block;
+		max-height: 100%;
+		max-width: 100%;
+		width: auto;
+		height: auto;
+		border-radius: 6px;
+		box-shadow: 0 2px 20px rgba(0, 0, 0, 0.18);
+	}
+	.wd-placeholder {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--sl-color-gray-3);
+		font-size: 0.8rem;
+	}
+	.wd-error {
+		color: #f44336;
+		font-size: 0.78rem;
+		font-family: var(--sl-font-system-mono);
+		padding: 12px;
+		white-space: pre-wrap;
+	}
+
+</style>

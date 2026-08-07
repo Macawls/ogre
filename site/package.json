@@ -3,8 +3,10 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "predev": "./build-wasm.sh",
     "dev": "astro dev",
     "start": "astro dev",
+    "prebuild": "./build-wasm.sh",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"

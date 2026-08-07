@@ -1,0 +1,233 @@
+---
+title: WebAssembly
+description: Run Ogre in the browser via WebAssembly — same renderer, no server.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import WasmDemo from "../../../components/WasmDemo.astro";
+
+<Aside type="caution" title="Work in progress">
+  The WebAssembly build and its JS surface are stabilizing.
+</Aside>
+
+<WasmDemo />
+
+`ogre.wasm` is Ogre compiled for `GOOS=js GOARCH=wasm`. It exposes the same renderer used by the CLI and HTTP server, called through a JavaScript API. Output formats are SVG, PNG, and JPEG.
+
+Booting the wasm requires Go's `wasm_exec.js`, which ships with the Go toolchain. See the [Go WebAssembly page](https://go.dev/wiki/WebAssembly) for details.
+
+## The JavaScript surface
+
+Once loaded, the wasm registers `window.Ogre`:
+
+```ts
+Ogre.render(html: string, options?: Options): RenderResult | { error: string }
+
+Ogre.createRenderer(): {
+  loadFont(source: FontSource): { ok: true } | { error: string }
+  render(html: string, options?: Options): RenderResult | { error: string }
+  free(): void
+}
+
+type Options = {
+  width?: number             // default 1200
+  height?: number            // default 630
+  format?: "svg" | "png" | "jpeg"  // default "svg"
+  quality?: number           // JPEG only, default 90
+  fonts?: FontSource[]
+  emojiProvider?: "twemoji" | "none"
+  maxElements?: number
+  tailwindVersion?: "v3" | "v4"
+}
+
+type FontSource = {
+  name: string
+  weight?: number
+  style?: string
+  data?: Uint8Array          // preferred
+  url?: string               // fetched at load time
+}
+
+type RenderResult = {
+  format: "svg" | "png" | "jpeg"
+  contentType: string
+  width: number
+  height: number
+  svg?: string               // when format === "svg"
+  bytes?: Uint8Array         // when format === "png" | "jpeg"
+}
+```
+
+## Bootstrapping
+
+Serve `ogre.wasm` and `wasm_exec.js` from the same origin. This is the minimum:
+
+```html
+<script src="/wasm_exec.js"></script>
+<script type="module">
+  const go = new Go();
+  const { instance } = await WebAssembly.instantiateStreaming(
+    fetch("/ogre.wasm"),
+    go.importObject,
+  );
+  go.run(instance);
+  // window.Ogre is now available
+</script>
+```
+
+For servers that don't set `application/wasm`, swap `instantiateStreaming` for `WebAssembly.instantiate(await (await fetch("/ogre.wasm")).arrayBuffer(), ...)`.
+
+## Live preview from a text input
+
+Debounce input events and re-render on each keystroke. This is the pattern used by the demo at the top of the page.
+
+```js
+const editor = document.getElementById("editor");
+const preview = document.getElementById("preview");
+
+let timer;
+editor.addEventListener("input", () => {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    const { svg } = Ogre.render(editor.value, { width: 1200, height: 630 });
+    preview.innerHTML = svg;
+  }, 100);
+});
+```
+
+## Download as PNG
+
+Pass `format: "png"`, wrap the returned `Uint8Array` in a `Blob`, and trigger a download.
+
+```js
+function exportCard(html) {
+  const result = Ogre.render(html, { width: 1200, height: 630, format: "png" });
+  if (result.error) throw new Error(result.error);
+  const blob = new Blob([result.bytes], { type: "image/png" });
+  const url = URL.createObjectURL(blob);
+  const link = Object.assign(document.createElement("a"), {
+    href: url,
+    download: "card.png",
+  });
+  link.click();
+  URL.revokeObjectURL(url);
+}
+```
+
+## Render multiple images with a shared renderer
+
+`Ogre.createRenderer()` returns a renderer whose font manager is reused across calls. Prefer this over `Ogre.render` when rendering more than a couple of images in a row.
+
+```js
+const ogre = Ogre.createRenderer();
+const items = [
+  { title: "next.js",  color: "sky" },
+  { title: "vite",     color: "yellow" },
+  { title: "esbuild",  color: "orange" },
+];
+
+const html = ({ title, color }) => `
+  <div class="flex w-full h-full items-center justify-center bg-${color}-500">
+    <div class="text-4xl font-bold text-white">${title}</div>
+  </div>
+`;
+
+for (const item of items) {
+  const { svg } = ogre.render(html(item), { width: 400, height: 120 });
+  document.querySelector("#grid").insertAdjacentHTML("beforeend", svg);
+}
+```
+
+## Fall back to wasm when the server is unavailable
+
+Try the HTTP server first. If the request fails or is rate-limited, render locally with the wasm.
+
+```js
+async function render(html, opts) {
+  try {
+    const response = await fetch("/render", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html, ...opts }),
+    });
+    if (response.ok) return await response.blob();
+    if (response.status !== 429) throw new Error("HTTP " + response.status);
+  } catch (_) {
+    // network error or rate limit — fall through
+  }
+  const result = Ogre.render(html, opts);
+  if (result.error) throw new Error(result.error);
+  return opts.format === "svg" || !opts.format
+    ? new Blob([result.svg], { type: "image/svg+xml" })
+    : new Blob([result.bytes], { type: `image/${result.format}` });
+}
+```
+
+## Lazy-load on first use
+
+The wasm is ~3 MB brotli-compressed. To avoid loading it on initial page render, instantiate it on demand and cache the promise.
+
+```js
+let ogrePromise = null;
+function loadOgre() {
+  if (ogrePromise) return ogrePromise;
+  ogrePromise = (async () => {
+    const go = new Go();
+    const { instance } = await WebAssembly.instantiateStreaming(
+      fetch("/ogre.wasm"),
+      go.importObject,
+    );
+    go.run(instance);
+    while (!window.Ogre) await new Promise((resolve) => setTimeout(resolve, 10));
+  })();
+  return ogrePromise;
+}
+
+document.getElementById("preview-btn").addEventListener("click", async () => {
+  await loadOgre();
+  const { svg } = Ogre.render(document.getElementById("html").value);
+  document.getElementById("out").innerHTML = svg;
+});
+```
+
+## Register a custom font
+
+Fetch the font file, pass its bytes to `loadFont`, then render with `font-family` set to the registered name.
+
+```js
+const ogre = Ogre.createRenderer();
+
+const fontBuffer = await fetch("/fonts/Inter-Bold.woff2").then((response) =>
+  response.arrayBuffer(),
+);
+ogre.loadFont({ name: "Inter", weight: 700, data: new Uint8Array(fontBuffer) });
+
+const { svg } = ogre.render(
+  `<div class="w-full h-full bg-black text-white flex items-center justify-center"
+        style="font-family: Inter">
+     <div class="text-6xl font-bold">Rendered client-side</div>
+   </div>`,
+  { width: 1200, height: 630 },
+);
+```
+
+`loadFont` also accepts `{ url }`; the wasm fetches and registers the bytes.
+
+## Payload size
+
+Measured against the current `-ldflags="-s -w"` build:
+
+| Encoding | Transferred |
+| --- | --- |
+| Identity (no compression) | 17.4 MB |
+| Gzip -9 | 4.35 MB |
+| Zstd -19 | 3.30 MB |
+| **Brotli -11** | **3.10 MB** |
+
+Static servers without compression (for example `python3 -m http.server`) send the full 17 MB. Cloudflare, Vercel, GitHub Pages, and Netlify serve `.wasm` with brotli by default; the transferred size in those environments is ~3.1 MB.
+
+TinyGo is not supported. Ogre depends on `github.com/go-text/typesetting`, which uses reflection features TinyGo does not implement.
+
+## Alternatives
+
+For server-side rendering — queues, scheduled jobs, backend services — see the [HTTP server](/guides/server/) and [Docker](/guides/docker/) guides. The Go binary is smaller than the wasm, boots faster, and does not need to be shipped to each client.
