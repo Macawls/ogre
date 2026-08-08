@@ -5,6 +5,22 @@ description: All notable changes to Ogre, generated from conventional commit his
 
 See [GitHub Releases](https://github.com/macawls/ogre/releases) for downloadable binaries and detailed release notes.
 
+## [3.2.1] - 2026-08-08
+
+### Bug Fixes
+
+- Use v3 module path (#17)
+
+### CI
+
+- Chain changelog job after release in a single workflow
+- Fetch ogre.wasm from GitHub releases when source is absent
+- Add Go to Nixpacks setup phase
+
+### Documentation
+
+- Update changelog for v3.2.0
+
 ## [3.2.0] - 2026-08-07
 
 ### Documentation
