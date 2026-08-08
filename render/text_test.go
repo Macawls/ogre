@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/macawls/ogre/font"
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/font"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func TestRenderTextBasic(t *testing.T) {

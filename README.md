@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/Macawls/ogre/actions/workflows/test.yml"><img src="https://github.com/Macawls/ogre/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/Macawls/ogre/releases"><img src="https://img.shields.io/github/v/release/Macawls/ogre" alt="Release"></a>
-  <a href="https://pkg.go.dev/github.com/macawls/ogre"><img src="https://pkg.go.dev/badge/github.com/macawls/ogre.svg" alt="Go Reference"></a>
+  <a href="https://pkg.go.dev/github.com/macawls/ogre/v3"><img src="https://pkg.go.dev/badge/github.com/macawls/ogre/v3.svg" alt="Go Reference"></a>
   <a href="https://github.com/Macawls/ogre/pkgs/container/ogre"><img src="https://img.shields.io/badge/ghcr.io-ogre-blue" alt="GHCR"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Macawls/ogre" alt="License"></a>
 </p>
@@ -43,7 +43,7 @@
 ### As a CLI
 
 ```bash
-go install github.com/macawls/ogre/cmd/ogre@latest
+go install github.com/macawls/ogre/v3/cmd/ogre@latest
 
 # Render HTML file to SVG
 ogre --render template.html --output og.svg
@@ -77,7 +77,7 @@ package main
 import (
     "os"
 
-    "github.com/macawls/ogre"
+    "github.com/macawls/ogre/v3"
 )
 
 func main() {

@@ -6,9 +6,9 @@ import (
 	"image/png"
 	"testing"
 
-	"github.com/macawls/ogre/layout"
-	"github.com/macawls/ogre/parse"
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/layout"
+	"github.com/macawls/ogre/v3/parse"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func buildTestTree(cs *style.ComputedStyle, w, h float64) (*layout.LayoutTree, map[*parse.Node]*style.ComputedStyle) {

@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"syscall/js"
 
-	"github.com/macawls/ogre"
+	"github.com/macawls/ogre/v3"
 )
 
 func main() {

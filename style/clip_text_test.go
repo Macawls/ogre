@@ -3,7 +3,7 @@ package style
 import (
 	"testing"
 
-	"github.com/macawls/ogre/parse"
+	"github.com/macawls/ogre/v3/parse"
 )
 
 func TestTailwindBackgroundClipText(t *testing.T) {

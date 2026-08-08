@@ -31,7 +31,7 @@ package main
 import (
     "os"
 
-    "github.com/macawls/ogre"
+    "github.com/macawls/ogre/v3"
 )
 
 func main() {

@@ -27,7 +27,7 @@ Ogre handles this. Write HTML with inline styles or Tailwind classes, pass it to
 The canvas size is arbitrary — defaults are 1200×630 (the OG standard), but set `Width` and `Height` to whatever you need. For example, `1920×1080` for HD presentation slides, or a custom size for a certificate or invoice.
 
 ```bash
-go install github.com/macawls/ogre/cmd/ogre@latest
+go install github.com/macawls/ogre/v3/cmd/ogre@latest
 ```
 
 ## Quick look

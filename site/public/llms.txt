@@ -6,8 +6,8 @@ Ogre converts HTML and CSS to images in pure Go. No Chrome, no Node, no CGo. Sin
 
 ## Use it as
 
-- Go library: `go get github.com/macawls/ogre`
-- CLI: `go install github.com/macawls/ogre/cmd/ogre@latest`
+- Go library: `go get github.com/macawls/ogre/v3`
+- CLI: `go install github.com/macawls/ogre/v3/cmd/ogre@latest`
 - HTTP server: `ogre --serve --port 3000`
 - Docker: `docker run -p 3000:3000 ghcr.io/macawls/ogre:latest`
 

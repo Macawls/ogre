@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/macawls/ogre/layout"
-	"github.com/macawls/ogre/parse"
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/layout"
+	"github.com/macawls/ogre/v3/parse"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func buildSimpleTree(pn *parse.Node, styles map[*parse.Node]*style.ComputedStyle, w, h float64) *layout.LayoutTree {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func TestUniformBorder(t *testing.T) {

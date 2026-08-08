@@ -3,8 +3,8 @@ package layout
 import (
 	"testing"
 
-	"github.com/macawls/ogre/parse"
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/parse"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func dummyMeasure(pn *parse.Node, text string, cs *style.ComputedStyle, maxWidth float64) (float64, float64) {

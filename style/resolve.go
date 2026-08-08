@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/macawls/ogre/parse"
+	"github.com/macawls/ogre/v3/parse"
 )
 
 const defaultRootFontSize = 16.0

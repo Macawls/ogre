@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/style"
 )
 
 // RenderOverflowClip generates the corresponding output format.

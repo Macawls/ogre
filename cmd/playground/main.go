@@ -5,7 +5,7 @@ package main
 import (
 	"syscall/js"
 
-	"github.com/macawls/ogre"
+	"github.com/macawls/ogre/v3"
 )
 
 var renderer *ogre.Renderer
