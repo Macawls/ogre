@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/style"
 )
 
 type borderSide struct {
@@ -139,7 +139,7 @@ func renderMixedBorders(sides [4]borderSide, cs *style.ComputedStyle, x, y, w, h
 func renderMixedLines(b *strings.Builder, sides [4]borderSide, x, y, w, h float64) {
 	type lineSpec struct {
 		x1, y1, x2, y2 float64
-		side            borderSide
+		side           borderSide
 	}
 
 	lines := []lineSpec{

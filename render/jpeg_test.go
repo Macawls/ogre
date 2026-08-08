@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func TestRenderJPEG_MagicBytes(t *testing.T) {

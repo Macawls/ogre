@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/macawls/ogre/font"
-	"github.com/macawls/ogre/layout"
-	"github.com/macawls/ogre/parse"
-	"github.com/macawls/ogre/render"
-	"github.com/macawls/ogre/style"
+	"github.com/macawls/ogre/v3/font"
+	"github.com/macawls/ogre/v3/layout"
+	"github.com/macawls/ogre/v3/parse"
+	"github.com/macawls/ogre/v3/render"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func toFontVariations(axes []style.VariationAxis) []font.Variation {

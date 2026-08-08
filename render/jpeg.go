@@ -6,10 +6,10 @@ import (
 	"image/color"
 	"image/draw"
 
-	fontpkg "github.com/macawls/ogre/font"
-	"github.com/macawls/ogre/layout"
-	"github.com/macawls/ogre/parse"
-	"github.com/macawls/ogre/style"
+	fontpkg "github.com/macawls/ogre/v3/font"
+	"github.com/macawls/ogre/v3/layout"
+	"github.com/macawls/ogre/v3/parse"
+	"github.com/macawls/ogre/v3/style"
 )
 
 // RenderJPEG generates the corresponding output format.

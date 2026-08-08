@@ -61,7 +61,7 @@ sha256sum -c checksums.txt --ignore-missing
 If you have Go 1.25 or later:
 
 ```bash
-go install github.com/macawls/ogre/cmd/ogre@latest
+go install github.com/macawls/ogre/v3/cmd/ogre@latest
 ```
 
 This installs the `ogre` binary to `$GOPATH/bin` (usually `~/go/bin`).
@@ -69,13 +69,13 @@ This installs the `ogre` binary to `$GOPATH/bin` (usually `~/go/bin`).
 ## Go library
 
 ```bash
-go get github.com/macawls/ogre@latest
+go get github.com/macawls/ogre/v3@latest
 ```
 
 Then import it:
 
 ```go
-import "github.com/macawls/ogre"
+import "github.com/macawls/ogre/v3"
 ```
 
 ## Docker

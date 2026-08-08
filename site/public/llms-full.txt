@@ -10,10 +10,10 @@ Ogre converts HTML and CSS to images (SVG, PNG, JPEG) in pure Go. It is designed
 
 ```bash
 # CLI
-go install github.com/macawls/ogre/cmd/ogre@latest
+go install github.com/macawls/ogre/v3/cmd/ogre@latest
 
 # Library
-go get github.com/macawls/ogre
+go get github.com/macawls/ogre/v3
 ```
 
 ## Go Library API

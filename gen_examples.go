@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/macawls/ogre"
-	"github.com/macawls/ogre/font"
+	"github.com/macawls/ogre/v3"
+	"github.com/macawls/ogre/v3/font"
 )
 
 func readTemplate(content, name string) string {

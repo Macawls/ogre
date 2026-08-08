@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/macawls/ogre/parse"
+	"github.com/macawls/ogre/v3/parse"
 )
 
 func approxEqual(a, b, epsilon float64) bool {

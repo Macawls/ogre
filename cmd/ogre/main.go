@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	ogre "github.com/macawls/ogre"
-	"github.com/macawls/ogre/server"
+	ogre "github.com/macawls/ogre/v3"
+	"github.com/macawls/ogre/v3/server"
 )
 
 func main() {

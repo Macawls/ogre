@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/image/font/gofont/goitalic"
 
-	"github.com/macawls/ogre"
+	"github.com/macawls/ogre/v3"
 )
 
 func TestCustomFont(t *testing.T) {

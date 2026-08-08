@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/macawls/ogre"
+	"github.com/macawls/ogre/v3"
 )
 
 func BenchmarkRenderSVG(b *testing.B) {
