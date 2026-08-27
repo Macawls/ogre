@@ -5,6 +5,16 @@ description: All notable changes to Ogre, generated from conventional commit his
 
 See [GitHub Releases](https://github.com/macawls/ogre/releases) for downloadable binaries and detailed release notes.
 
+## [3.3.0] - 2026-08-27
+
+### Documentation
+
+- Update changelog for v3.2.1
+
+### Features
+
+- Agent-optimized --help output
+
 ## [3.2.1] - 2026-08-08
 
 ### Bug Fixes

@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [3.3.0] - 2026-08-27
+
+### Documentation
+
+- Update changelog for v3.2.1
+
+### Features
+
+- Agent-optimized --help output
+
 ## [3.2.1] - 2026-08-08
 
 ### Bug Fixes
