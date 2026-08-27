@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	flag.Usage = usage
+
 	serve := flag.Bool("serve", false, "start HTTP server mode")
 	port := flag.Int("port", 3000, "server port")
 	render := flag.String("render", "", "path to HTML file to render")
@@ -103,4 +105,94 @@ func renderAndWrite(html, output string, width, height int, format, twVersion st
 		fmt.Fprintf(os.Stderr, "error writing file: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+const helpText = `ogre — HTML/CSS to image renderer (SVG, PNG, JPEG). Pure Go, no headless browser.
+
+Accepts the same HTML/CSS subset as Vercel Satori. Inline styles + Tailwind
+utility classes only — no external stylesheets, no <style> blocks.
+
+USAGE
+  ogre --html '<div style="…">…</div>' [flags]         # inline HTML
+  ogre --render page.html [flags]                       # file input
+  ogre --serve [--port N]                               # HTTP server
+
+FLAGS
+  Input (choose one):
+    --html    string  inline HTML source
+    --render  string  path to an HTML file
+    --serve           start HTTP server
+
+  Output:
+    --output  string  output file (required for png/jpeg; stdout for svg)
+    --format  string  svg | png | jpeg               (default svg)
+    --width   int     canvas width in px             (default 1200)
+    --height  int     canvas height in px            (default 630)
+
+  Tailwind:
+    --tailwind-version string   v3 | v4              (default v3)
+
+  Server:
+    --port    int     server port (with --serve)    (default 3000)
+
+EXAMPLES
+  # Inline HTML → PNG
+  ogre --html '<div class="flex w-full h-full items-center justify-center bg-blue-500 text-white text-6xl font-bold">Hello</div>' \
+       --format png --output card.png
+
+  # File → SVG on stdout
+  ogre --render card.html > card.svg
+
+  # HTTP server on port 8080
+  ogre --serve --port 8080
+
+WRITING HTML FOR OGRE (read this before generating markup)
+
+  Styling:
+    * Use inline style="…" attributes and Tailwind class="…" utilities.
+    * DO NOT emit <link rel="stylesheet" …>, <style> blocks, or a Tailwind
+      CDN <script> — Ogre parses inline attributes only. External CSS is
+      never fetched; <style>/<script> tag contents may render as text.
+    * No @media, :hover / :focus, ::before / ::after, animations,
+      transitions, or calc(). Values are resolved once, statically.
+
+  Layout — flexbox only (W3C spec):
+    * <div> defaults to display: block, rendered internally as
+      flex-direction: column with align-items: stretch.
+    * DO NOT use display: grid, grid-template-*, float, or columns —
+      grid falls through to the default (block/column-flex) and your
+      layout will drift.
+    * position: static | relative | absolute only. fixed and sticky are
+      not supported (they degrade silently).
+
+  Images (<img src> and background-image: url(…)):
+    * data: URIs (self-contained) — preferred for deterministic renders.
+    * http(s):// URLs — fetched with a 5s timeout, cached in-process.
+    * DO NOT use local file paths — they render a gray placeholder.
+    * No <picture>, srcset, or sizes — only <img src>.
+
+  Fonts:
+    * Ships with Go's default sans (regular + bold).
+    * Any Google Fonts family works by name — fetched on first use.
+    * DO NOT use @font-face — ignored. Pass custom fonts via the Go
+      Options.Fonts field or the HTTP "fonts" array instead.
+    * WOFF2 is not supported (use TTF, OTF, or WOFF).
+
+  Supported that agents often skip:
+    transform, transform-origin, filter (blur / grayscale / brightness),
+    box-shadow, text-shadow, clip-path, opacity, border-radius,
+    background-image linear-gradient / radial-gradient, object-fit,
+    line-clamp, emoji, RTL / bidi (Arabic, Hebrew, etc.).
+
+  Tailwind arbitrary values work: w-[123px], bg-[#ff5500], rotate-[15deg].
+  In v4, bg-(--brand) expands to background-color: var(--brand).
+
+FULL LLM CONTEXT
+  https://ogre.macawls.dev/llms-full.txt        (canonical digest)
+  https://ogre.macawls.dev/reference/css/       (property table)
+  https://ogre.macawls.dev/reference/tailwind/  (utility list)
+`
+
+func usage() {
+	fmt.Fprint(os.Stderr, helpText)
 }
