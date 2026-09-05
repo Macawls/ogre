@@ -17,6 +17,7 @@ export default defineConfig({
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/macawls/ogre' }],
 			components: {
 				Header: './src/components/Header.astro',
+				Head: './src/components/ExtraHead.astro',
 			},
 			head: [
 				{
@@ -32,7 +33,7 @@ export default defineConfig({
 				{
 					label: 'Overview',
 					items: [
-						{ label: 'Introduction', slug: '' },
+						{ label: 'Introduction', slug: 'docs' },
 						{ label: 'Installation', slug: 'getting-started/installation' },
 						{ label: 'Quick Start', slug: 'getting-started/quick-start' },
 						{ label: 'Playground', slug: 'getting-started/playground' },

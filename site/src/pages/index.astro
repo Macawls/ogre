@@ -1,0 +1,631 @@
+---
+import { Code } from 'astro:components';
+import blogExample from '../assets/examples/ex-blog.png';
+
+const goSnippet = `package main
+
+import (
+    "os"
+
+    "github.com/macawls/ogre/v3"
+)
+
+func main() {
+    result, _ := ogre.Render(` + "`" + `
+        <div class="flex flex-col w-full h-full bg-slate-900 p-16 justify-center">
+            <div class="text-5xl font-bold text-white">
+                Why We Migrated to Postgres
+            </div>
+            <div class="text-xl text-slate-400 mt-4">
+                Lessons from moving 2TB of data
+            </div>
+        </div>
+    ` + "`" + `, ogre.Options{
+        Width:  1200,
+        Height: 630,
+        Format: ogre.PNG,
+    })
+
+    os.WriteFile("og.png", result.Data, 0644)
+}
+`;
+
+const site = Astro.site?.toString().replace(/\/$/, '') ?? 'https://ogre.macawls.dev';
+const title = 'Ogre — Pure Go HTML/CSS to image renderer (OpenGraph, PNG, SVG, JPEG)';
+const description =
+	'Pure Go renderer that turns HTML and CSS into SVG, PNG, or JPEG images. Generate OpenGraph images, social cards, and presentation slides from a Go library, CLI, or HTTP server. Single static binary — no Chrome, no Node, no CGo.';
+const ogImage = `${site}/og.png`;
+const canonical = `${site}/`;
+
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'SoftwareApplication',
+	name: 'Ogre',
+	applicationCategory: 'DeveloperApplication',
+	operatingSystem: 'Linux, macOS, Windows',
+	programmingLanguage: 'Go',
+	description,
+	url: canonical,
+	image: ogImage,
+	license: 'https://opensource.org/licenses/MIT',
+	codeRepository: 'https://github.com/macawls/ogre',
+	downloadUrl: 'https://github.com/macawls/ogre/releases',
+	offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+	author: { '@type': 'Person', name: 'Joshua Macawls', url: 'https://github.com/macawls' },
+};
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta
+			name="keywords"
+			content="ogre, golang, go, opengraph, og image, html to image, html to svg, html to png, html to jpeg, html to slides, presentation slides, image generation, pure go, no cgo, satori alternative, go image renderer, tailwind css go"
+		/>
+		<link rel="canonical" href={canonical} />
+		<link rel="icon" type="image/png" href="/favicon.png" />
+
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Ogre" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="Ogre — Pure Go HTML/CSS to image renderer" />
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+
+		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+		/>
+	</head>
+	<body>
+		<header class="site-header">
+			<a href="/" class="brand" aria-label="Ogre home">
+				<img src="/mascot.png" alt="" width="36" height="36" />
+				<span>Ogre</span>
+			</a>
+			<nav class="nav">
+				<a href="/docs/">Docs</a>
+				<a href="/getting-started/playground/">Playground</a>
+				<a href="https://pkg.go.dev/github.com/macawls/ogre/v3" rel="noopener">pkg.go.dev</a>
+				<a href="https://github.com/macawls/ogre" rel="noopener">GitHub</a>
+			</nav>
+		</header>
+
+		<main>
+			<section class="hero">
+				<div class="hero-content">
+					<h1>
+						Pure Go HTML/CSS<br />to image renderer
+					</h1>
+					<p class="lede">
+						Ogre turns HTML and CSS into <strong>SVG</strong>, <strong>PNG</strong>, or
+						<strong>JPEG</strong> — designed for OpenGraph images, social cards, and
+						presentation slides. Use it as a Go library, a standalone CLI, or a
+						self-hosted HTTP server. Single static binary. No Chrome, no Node, no CGo.
+					</p>
+					<div class="cta">
+						<a class="btn primary" href="/docs/">Read the docs →</a>
+						<a class="btn ghost" href="https://github.com/macawls/ogre" rel="noopener">
+							Star on GitHub
+						</a>
+					</div>
+				</div>
+				<img
+					class="hero-mascot"
+					src="/mascot.png"
+					alt="Ogre mascot"
+					width="220"
+					height="220"
+				/>
+			</section>
+
+			<section class="install" aria-label="Install">
+				<Code
+					code="go install github.com/macawls/ogre/v3/cmd/ogre@latest"
+					lang="bash"
+					theme="one-dark-pro"
+				/>
+			</section>
+
+			<section class="features">
+				<article>
+					<h2>Pure Go, single binary</h2>
+					<p>
+						No headless Chrome, no Node.js runtime, no shared libraries. Ogre ships
+						as one static binary that runs in single-digit megabytes of RAM instead
+						of the hundreds a browser needs. Drop it into an
+						<code>http.Handler</code>, run it as a subprocess, or deploy the Docker
+						image. <a href="/reference/performance/">See performance numbers →</a>
+					</p>
+				</article>
+
+				<article>
+					<h2>OpenGraph images from HTML templates</h2>
+					<p>
+						Write the card as HTML, pass it through Ogre, get an image back. Defaults
+						to <code>1200×630</code> (the OG standard) but any canvas size works —
+						<code>1920×1080</code> for HD slides, arbitrary sizes for invoices,
+						certificates, or repo cards.
+						<a href="/guides/library/">Library usage →</a>
+					</p>
+				</article>
+
+				<article>
+					<h2>Tailwind v3 &amp; v4 built in</h2>
+					<p>
+						Utility classes resolve directly — no build step, no Tailwind CLI. v3 by
+						default; opt into v4 (OKLCH palette, renamed shadow/blur scales,
+						<code>bg-linear-to-*</code> gradients) with one option.
+						<a href="/reference/tailwind/">Tailwind reference →</a>
+					</p>
+				</article>
+
+				<article>
+					<h2>Three surfaces, one codebase</h2>
+					<p>
+						The same rendering engine ships as a <a href="/guides/library/">Go library</a>,
+						a <a href="/guides/cli/">CLI</a>, and a
+						<a href="/guides/server/">production HTTP server</a> with LRU caching, rate
+						limiting, and <code>html/template</code> support. Or run the
+						<a href="/guides/docker/">Docker image</a>.
+					</p>
+				</article>
+
+				<article>
+					<h2>Complex text, emoji, RTL</h2>
+					<p>
+						Pure-Go HarfBuzz port for shaping. Arabic, Hebrew, Devanagari, and Thai
+						render correctly. Unicode bidi algorithm for RTL. Twemoji, OpenMoji, and
+						Noto emoji supported in both SVG and PNG output.
+						<a href="/getting-started/emoji-and-rtl/">Emoji &amp; RTL →</a>
+					</p>
+				</article>
+
+			</section>
+
+			<section class="showcase">
+				<h2>From HTML to image, in Go</h2>
+				<div class="showcase-grid">
+					<div class="code-frame">
+						<div class="code-frame-header">
+							<span class="dot red"></span>
+							<span class="dot yellow"></span>
+							<span class="dot green"></span>
+							<span class="code-frame-title">main.go</span>
+						</div>
+						<Code code={goSnippet} lang="go" theme="one-dark-pro" />
+					</div>
+					<figure>
+						<img
+							src={blogExample.src}
+							width={blogExample.width}
+							height={blogExample.height}
+							alt="OpenGraph image generated by Ogre from HTML and Tailwind CSS in Go — a blog post card titled 'Why We Migrated to Postgres' on a slate background"
+							loading="lazy"
+						/>
+						<figcaption>
+							Rendered PNG · 1200×630 · ~8 ms per render
+							<a href="/reference/performance/">(benchmarks →)</a>
+						</figcaption>
+					</figure>
+				</div>
+			</section>
+
+			<section class="agents">
+				<h2>Agent-friendly</h2>
+				<p>
+					Ogre is designed to be trivial for coding agents (Claude, Cursor, Codex) to
+					pick up and drive. One-line install, one HTTP endpoint that takes JSON and
+					returns image bytes, and no browser fleet to manage. The docs site serves
+					<a href="/llms.txt">llms.txt</a> and
+					<a href="/llms-full.txt">llms-full.txt</a> for retrieval, and there's a
+					<a href="https://ogre-api.macawls.dev" rel="noopener">public HTTP instance</a>
+					at <code>ogre-api.macawls.dev</code> so agents can experiment without any
+					setup.
+				</p>
+				<div class="code-frame">
+					<div class="code-frame-header">
+						<span class="dot red"></span>
+						<span class="dot yellow"></span>
+						<span class="dot green"></span>
+						<span class="code-frame-title">curl the public API</span>
+					</div>
+					<Code
+						code={`curl -X POST https://ogre-api.macawls.dev/render \\
+  -H "Content-Type: application/json" \\
+  -d '{"html":"<div class=\\"flex w-full h-full bg-slate-900 items-center justify-center\\"><div class=\\"text-6xl font-bold text-white\\">Hello</div></div>","format":"png"}' \\
+  --output og.png`}
+						lang="bash"
+						theme="one-dark-pro"
+					/>
+				</div>
+			</section>
+
+			<section class="closing">
+				<h2>Ready to try it?</h2>
+				<p>
+					<a href="/docs/">Read the introduction</a>, run the
+					<a href="/getting-started/playground/">browser playground</a>, or explore the
+					<a href="https://pkg.go.dev/github.com/macawls/ogre/v3" rel="noopener">Go API on pkg.go.dev</a>.
+				</p>
+			</section>
+		</main>
+
+		<footer class="site-footer">
+			<div class="footer-grid">
+				<div>
+					<div class="footer-title">Ogre</div>
+					<div class="footer-sub">Pure Go HTML/CSS to image renderer</div>
+				</div>
+				<div class="footer-links">
+					<a href="/docs/">Docs</a>
+					<a href="/getting-started/installation/">Install</a>
+					<a href="/getting-started/playground/">Playground</a>
+					<a href="/reference/api/">Go API</a>
+					<a href="/reference/http/">HTTP API</a>
+					<a href="https://github.com/macawls/ogre" rel="noopener">GitHub</a>
+					<a href="https://pkg.go.dev/github.com/macawls/ogre/v3" rel="noopener">pkg.go.dev</a>
+					<a href="/llms.txt">llms.txt</a>
+					<a href="/llms-full.txt">llms-full.txt</a>
+				</div>
+			</div>
+			<div class="footer-legal">
+				MIT licensed · <a href="https://github.com/macawls" rel="noopener">@macawls</a>
+			</div>
+		</footer>
+
+		<style is:global>
+			:root {
+				--bg: #1e2127;
+				--bg-elev: #21252b;
+				--fg: #d7dae0;
+				--fg-muted: #828997;
+				--fg-dim: #5c6370;
+				--accent: #61afef;
+				--accent-strong: #98c379;
+				--hairline: #2c313a;
+				--code-bg: #282c34;
+				color-scheme: dark;
+			}
+
+			* { box-sizing: border-box; }
+
+			html, body {
+				margin: 0;
+				padding: 0;
+				background: var(--bg);
+				color: var(--fg);
+				font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+				font-size: 17px;
+				line-height: 1.65;
+				-webkit-font-smoothing: antialiased;
+				text-rendering: optimizeLegibility;
+			}
+
+			a { color: var(--accent); text-decoration: none; }
+			a:hover { text-decoration: underline; }
+
+			code, pre { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+			code {
+				background: var(--code-bg);
+				padding: 0.1em 0.35em;
+				border-radius: 4px;
+				font-size: 0.88em;
+				color: var(--fg);
+			}
+			pre {
+				background: var(--code-bg);
+				color: var(--fg);
+				padding: 1.1rem 1.3rem;
+				border-radius: 8px;
+				border: 1px solid var(--hairline);
+				overflow-x: auto;
+				font-size: 0.85rem;
+				line-height: 1.7;
+				margin: 0;
+			}
+			pre code { background: transparent; padding: 0; font-size: inherit; }
+
+			.site-header {
+				max-width: 900px;
+				margin: 0 auto;
+				padding: 1.5rem 1.5rem;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 1rem;
+			}
+			.brand {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				color: var(--fg);
+				font-weight: 700;
+				letter-spacing: -0.02em;
+			}
+			.brand:hover { text-decoration: none; }
+			.brand img { display: block; }
+			.nav { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+			.nav a {
+				color: var(--fg-muted);
+				font-size: 0.9rem;
+				font-weight: 500;
+				padding: 0.35rem 0.7rem;
+				border-radius: 6px;
+			}
+			.nav a:hover {
+				color: var(--fg);
+				background: rgba(255,255,255,0.04);
+				text-decoration: none;
+			}
+
+			main {
+				max-width: 780px;
+				margin: 0 auto;
+				padding: 3rem 1.5rem 4rem;
+			}
+
+			.hero {
+				padding: 3rem 0 2.5rem;
+				display: flex;
+				align-items: center;
+				gap: 2.5rem;
+			}
+			.hero-content { flex: 1; min-width: 0; }
+			.hero-mascot {
+				flex-shrink: 0;
+				width: 200px;
+				height: 200px;
+				object-fit: contain;
+				transform: rotate(4deg);
+			}
+			.hero h1 {
+				font-size: clamp(2.25rem, 5.5vw, 3.4rem);
+				font-weight: 800;
+				line-height: 1.05;
+				letter-spacing: -0.035em;
+				margin: 0 0 1.5rem;
+				color: #fff;
+			}
+			.hero .lede {
+				font-size: 1.1rem;
+				color: var(--fg-muted);
+				max-width: 60ch;
+				margin: 0 0 2rem;
+			}
+			.hero .lede strong { color: var(--fg); font-weight: 600; }
+			.cta { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+			.btn {
+				display: inline-block;
+				padding: 0.65rem 1.15rem;
+				border-radius: 6px;
+				font-size: 0.95rem;
+				font-weight: 500;
+				border: 1px solid transparent;
+				transition: background 0.15s, border-color 0.15s;
+			}
+			.btn:hover { text-decoration: none; }
+			.btn.primary {
+				background: var(--fg);
+				color: var(--bg);
+				border-color: var(--fg);
+			}
+			.btn.primary:hover { background: #fff; border-color: #fff; }
+			.btn.ghost {
+				color: var(--fg);
+				border-color: var(--hairline);
+			}
+			.btn.ghost:hover { border-color: var(--fg-muted); background: rgba(255,255,255,0.03); }
+
+			.install { margin: 0 0 3.5rem; }
+			.install pre { font-size: 0.95rem; }
+
+			.features {
+				display: flex;
+				flex-direction: column;
+				gap: 2rem;
+				border-top: 1px solid var(--hairline);
+				padding-top: 3rem;
+			}
+			.features article h2 {
+				font-size: 1.15rem;
+				font-weight: 600;
+				margin: 0 0 0.5rem;
+				color: var(--fg);
+				letter-spacing: -0.01em;
+			}
+			.features article p {
+				margin: 0;
+				color: var(--fg-muted);
+				font-size: 1rem;
+			}
+			.features article p a { color: var(--accent); }
+
+			.showcase,
+			.agents {
+				border-top: 1px solid var(--hairline);
+				margin-top: 4rem;
+				padding-top: 3rem;
+			}
+			.showcase h2,
+			.agents h2 {
+				font-size: 1.4rem;
+				font-weight: 700;
+				margin: 0 0 1.5rem;
+				letter-spacing: -0.02em;
+				color: var(--fg);
+			}
+			.agents p {
+				color: var(--fg-muted);
+				margin: 0 0 1.5rem;
+			}
+			.agents p code {
+				font-size: 0.85em;
+			}
+			.showcase-grid {
+				display: grid;
+				gap: 1.25rem;
+			}
+			.showcase figure {
+				margin: 0;
+				border: 1px solid var(--hairline);
+				border-radius: 8px;
+				overflow: hidden;
+				background: var(--code-bg);
+			}
+			.showcase figure img {
+				display: block;
+				width: 100%;
+				height: auto;
+			}
+			.showcase figcaption {
+				padding: 0.6rem 1rem;
+				font-size: 0.8rem;
+				color: var(--fg-dim);
+				border-top: 1px solid var(--hairline);
+				font-family: 'JetBrains Mono', ui-monospace, monospace;
+				display: flex;
+				gap: 0.6rem;
+				flex-wrap: wrap;
+				align-items: baseline;
+			}
+			.showcase figcaption a { color: var(--fg-muted); }
+
+			.code-frame {
+				border: 1px solid var(--hairline);
+				border-radius: 8px;
+				overflow: hidden;
+				background: var(--code-bg);
+			}
+			.code-frame-header {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 0.55rem 0.8rem;
+				background: rgba(0,0,0,0.25);
+				border-bottom: 1px solid var(--hairline);
+			}
+			.code-frame-header .dot {
+				width: 11px;
+				height: 11px;
+				border-radius: 50%;
+				display: inline-block;
+			}
+			.code-frame-header .dot.red { background: #ff5f57; }
+			.code-frame-header .dot.yellow { background: #febc2e; }
+			.code-frame-header .dot.green { background: #28c840; }
+			.code-frame-header .code-frame-title {
+				margin-left: 0.6rem;
+				font-family: 'JetBrains Mono', ui-monospace, monospace;
+				font-size: 0.78rem;
+				color: var(--fg-dim);
+			}
+			.code-frame :global(pre.astro-code) {
+				margin: 0;
+				border: 0;
+				border-radius: 0;
+				padding: 1.1rem 1.3rem;
+				background: var(--code-bg) !important;
+				font-size: 0.85rem;
+				line-height: 1.65;
+			}
+			.install .code-frame,
+			.install :global(pre.astro-code) {
+				border-radius: 8px;
+			}
+			.install :global(pre.astro-code) {
+				padding: 1rem 1.2rem;
+				font-size: 0.95rem;
+			}
+
+			.closing {
+				border-top: 1px solid var(--hairline);
+				margin-top: 4rem;
+				padding-top: 3rem;
+			}
+			.closing h2 {
+				font-size: 1.4rem;
+				font-weight: 700;
+				margin: 0 0 0.75rem;
+				letter-spacing: -0.02em;
+			}
+			.closing p { margin: 0; color: var(--fg-muted); }
+
+			.site-footer {
+				border-top: 1px solid var(--hairline);
+				background: var(--bg-elev);
+				padding: 2.5rem 1.5rem 2rem;
+			}
+			.footer-grid {
+				max-width: 780px;
+				margin: 0 auto;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 2rem;
+				justify-content: space-between;
+				align-items: flex-start;
+			}
+			.footer-title {
+				font-weight: 700;
+				color: var(--fg);
+				letter-spacing: -0.02em;
+			}
+			.footer-sub {
+				font-size: 0.85rem;
+				color: var(--fg-dim);
+				margin-top: 0.25rem;
+			}
+			.footer-links {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.4rem 1rem;
+				max-width: 480px;
+				justify-content: flex-end;
+			}
+			.footer-links a { color: var(--fg-muted); font-size: 0.88rem; }
+			.footer-links a:hover { color: var(--fg); }
+			.footer-legal {
+				max-width: 780px;
+				margin: 2rem auto 0;
+				padding-top: 1.5rem;
+				border-top: 1px solid var(--hairline);
+				font-size: 0.8rem;
+				color: var(--fg-dim);
+			}
+			.footer-legal a { color: var(--fg-muted); }
+
+			@media (max-width: 720px) {
+				.hero {
+					flex-direction: column-reverse;
+					align-items: flex-start;
+					gap: 1.5rem;
+				}
+				.hero-mascot { width: 120px; height: 120px; }
+			}
+			@media (max-width: 640px) {
+				.site-header { padding: 1rem; }
+				.nav a { padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+				main { padding: 1.5rem 1.25rem 3rem; }
+				.hero { padding: 2rem 0 1.5rem; }
+				.hero h1 br { display: none; }
+				.footer-links { justify-content: flex-start; }
+			}
+		</style>
+	</body>
+</html>

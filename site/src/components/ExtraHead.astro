@@ -1,0 +1,23 @@
+---
+import Default from '@astrojs/starlight/components/Head.astro';
+
+const ogImage = new URL('/og.png', Astro.site).toString();
+
+const frontmatterHead = Astro.props.entry?.data?.head ?? [];
+const hasOgImage = frontmatterHead.some(
+	(tag: { tag: string; attrs?: Record<string, string> }) =>
+		tag.tag === 'meta' && tag.attrs?.property === 'og:image',
+);
+---
+
+<Default {...Astro.props}><slot /></Default>
+
+{!hasOgImage && (
+	<>
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="Ogre — Pure Go HTML/CSS to image renderer" />
+		<meta name="twitter:image" content={ogImage} />
+	</>
+)}
