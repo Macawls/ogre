@@ -21,6 +21,25 @@
   <a href="https://ogre.macawls.dev"><strong>Documentation</strong></a> · <a href="https://ogre.macawls.dev/getting-started/playground/">Playground</a>
 </p>
 
+## For AI coding agents
+
+Ogre is designed to be trivial for LLM-powered agents (Claude, Cursor, Codex, ChatGPT, etc.) to pick up and drive.
+
+- **Machine-readable summary:** [`llms.txt`](https://ogre.macawls.dev/llms.txt) · [`llms-full.txt`](https://ogre.macawls.dev/llms-full.txt) (llmstxt.org spec)
+- **Agent contributor guide:** [`AGENTS.md`](AGENTS.md)
+- **Public HTTP instance** (no setup, use it in prompts): `https://ogre-api.macawls.dev`
+
+```bash
+# One-line install
+go install github.com/macawls/ogre/v3/cmd/ogre@latest
+
+# Or POST to the public API — returns image bytes
+curl -X POST https://ogre-api.macawls.dev/render \
+  -H "Content-Type: application/json" \
+  -d '{"html":"<div class=\"flex w-full h-full bg-slate-900 items-center justify-center\"><div class=\"text-6xl font-bold text-white\">Hello</div></div>","format":"png"}' \
+  --output og.png
+```
+
 ## Features
 
 - HTML + inline CSS to SVG, PNG, or JPEG

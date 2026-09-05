@@ -1,6 +1,6 @@
 ---
 import { Code } from 'astro:components';
-import blogExample from '../assets/examples/ex-blog.png';
+import repoExample from '../assets/examples/ex-repo.png';
 
 const goSnippet = `package main
 
@@ -12,18 +12,29 @@ import (
 
 func main() {
     result, _ := ogre.Render(` + "`" + `
-        <div class="flex flex-col w-full h-full bg-slate-900 p-16 justify-center">
-            <div class="text-5xl font-bold text-white">
-                Why We Migrated to Postgres
+        <div class="flex flex-col w-full h-full bg-[#0d1117] p-14 justify-between">
+            <div class="flex items-center gap-4">
+                <img src="https://github.com/vercel.png"
+                     class="w-11 h-11 rounded-full" />
+                <div class="flex items-center gap-2 text-xl">
+                    <span class="text-[#58a6ff]">vercel</span>
+                    <span class="text-[#8b949e]">/</span>
+                    <span class="text-[#f0f6fc] font-bold">next.js</span>
+                </div>
             </div>
-            <div class="text-xl text-slate-400 mt-4">
-                Lessons from moving 2TB of data
+            <div class="flex flex-col">
+                <div class="text-5xl font-bold text-[#f0f6fc]">
+                    The React Framework for the Web
+                </div>
+                <div class="text-lg text-[#8b949e] mt-4">
+                    Used by the world's largest companies.
+                </div>
             </div>
         </div>
     ` + "`" + `, ogre.Options{
         Width:  1200,
         Height: 630,
-        Format: ogre.PNG,
+        Format: ogre.FormatPNG,
     })
 
     os.WriteFile("og.png", result.Data, 0644)
@@ -31,28 +42,61 @@ func main() {
 `;
 
 const site = Astro.site?.toString().replace(/\/$/, '') ?? 'https://ogre.macawls.dev';
-const title = 'Ogre — Pure Go HTML/CSS to image renderer (OpenGraph, PNG, SVG, JPEG)';
-const description =
-	'Pure Go renderer that turns HTML and CSS into SVG, PNG, or JPEG images. Generate OpenGraph images, social cards, and presentation slides from a Go library, CLI, or HTTP server. Single static binary — no Chrome, no Node, no CGo.';
+const title = 'Ogre — Pure Go HTML/CSS to image renderer';
+const tagline = 'Render HTML and CSS to SVG, PNG, or JPEG in pure Go. OpenGraph images, social cards, and slides from one static binary — library, CLI, or HTTP server.';
+const description = tagline;
+const longDescription =
+	'Ogre is an open-source, pure Go renderer that turns HTML and CSS into SVG, PNG, or JPEG images. Designed for generating OpenGraph images, social cards, and presentation slides. Use it as a Go library, CLI, or HTTP server. Single static binary — no Chrome, no Node, no CGo. Tailwind v3 and v4 supported out of the box. Agent-friendly with llms.txt and a public HTTP instance.';
 const ogImage = `${site}/og.png`;
 const canonical = `${site}/`;
 
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'SoftwareApplication',
-	name: 'Ogre',
-	applicationCategory: 'DeveloperApplication',
-	operatingSystem: 'Linux, macOS, Windows',
-	programmingLanguage: 'Go',
-	description,
-	url: canonical,
-	image: ogImage,
-	license: 'https://opensource.org/licenses/MIT',
-	codeRepository: 'https://github.com/macawls/ogre',
-	downloadUrl: 'https://github.com/macawls/ogre/releases',
-	offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-	author: { '@type': 'Person', name: 'Joshua Macawls', url: 'https://github.com/macawls' },
-};
+const jsonLd = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'SoftwareApplication',
+		name: 'Ogre',
+		alternateName: ['ogre-go', 'macawls/ogre'],
+		applicationCategory: 'DeveloperApplication',
+		applicationSubCategory: 'Image renderer',
+		operatingSystem: 'Linux, macOS, Windows',
+		description: longDescription,
+		url: canonical,
+		image: ogImage,
+		license: 'https://opensource.org/licenses/MIT',
+		softwareVersion: '3',
+		offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+		author: { '@type': 'Person', name: 'Joshua Macawls', url: 'https://github.com/macawls' },
+		keywords:
+			'golang, html to image, opengraph, social cards, satori alternative, image generation, tailwind css, ai agent',
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'SoftwareSourceCode',
+		name: 'Ogre',
+		description: longDescription,
+		codeRepository: 'https://github.com/macawls/ogre',
+		programmingLanguage: 'Go',
+		runtimePlatform: 'Go 1.22+',
+		targetProduct: {
+			'@type': 'SoftwareApplication',
+			name: 'Ogre',
+			operatingSystem: 'Linux, macOS, Windows',
+			applicationCategory: 'DeveloperApplication',
+		},
+		license: 'https://opensource.org/licenses/MIT',
+		author: { '@type': 'Person', name: 'Joshua Macawls', url: 'https://github.com/macawls' },
+		codeSampleType: 'full',
+		url: canonical,
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'WebSite',
+		name: 'Ogre',
+		url: canonical,
+		description: longDescription,
+		publisher: { '@type': 'Person', name: 'Joshua Macawls', url: 'https://github.com/macawls' },
+	},
+];
 ---
 
 <!doctype html>
@@ -64,10 +108,18 @@ const jsonLd = {
 		<meta name="description" content={description} />
 		<meta
 			name="keywords"
-			content="ogre, golang, go, opengraph, og image, html to image, html to svg, html to png, html to jpeg, html to slides, presentation slides, image generation, pure go, no cgo, satori alternative, go image renderer, tailwind css go"
+			content="ogre, golang, go, opengraph, og image, html to image, html to svg, html to png, html to jpeg, html to slides, presentation slides, image generation, pure go, no cgo, satori alternative, go image renderer, tailwind css go, ai agent, claude, cursor, mcp, llm friendly"
 		/>
+		<meta name="author" content="Joshua Macawls" />
+		<meta name="theme-color" content="#0d1117" />
+		<meta name="color-scheme" content="dark light" />
 		<link rel="canonical" href={canonical} />
 		<link rel="icon" type="image/png" href="/favicon.png" />
+		<link rel="apple-touch-icon" href="/favicon.png" />
+
+		{/* Discoverability signals for LLM/agent tooling. */}
+		<link rel="alternate" type="text/markdown" title="llms.txt (concise agent context)" href="/llms.txt" />
+		<link rel="alternate" type="text/markdown" title="llms-full.txt (full agent context)" href="/llms-full.txt" />
 
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content="Ogre" />
@@ -78,8 +130,11 @@ const jsonLd = {
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
 		<meta property="og:image:alt" content="Ogre — Pure Go HTML/CSS to image renderer" />
+		<meta property="og:locale" content="en_US" />
 
 		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:site" content="@macawls" />
+		<meta name="twitter:creator" content="@macawls" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={ogImage} />
@@ -213,14 +268,14 @@ const jsonLd = {
 					</div>
 					<figure>
 						<img
-							src={blogExample.src}
-							width={blogExample.width}
-							height={blogExample.height}
-							alt="OpenGraph image generated by Ogre from HTML and Tailwind CSS in Go — a blog post card titled 'Why We Migrated to Postgres' on a slate background"
+							src={repoExample.src}
+							width={repoExample.width}
+							height={repoExample.height}
+							alt="OpenGraph image generated by Ogre from HTML and Tailwind CSS in Go — a GitHub-style repository card for vercel/next.js on a dark background"
 							loading="lazy"
 						/>
 						<figcaption>
-							Rendered PNG · 1200×630 · ~8 ms per render
+							Rendered PNG · 1200×630 · ~11 ms per render
 							<a href="/reference/performance/">(benchmarks →)</a>
 						</figcaption>
 					</figure>
