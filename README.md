@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="mascot.png" width="200" alt="Ogre">
+  <img src="mascot.png" width="200" alt="Ogre — Pure Go HTML/CSS to image renderer for OpenGraph images">
 </p>
 
 <h1 align="center">Ogre</h1>
