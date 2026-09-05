@@ -233,13 +233,13 @@ const jsonLd = [
 				<article>
 					<h3>Agent-friendly</h3>
 					<p>
-						One-command install, one JSON HTTP endpoint that takes HTML and returns
-						image bytes, and no browser fleet to manage. The docs serve
+						An agent can shell out to a single command: pipe HTML in with
+						<code>--html '&lt;div&gt;…&lt;/div&gt;'</code>, get a PNG or SVG file
+						back at <code>--output og.png</code>. No HTTP server to stand up, no
+						browser fleet, no Node runtime — just one static binary reading stdin
+						and writing bytes. For retrieval, the docs also serve
 						<a href="/llms.txt">llms.txt</a> and
-						<a href="/llms-full.txt">llms-full.txt</a> for retrieval, and there's a
-						<a href="https://ogre-api.macawls.dev" rel="noopener">public instance</a>
-						at <code>ogre-api.macawls.dev</code> so agents can experiment without
-						any setup.
+						<a href="/llms-full.txt">llms-full.txt</a>.
 					</p>
 				</article>
 
@@ -303,27 +303,33 @@ const jsonLd = [
 			</section>
 
 			<section class="agents">
-				<h2>Try it without installing</h2>
+				<h2>One command: HTML in, image out</h2>
 				<p>
-					A public instance runs at <code>ogre-api.macawls.dev</code> — hand it HTML,
-					get PNG bytes back. Drop this straight into a prompt or a shell.
+					After <code>go install</code>, an agent (or a shell script, or a Makefile)
+					can render an image with a single call. Pass HTML with <code>--html</code>,
+					write the file with <code>--output</code>. That's the whole contract.
 				</p>
 				<div class="code-frame">
 					<div class="code-frame-header">
 						<span class="dot red"></span>
 						<span class="dot yellow"></span>
 						<span class="dot green"></span>
-						<span class="code-frame-title">curl the public API</span>
+						<span class="code-frame-title">ogre CLI</span>
 					</div>
 					<Code
-						code={`curl -X POST https://ogre-api.macawls.dev/render \\
-  -H "Content-Type: application/json" \\
-  -d '{"html":"<div class=\\"flex w-full h-full bg-slate-900 items-center justify-center\\"><div class=\\"text-6xl font-bold text-white\\">Hello</div></div>","format":"png"}' \\
+						code={`ogre \\
+  --html '<div class="flex w-full h-full bg-slate-900 items-center justify-center"><div class="text-6xl font-bold text-white">Hello</div></div>' \\
+  --format png \\
   --output og.png`}
 						lang="bash"
 						theme="one-dark-pro"
 					/>
 				</div>
+				<p class="agents-alt">
+					No install? Same contract over HTTP against the public instance at
+					<a href="https://ogre-api.macawls.dev" rel="noopener"><code>ogre-api.macawls.dev</code></a> —
+					see <a href="/reference/http/">the HTTP reference</a>.
+				</p>
 			</section>
 
 			<section class="closing">
@@ -561,6 +567,11 @@ const jsonLd = [
 			}
 			.agents p code {
 				font-size: 0.85em;
+			}
+			.agents .agents-alt {
+				margin: 1rem 0 0;
+				font-size: 0.92rem;
+				color: var(--fg-dim);
 			}
 			.showcase-grid {
 				display: grid;
