@@ -456,7 +456,10 @@ var tailwindColorsV4 = map[string]map[int]string{
 	},
 }
 
-func parseSpacing(s string) (string, bool) {
+func parseSpacing(s string, cfg *TailwindConfig) (string, bool) {
+	if v, ok := cfg.spacingOverride(s); ok {
+		return v, true
+	}
 	switch s {
 	case "px":
 		return "1px", true
@@ -478,7 +481,7 @@ func parseSpacing(s string) (string, bool) {
 	return fmt.Sprintf("%dpx", n*4), true
 }
 
-func resolveColorClass(prefix, rest string, version TailwindVersion) (string, string, bool) {
+func resolveColorClass(prefix, rest string, version TailwindVersion, cfg *TailwindConfig) (string, string, bool) {
 	var prop string
 	switch prefix {
 	case "text":
@@ -510,6 +513,9 @@ func resolveColorClass(prefix, rest string, version TailwindVersion) (string, st
 	if err != nil {
 		return "", "", false
 	}
+	if v, ok := cfg.colorOverride(colorName, shade); ok {
+		return prop, v, true
+	}
 	shades, ok := colorsFor(version)[colorName]
 	if !ok {
 		return "", "", false
@@ -524,10 +530,16 @@ func resolveColorClass(prefix, rest string, version TailwindVersion) (string, st
 // ResolveTailwind converts Tailwind utility classes to CSS properties under
 // the given version's semantics. Passing an empty version defaults to v3.
 func ResolveTailwind(classes []string, version TailwindVersion) map[string]string {
+	return ResolveTailwindWithConfig(classes, version, nil)
+}
+
+// ResolveTailwindWithConfig is like ResolveTailwind but consults cfg for
+// custom colors, spacing, fonts, and arbitrary class overrides.
+func ResolveTailwindWithConfig(classes []string, version TailwindVersion, cfg *TailwindConfig) map[string]string {
 	version = normalizeVersion(version)
 	result := make(map[string]string)
 	for _, cls := range classes {
-		resolveTailwindClass(cls, version, result)
+		resolveTailwindClass(cls, version, cfg, result)
 	}
 	if dir, ok := result["--tw-gradient-dir"]; ok {
 		from := result["--tw-gradient-from"]
@@ -553,7 +565,13 @@ func ResolveTailwind(classes []string, version TailwindVersion) map[string]strin
 	return result
 }
 
-func resolveTailwindClass(cls string, version TailwindVersion, out map[string]string) {
+func resolveTailwindClass(cls string, version TailwindVersion, cfg *TailwindConfig, out map[string]string) {
+	if props, ok := cfg.extendOverride(cls); ok {
+		for k, v := range props {
+			out[k] = v
+		}
+		return
+	}
 	if bracket := strings.IndexByte(cls, '['); bracket >= 0 && strings.HasSuffix(cls, "]") {
 		resolveArbitrary(cls, bracket, false, out)
 		return
@@ -565,7 +583,7 @@ func resolveTailwindClass(cls string, version TailwindVersion, out map[string]st
 			return
 		}
 	}
-	cache := cacheFor(version)
+	cache := configCacheFor(cfg, version)
 	if cached, ok := cache.Load(cls); ok {
 		for _, p := range cached.([]cssProp) {
 			out[p.K] = p.V
@@ -573,7 +591,7 @@ func resolveTailwindClass(cls string, version TailwindVersion, out map[string]st
 		return
 	}
 	scratch := make(map[string]string)
-	resolveTailwindClassBody(cls, version, scratch)
+	resolveTailwindClassBody(cls, version, cfg, scratch)
 	props := make([]cssProp, 0, len(scratch))
 	for k, v := range scratch {
 		props = append(props, cssProp{K: k, V: v})
@@ -662,7 +680,7 @@ func resolveV4Overrides(cls string, out map[string]string) bool {
 	return false
 }
 
-func resolveTailwindClassBody(cls string, version TailwindVersion, out map[string]string) {
+func resolveTailwindClassBody(cls string, version TailwindVersion, cfg *TailwindConfig, out map[string]string) {
 	if version == TailwindV4 && resolveV4Overrides(cls, out) {
 		return
 	}
@@ -1099,7 +1117,55 @@ func resolveTailwindClassBody(cls string, version TailwindVersion, out map[strin
 	case "inline-flex":
 		out["display"] = "flex"
 	case "grid":
-		out["display"] = "flex"
+		out["display"] = "grid"
+	case "inline-grid":
+		out["display"] = "grid"
+
+	// Grid auto flow
+	case "grid-flow-row":
+		out["grid-auto-flow"] = "row"
+	case "grid-flow-col":
+		out["grid-auto-flow"] = "column"
+	case "grid-flow-dense":
+		out["grid-auto-flow"] = "dense"
+	case "grid-flow-row-dense":
+		out["grid-auto-flow"] = "row dense"
+	case "grid-flow-col-dense":
+		out["grid-auto-flow"] = "column dense"
+
+	// Grid template shortcuts
+	case "grid-cols-none":
+		out["grid-template-columns"] = "none"
+	case "grid-rows-none":
+		out["grid-template-rows"] = "none"
+
+	// Grid span shortcuts
+	case "col-span-full":
+		out["grid-column"] = "1 / -1"
+	case "row-span-full":
+		out["grid-row"] = "1 / -1"
+	case "col-auto":
+		out["grid-column"] = "auto"
+	case "row-auto":
+		out["grid-row"] = "auto"
+
+	// Auto tracks
+	case "auto-cols-auto":
+		out["grid-auto-columns"] = "auto"
+	case "auto-cols-min":
+		out["grid-auto-columns"] = "min-content"
+	case "auto-cols-max":
+		out["grid-auto-columns"] = "max-content"
+	case "auto-cols-fr":
+		out["grid-auto-columns"] = "1fr"
+	case "auto-rows-auto":
+		out["grid-auto-rows"] = "auto"
+	case "auto-rows-min":
+		out["grid-auto-rows"] = "min-content"
+	case "auto-rows-max":
+		out["grid-auto-rows"] = "max-content"
+	case "auto-rows-fr":
+		out["grid-auto-rows"] = "1fr"
 
 	// Layout
 	case "overflow-hidden":
@@ -1262,11 +1328,11 @@ func resolveTailwindClassBody(cls string, version TailwindVersion, out map[strin
 		out["background-clip"] = "content-box"
 
 	default:
-		resolveTailwindDynamic(cls, version, out)
+		resolveTailwindDynamic(cls, version, cfg, out)
 	}
 }
 
-func resolveTailwindDynamic(cls string, version TailwindVersion, out map[string]string) {
+func resolveTailwindDynamic(cls string, version TailwindVersion, cfg *TailwindConfig, out map[string]string) {
 	parts := strings.SplitN(cls, "-", 2)
 	if len(parts) < 2 {
 		return
@@ -1276,126 +1342,126 @@ func resolveTailwindDynamic(cls string, version TailwindVersion, out map[string]
 
 	switch prefix {
 	case "p":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["padding-top"] = v
 			out["padding-right"] = v
 			out["padding-bottom"] = v
 			out["padding-left"] = v
 		}
 	case "px":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["padding-left"] = v
 			out["padding-right"] = v
 		}
 	case "py":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["padding-top"] = v
 			out["padding-bottom"] = v
 		}
 	case "pt":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["padding-top"] = v
 		}
 	case "pr":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["padding-right"] = v
 		}
 	case "pb":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["padding-bottom"] = v
 		}
 	case "pl":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["padding-left"] = v
 		}
 	case "m":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["margin-top"] = v
 			out["margin-right"] = v
 			out["margin-bottom"] = v
 			out["margin-left"] = v
 		}
 	case "mx":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["margin-left"] = v
 			out["margin-right"] = v
 		}
 	case "my":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["margin-top"] = v
 			out["margin-bottom"] = v
 		}
 	case "mt":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["margin-top"] = v
 		}
 	case "mr":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["margin-right"] = v
 		}
 	case "mb":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["margin-bottom"] = v
 		}
 	case "ml":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["margin-left"] = v
 		}
 	case "gap":
 		if strings.HasPrefix(rest, "x-") {
-			if v, ok := parseSpacing(rest[2:]); ok {
+			if v, ok := parseSpacing(rest[2:], cfg); ok {
 				out["column-gap"] = v
 			}
 		} else if strings.HasPrefix(rest, "y-") {
-			if v, ok := parseSpacing(rest[2:]); ok {
+			if v, ok := parseSpacing(rest[2:], cfg); ok {
 				out["row-gap"] = v
 			}
-		} else if v, ok := parseSpacing(rest); ok {
+		} else if v, ok := parseSpacing(rest, cfg); ok {
 			out["gap"] = v
 			out["row-gap"] = v
 			out["column-gap"] = v
 		}
 	case "space":
 		if strings.HasPrefix(rest, "x-") {
-			if v, ok := parseSpacing(rest[2:]); ok {
+			if v, ok := parseSpacing(rest[2:], cfg); ok {
 				out["column-gap"] = v
 			}
 		} else if strings.HasPrefix(rest, "y-") {
-			if v, ok := parseSpacing(rest[2:]); ok {
+			if v, ok := parseSpacing(rest[2:], cfg); ok {
 				out["row-gap"] = v
 			}
 		}
 	case "w":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["width"] = v
 		}
 	case "h":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["height"] = v
 		}
 	case "size":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["width"] = v
 			out["height"] = v
 		}
 	case "top":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["top"] = v
 		}
 	case "right":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["right"] = v
 		}
 	case "bottom":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["bottom"] = v
 		}
 	case "left":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["left"] = v
 		}
 	case "inset":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["top"] = v
 			out["right"] = v
 			out["bottom"] = v
@@ -1406,7 +1472,7 @@ func resolveTailwindDynamic(cls string, version TailwindVersion, out map[string]
 			out["opacity"] = fmt.Sprintf("%.2f", float64(n)/100.0)
 		}
 	case "leading":
-		if v, ok := parseSpacing(rest); ok {
+		if v, ok := parseSpacing(rest, cfg); ok {
 			out["line-height"] = v
 		}
 	case "line":
@@ -1418,11 +1484,11 @@ func resolveTailwindDynamic(cls string, version TailwindVersion, out map[string]
 		}
 	case "translate":
 		if strings.HasPrefix(rest, "x-") {
-			if v, ok := parseSpacing(rest[2:]); ok {
+			if v, ok := parseSpacing(rest[2:], cfg); ok {
 				out["transform"] = "translateX(" + v + ")"
 			}
 		} else if strings.HasPrefix(rest, "y-") {
-			if v, ok := parseSpacing(rest[2:]); ok {
+			if v, ok := parseSpacing(rest[2:], cfg); ok {
 				out["transform"] = "translateY(" + v + ")"
 			}
 		}
@@ -1453,33 +1519,90 @@ func resolveTailwindDynamic(cls string, version TailwindVersion, out map[string]
 			}
 		}
 	case "text", "bg":
-		resolveColorPrefix(prefix, rest, version, out)
+		resolveColorPrefix(prefix, rest, version, cfg, out)
 	case "from":
-		if _, val, ok := resolveColorClass("bg", rest, version); ok {
+		if _, val, ok := resolveColorClass("bg", rest, version, cfg); ok {
 			out["--tw-gradient-from"] = val
 		}
 	case "via":
-		if _, val, ok := resolveColorClass("bg", rest, version); ok {
+		if _, val, ok := resolveColorClass("bg", rest, version, cfg); ok {
 			out["--tw-gradient-via"] = val
 		}
 	case "to":
-		if _, val, ok := resolveColorClass("bg", rest, version); ok {
+		if _, val, ok := resolveColorClass("bg", rest, version, cfg); ok {
 			out["--tw-gradient-to"] = val
 		}
 	case "border":
-		resolveBorderDynamic(rest, version, out)
+		resolveBorderDynamic(rest, version, cfg, out)
+	case "font":
+		if v, ok := cfg.fontOverride(rest); ok {
+			out["font-family"] = v
+		}
+	case "grid":
+		resolveGridPrefix(rest, out)
+	case "col":
+		resolveColRow("column", rest, out)
+	case "row":
+		resolveColRow("row", rest, out)
+	case "auto":
+		resolveAutoPrefix(rest, out)
 	}
 }
 
-func resolveColorPrefix(prefix, rest string, version TailwindVersion, out map[string]string) {
-	prop, val, ok := resolveColorClass(prefix, rest, version)
+func resolveGridPrefix(rest string, out map[string]string) {
+	switch {
+	case strings.HasPrefix(rest, "cols-"):
+		n, err := strconv.Atoi(rest[len("cols-"):])
+		if err == nil && n > 0 {
+			out["grid-template-columns"] = fmt.Sprintf("repeat(%d, minmax(0, 1fr))", n)
+		}
+	case strings.HasPrefix(rest, "rows-"):
+		n, err := strconv.Atoi(rest[len("rows-"):])
+		if err == nil && n > 0 {
+			out["grid-template-rows"] = fmt.Sprintf("repeat(%d, minmax(0, 1fr))", n)
+		}
+	}
+}
+
+func resolveColRow(axis, rest string, out map[string]string) {
+	prop := "grid-" + axis
+	switch {
+	case strings.HasPrefix(rest, "span-"):
+		n, err := strconv.Atoi(rest[len("span-"):])
+		if err == nil && n > 0 {
+			out[prop] = fmt.Sprintf("span %d / span %d", n, n)
+		}
+	case strings.HasPrefix(rest, "start-"):
+		n, err := strconv.Atoi(rest[len("start-"):])
+		if err == nil {
+			out[prop+"-start"] = strconv.Itoa(n)
+		}
+	case strings.HasPrefix(rest, "end-"):
+		n, err := strconv.Atoi(rest[len("end-"):])
+		if err == nil {
+			out[prop+"-end"] = strconv.Itoa(n)
+		}
+	}
+}
+
+func resolveAutoPrefix(rest string, out map[string]string) {
+	switch {
+	case strings.HasPrefix(rest, "cols-"):
+		out["grid-auto-columns"] = rest[len("cols-"):]
+	case strings.HasPrefix(rest, "rows-"):
+		out["grid-auto-rows"] = rest[len("rows-"):]
+	}
+}
+
+func resolveColorPrefix(prefix, rest string, version TailwindVersion, cfg *TailwindConfig, out map[string]string) {
+	prop, val, ok := resolveColorClass(prefix, rest, version, cfg)
 	if ok {
 		out[prop] = val
 	}
 }
 
-func resolveBorderDynamic(rest string, version TailwindVersion, out map[string]string) {
-	if prop, val, ok := resolveColorClass("border", rest, version); ok {
+func resolveBorderDynamic(rest string, version TailwindVersion, cfg *TailwindConfig, out map[string]string) {
+	if prop, val, ok := resolveColorClass("border", rest, version, cfg); ok {
 		out[prop] = val
 		return
 	}

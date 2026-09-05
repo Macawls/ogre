@@ -8,6 +8,7 @@ import (
 
 	ogre "github.com/macawls/ogre/v3"
 	"github.com/macawls/ogre/v3/server"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func main() {
@@ -22,16 +23,27 @@ func main() {
 	height := flag.Int("height", 630, "canvas height")
 	format := flag.String("format", "svg", "output format: svg, png, or jpeg")
 	twVersion := flag.String("tailwind-version", "v3", "Tailwind CSS version: v3 or v4")
+	twConfig := flag.String("tailwind-config", "", "path to Tailwind config file (.css or .json)")
 
 	flag.Parse()
+
+	var cfg *style.TailwindConfig
+	if *twConfig != "" {
+		loaded, err := style.LoadTailwindConfig(*twConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error loading tailwind config: %v\n", err)
+			os.Exit(1)
+		}
+		cfg = loaded
+	}
 
 	switch {
 	case *serve:
 		runServer(*port)
 	case *render != "":
-		runRender(*render, *output, *width, *height, *format, *twVersion)
+		runRender(*render, *output, *width, *height, *format, *twVersion, cfg)
 	case *html != "":
-		runHTML(*html, *output, *width, *height, *format, *twVersion)
+		runHTML(*html, *output, *width, *height, *format, *twVersion, cfg)
 	default:
 		flag.Usage()
 		os.Exit(1)
@@ -51,20 +63,20 @@ func runServer(port int) {
 	}
 }
 
-func runRender(path, output string, width, height int, format, twVersion string) {
+func runRender(path, output string, width, height int, format, twVersion string, twConfig *style.TailwindConfig) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error reading file: %v\n", err)
 		os.Exit(1)
 	}
-	renderAndWrite(string(data), output, width, height, format, twVersion)
+	renderAndWrite(string(data), output, width, height, format, twVersion, twConfig)
 }
 
-func runHTML(html, output string, width, height int, format, twVersion string) {
-	renderAndWrite(html, output, width, height, format, twVersion)
+func runHTML(html, output string, width, height int, format, twVersion string, twConfig *style.TailwindConfig) {
+	renderAndWrite(html, output, width, height, format, twVersion, twConfig)
 }
 
-func renderAndWrite(html, output string, width, height int, format, twVersion string) {
+func renderAndWrite(html, output string, width, height int, format, twVersion string, twConfig *style.TailwindConfig) {
 	f := ogre.Format(strings.ToLower(format))
 	if f != ogre.FormatSVG && f != ogre.FormatPNG && f != ogre.FormatJPEG {
 		fmt.Fprintf(os.Stderr, "unsupported format: %s\n", format)
@@ -87,6 +99,7 @@ func renderAndWrite(html, output string, width, height int, format, twVersion st
 		Height:          height,
 		Format:          f,
 		TailwindVersion: tv,
+		TailwindConfig:  twConfig,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "render error: %v\n", err)
@@ -131,6 +144,7 @@ FLAGS
 
   Tailwind:
     --tailwind-version string   v3 | v4              (default v3)
+    --tailwind-config  string   path to a config file (.css or .json)
 
   Server:
     --port    int     server port (with --serve)    (default 3000)
@@ -156,12 +170,15 @@ WRITING HTML FOR OGRE (read this before generating markup)
     * No @media, :hover / :focus, ::before / ::after, animations,
       transitions, or calc(). Values are resolved once, statically.
 
-  Layout — flexbox only (W3C spec):
+  Layout — flexbox and CSS Grid (Level 1, Phase A):
     * <div> defaults to display: block, rendered internally as
       flex-direction: column with align-items: stretch.
-    * DO NOT use display: grid, grid-template-*, float, or columns —
-      grid falls through to the default (block/column-flex) and your
-      layout will drift.
+    * display: grid works with fixed / percent / fr tracks, explicit
+      line placement (incl. col-span-full / grid-column: 1 / -1), gap,
+      and simple auto-placement. See https://ogre.macawls.dev/guides/grid/
+      for track-sizing details and Phase A limitations (no minmax lower
+      bound, no template-areas, no auto-fill/auto-fit, no subgrid).
+    * DO NOT use float or columns — no rendering path exists for those.
     * position: static | relative | absolute only. fixed and sticky are
       not supported (they degrade silently).
 
@@ -186,6 +203,12 @@ WRITING HTML FOR OGRE (read this before generating markup)
 
   Tailwind arbitrary values work: w-[123px], bg-[#ff5500], rotate-[15deg].
   In v4, bg-(--brand) expands to background-color: var(--brand).
+
+  Custom Tailwind config (--tailwind-config theme.css or theme.json):
+    * v4 @theme { --color-<name>-<shade>, --spacing-<key>, --font-<key>,
+      --breakpoint-<key> } is the CSS format Tailwind users already have.
+    * JSON schema mirrors ogre.TailwindConfig (Colors, Spacing, Fonts,
+      Extend). See https://ogre.macawls.dev/guides/tailwind/#custom-config.
 
 FULL LLM CONTEXT
   https://ogre.macawls.dev/llms-full.txt        (canonical digest)

@@ -147,6 +147,17 @@ type Style struct {
 	Left   Dimension
 
 	AspectRatio float64
+
+	GridTemplateColumns TrackList
+	GridTemplateRows    TrackList
+	GridAutoColumns     TrackSize
+	GridAutoRows        TrackSize
+	GridAutoFlow        GridAutoFlow
+
+	GridColumnStart GridPlacement
+	GridColumnEnd   GridPlacement
+	GridRowStart    GridPlacement
+	GridRowEnd      GridPlacement
 }
 
 // Display controls whether a node participates in layout.
@@ -155,7 +166,47 @@ type Display int
 const (
 	DisplayFlex Display = iota
 	DisplayNone
+	DisplayGrid
 )
+
+// TrackSizingKind categorizes a grid track's sizing function.
+type TrackSizingKind int
+
+const (
+	TrackFixed TrackSizingKind = iota
+	TrackAuto
+	TrackFr
+)
+
+// TrackSize describes one grid-template track.
+type TrackSize struct {
+	Kind   TrackSizingKind
+	Length Dimension
+	Fr     float64
+}
+
+// TrackList is the ordered set of tracks parsed from grid-template-{rows,cols}.
+type TrackList struct {
+	Tracks []TrackSize
+}
+
+// GridAutoFlow selects the auto-placement direction.
+type GridAutoFlow int
+
+const (
+	FlowRow GridAutoFlow = iota
+	FlowColumn
+	FlowRowDense
+	FlowColumnDense
+)
+
+// GridPlacement is a `grid-column` or `grid-row` value. Start/End are 1-based
+// line indices; 0 means auto. Span > 0 means "span N tracks".
+type GridPlacement struct {
+	Start int
+	End   int
+	Span  int
+}
 
 // Layout holds the computed position and size of a node after layout.
 type Layout struct {

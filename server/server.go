@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/macawls/ogre/v3"
+	"github.com/macawls/ogre/v3/style"
 )
 
 const (
@@ -160,25 +161,29 @@ type fontRequest struct {
 }
 
 type renderRequest struct {
-	HTML            string         `json:"html"`
-	Width           int            `json:"width,omitempty"`
-	Height          int            `json:"height,omitempty"`
-	Format          string         `json:"format,omitempty"`
-	Quality         int            `json:"quality,omitempty"`
-	Template        string         `json:"template,omitempty"`
-	Data            map[string]any `json:"data,omitempty"`
-	Fonts           []fontRequest  `json:"fonts,omitempty"`
-	TailwindVersion string         `json:"tailwindVersion,omitempty"`
+	HTML              string                `json:"html"`
+	Width             int                   `json:"width,omitempty"`
+	Height            int                   `json:"height,omitempty"`
+	Format            string                `json:"format,omitempty"`
+	Quality           int                   `json:"quality,omitempty"`
+	Template          string                `json:"template,omitempty"`
+	Data              map[string]any        `json:"data,omitempty"`
+	Fonts             []fontRequest         `json:"fonts,omitempty"`
+	TailwindVersion   string                `json:"tailwindVersion,omitempty"`
+	TailwindConfig    *style.TailwindConfig `json:"tailwindConfig,omitempty"`
+	TailwindConfigCSS string                `json:"tailwindConfigCSS,omitempty"`
 }
 
 type templateRequest struct {
-	Template        string         `json:"template"`
-	Data            map[string]any `json:"data"`
-	Width           int            `json:"width"`
-	Height          int            `json:"height"`
-	Format          string         `json:"format"`
-	Quality         int            `json:"quality"`
-	TailwindVersion string         `json:"tailwindVersion,omitempty"`
+	Template          string                `json:"template"`
+	Data              map[string]any        `json:"data"`
+	Width             int                   `json:"width"`
+	Height            int                   `json:"height"`
+	Format            string                `json:"format"`
+	Quality           int                   `json:"quality"`
+	TailwindVersion   string                `json:"tailwindVersion,omitempty"`
+	TailwindConfig    *style.TailwindConfig `json:"tailwindConfig,omitempty"`
+	TailwindConfigCSS string                `json:"tailwindConfigCSS,omitempty"`
 }
 
 // New creates a Server with the given configuration and registers routes.
@@ -388,7 +393,29 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.renderAndRespond(w, r, req.HTML, req.Width, req.Height, req.Format, req.Quality, fonts, req.TailwindVersion)
+	cfg, err := resolveTailwindConfig(req.TailwindConfig, req.TailwindConfigCSS)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.renderAndRespond(w, r, req.HTML, req.Width, req.Height, req.Format, req.Quality, fonts, req.TailwindVersion, cfg)
+}
+
+func resolveTailwindConfig(explicit *style.TailwindConfig, css string) (*style.TailwindConfig, error) {
+	if explicit != nil {
+		if explicit.IsEmpty() {
+			return nil, nil
+		}
+		return explicit, nil
+	}
+	if css == "" {
+		return nil, nil
+	}
+	parsed, err := style.ParseTailwindThemeCSS(css)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tailwindConfigCSS: %w", err)
+	}
+	return parsed, nil
 }
 
 func parseFontRequests(reqs []fontRequest) ([]ogre.FontSource, error) {
@@ -445,16 +472,21 @@ func (s *Server) handleRenderTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.renderAndRespond(w, r, buf.String(), req.Width, req.Height, req.Format, req.Quality, nil, req.TailwindVersion)
+	cfg, err := resolveTailwindConfig(req.TailwindConfig, req.TailwindConfigCSS)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.renderAndRespond(w, r, buf.String(), req.Width, req.Height, req.Format, req.Quality, nil, req.TailwindVersion, cfg)
 }
 
-func (s *Server) renderAndRespond(w http.ResponseWriter, r *http.Request, html string, width, height int, format string, quality int, fonts []ogre.FontSource, twVersion string) {
+func (s *Server) renderAndRespond(w http.ResponseWriter, r *http.Request, html string, width, height int, format string, quality int, fonts []ogre.FontSource, twVersion string, twConfig *style.TailwindConfig) {
 	start := time.Now()
 	if format == "" {
 		format = "svg"
 	}
 
-	key := cacheKey(html, width, height, format, twVersion)
+	key := cacheKey(html, width, height, format, twVersion, twConfig)
 
 	if data, ok := s.cache.Get(key); ok {
 		elapsed := time.Since(start)
@@ -495,6 +527,7 @@ func (s *Server) renderAndRespond(w http.ResponseWriter, r *http.Request, html s
 			Fonts:           fonts,
 			MaxElements:     s.cfg.MaxElements,
 			TailwindVersion: ogre.TailwindVersion(twVersion),
+			TailwindConfig:  twConfig,
 		})
 		ch <- renderResult{res, err}
 	}()
@@ -544,9 +577,13 @@ func (s *Server) renderAndRespond(w http.ResponseWriter, r *http.Request, html s
 	}
 }
 
-func cacheKey(html string, width, height int, format, twVersion string) string {
+func cacheKey(html string, width, height int, format, twVersion string, twConfig *style.TailwindConfig) string {
 	h := sha256.New()
-	fmt.Fprintf(h, "%s\x00%d\x00%d\x00%s\x00%s", html, width, height, format, twVersion)
+	var cfgKey string
+	if twConfig != nil {
+		cfgKey = twConfig.Key()
+	}
+	fmt.Fprintf(h, "%s\x00%d\x00%d\x00%s\x00%s\x00%s", html, width, height, format, twVersion, cfgKey)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
