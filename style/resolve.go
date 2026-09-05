@@ -159,14 +159,19 @@ var tagDefaults = map[string]map[string]string{
 // Resolve computes styles for every node in the tree, applying inheritance
 // and Tailwind classes under the given Tailwind version's semantics.
 func Resolve(root *parse.Node, viewportWidth, viewportHeight float64, twVersion TailwindVersion) map[*parse.Node]*ComputedStyle {
+	return ResolveWithConfig(root, viewportWidth, viewportHeight, twVersion, nil)
+}
+
+// ResolveWithConfig is like Resolve but applies cfg's Tailwind overrides.
+func ResolveWithConfig(root *parse.Node, viewportWidth, viewportHeight float64, twVersion TailwindVersion, cfg *TailwindConfig) map[*parse.Node]*ComputedStyle {
 	twVersion = normalizeVersion(twVersion)
 	result := make(map[*parse.Node]*ComputedStyle)
-	resolveNode(root, nil, nil, defaultRootFontSize, viewportWidth, viewportHeight, twVersion, result)
+	resolveNode(root, nil, nil, defaultRootFontSize, viewportWidth, viewportHeight, twVersion, cfg, result)
 	return result
 }
 
-func resolveNode(node *parse.Node, parent *ComputedStyle, parentVars map[string]string, rootFontSize, viewportWidth, viewportHeight float64, twVersion TailwindVersion, result map[*parse.Node]*ComputedStyle) {
-	props := mergeProps(node, twVersion)
+func resolveNode(node *parse.Node, parent *ComputedStyle, parentVars map[string]string, rootFontSize, viewportWidth, viewportHeight float64, twVersion TailwindVersion, cfg *TailwindConfig, result map[*parse.Node]*ComputedStyle) {
+	props := mergeProps(node, twVersion, cfg)
 	vars, resolved := resolveVariables(props, parentVars)
 	cs := resolveStyle(resolved, parent, rootFontSize, viewportWidth, viewportHeight)
 	if parent != nil && parent.BackgroundClip == "text" && cs.BackgroundClip == "" && cs.BackgroundImage == "" {
@@ -176,7 +181,7 @@ func resolveNode(node *parse.Node, parent *ComputedStyle, parentVars map[string]
 	result[node] = cs
 
 	for _, child := range node.Children {
-		resolveNode(child, cs, vars, rootFontSize, viewportWidth, viewportHeight, twVersion, result)
+		resolveNode(child, cs, vars, rootFontSize, viewportWidth, viewportHeight, twVersion, cfg, result)
 	}
 }
 
@@ -245,7 +250,7 @@ func resolveVar(value string, vars map[string]string) string {
 	}
 }
 
-func mergeProps(node *parse.Node, twVersion TailwindVersion) map[string]string {
+func mergeProps(node *parse.Node, twVersion TailwindVersion, cfg *TailwindConfig) map[string]string {
 	props := make(map[string]string)
 
 	props["display"] = "block"
@@ -259,7 +264,7 @@ func mergeProps(node *parse.Node, twVersion TailwindVersion) map[string]string {
 	}
 
 	if len(node.Classes) > 0 {
-		tw := ResolveTailwind(node.Classes, twVersion)
+		tw := ResolveTailwindWithConfig(node.Classes, twVersion, cfg)
 		for k, v := range tw {
 			props[k] = v
 		}
@@ -481,6 +486,46 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 	}
 	if v, ok := props["column-gap"]; ok {
 		cs.ColumnGap = ParseValue(v).Resolve(ctx)
+	}
+
+	if v, ok := props["grid-template-columns"]; ok {
+		cs.GridTemplateColumns = ParseTrackList(v)
+	}
+	if v, ok := props["grid-template-rows"]; ok {
+		cs.GridTemplateRows = ParseTrackList(v)
+	}
+	if v, ok := props["grid-auto-columns"]; ok {
+		if t, ok := parseTrackSize(v); ok {
+			cs.GridAutoColumns = t
+		}
+	}
+	if v, ok := props["grid-auto-rows"]; ok {
+		if t, ok := parseTrackSize(v); ok {
+			cs.GridAutoRows = t
+		}
+	}
+	if v, ok := props["grid-auto-flow"]; ok {
+		cs.GridAutoFlow = ParseGridAutoFlow(v)
+	}
+	if v, ok := props["grid-column"]; ok {
+		s, e := ParseGridLine(v)
+		cs.GridColumnStart, cs.GridColumnEnd = s, e
+	}
+	if v, ok := props["grid-column-start"]; ok {
+		cs.GridColumnStart = parseGridToken(v)
+	}
+	if v, ok := props["grid-column-end"]; ok {
+		cs.GridColumnEnd = parseGridToken(v)
+	}
+	if v, ok := props["grid-row"]; ok {
+		s, e := ParseGridLine(v)
+		cs.GridRowStart, cs.GridRowEnd = s, e
+	}
+	if v, ok := props["grid-row-start"]; ok {
+		cs.GridRowStart = parseGridToken(v)
+	}
+	if v, ok := props["grid-row-end"]; ok {
+		cs.GridRowEnd = parseGridToken(v)
 	}
 
 	return cs

@@ -4,8 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
+	"io"
 	"net/http"
+
+	"github.com/macawls/ogre/v3/style"
 )
+
+const handlerMaxBodyBytes = 10 << 20
 
 type HandlerConfig struct {
 	Width   int
@@ -15,14 +20,16 @@ type HandlerConfig struct {
 }
 
 type renderPayload struct {
-	HTML            string         `json:"html"`
-	Template        string         `json:"template"`
-	Data            map[string]any `json:"data"`
-	Width           int            `json:"width"`
-	Height          int            `json:"height"`
-	Format          string         `json:"format"`
-	Quality         int            `json:"quality"`
-	TailwindVersion string         `json:"tailwindVersion,omitempty"`
+	HTML              string          `json:"html"`
+	Template          string          `json:"template"`
+	Data              map[string]any  `json:"data"`
+	Width             int             `json:"width"`
+	Height            int             `json:"height"`
+	Format            string          `json:"format"`
+	Quality           int             `json:"quality"`
+	TailwindVersion   string          `json:"tailwindVersion,omitempty"`
+	TailwindConfig    *TailwindConfig `json:"tailwindConfig,omitempty"`
+	TailwindConfigCSS string          `json:"tailwindConfigCSS,omitempty"`
 }
 
 func (r *Renderer) Handler(cfg HandlerConfig) http.Handler {
@@ -37,8 +44,14 @@ func (r *Renderer) Handler(cfg HandlerConfig) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		body := http.MaxBytesReader(w, req.Body, handlerMaxBodyBytes)
+		defer body.Close()
 		var p renderPayload
-		if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
+		if err := json.NewDecoder(body).Decode(&p); err != nil {
+			if _, ok := err.(*http.MaxBytesError); ok || err == io.ErrUnexpectedEOF {
+				jsonError(w, "request body too large", http.StatusRequestEntityTooLarge)
+				return
+			}
 			jsonError(w, "invalid JSON", http.StatusBadRequest)
 			return
 		}
@@ -80,12 +93,26 @@ func (r *Renderer) Handler(cfg HandlerConfig) http.Handler {
 			quality = cfg.Quality
 		}
 
+		cfg := p.TailwindConfig
+		if cfg == nil && p.TailwindConfigCSS != "" {
+			parsed, err := style.ParseTailwindThemeCSS(p.TailwindConfigCSS)
+			if err != nil {
+				jsonError(w, "invalid tailwindConfigCSS: "+err.Error(), http.StatusBadRequest)
+				return
+			}
+			cfg = parsed
+		}
+		if cfg != nil && cfg.IsEmpty() {
+			cfg = nil
+		}
+
 		result, err := r.Render(html, Options{
 			Width:           width,
 			Height:          height,
 			Format:          format,
 			Quality:         quality,
 			TailwindVersion: TailwindVersion(p.TailwindVersion),
+			TailwindConfig:  cfg,
 		})
 		if err != nil {
 			jsonError(w, "render failed: "+err.Error(), http.StatusInternalServerError)

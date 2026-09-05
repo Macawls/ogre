@@ -40,6 +40,10 @@ const (
 // class resolution. Zero value defaults to v3.
 type TailwindVersion = style.TailwindVersion
 
+// TailwindConfig extends the built-in Tailwind class table with custom
+// colors, spacing, fonts, or arbitrary utilities.
+type TailwindConfig = style.TailwindConfig
+
 const (
 	// TailwindV3 selects Tailwind v3 semantics (the default).
 	TailwindV3 = style.TailwindV3
@@ -60,6 +64,7 @@ type Options struct {
 	EmojiProvider   string // "twemoji" (default), "none"
 	MaxElements     int
 	TailwindVersion TailwindVersion // "" or "v3" → v3 (default); "v4" → v4
+	TailwindConfig  *TailwindConfig
 }
 
 // FontSource describes a font to load, either from raw bytes or a URL.
@@ -147,7 +152,7 @@ func (r *Renderer) Render(html string, opts Options) (*Result, error) {
 	w := float64(opts.Width)
 	h := float64(opts.Height)
 
-	styles := style.Resolve(root, w, h, opts.TailwindVersion)
+	styles := style.ResolveWithConfig(root, w, h, opts.TailwindVersion, opts.TailwindConfig)
 
 	if r.fontCache == nil {
 		cacheDir := filepath.Join(os.TempDir(), "ogre-font-cache")

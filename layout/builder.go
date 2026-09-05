@@ -110,6 +110,17 @@ func mapStyle(cs *style.ComputedStyle) Style {
 		Left:   mapDimension(cs.Left),
 
 		AspectRatio: cs.AspectRatio,
+
+		GridTemplateColumns: mapTrackList(cs.GridTemplateColumns),
+		GridTemplateRows:    mapTrackList(cs.GridTemplateRows),
+		GridAutoColumns:     mapTrackSize(cs.GridAutoColumns),
+		GridAutoRows:        mapTrackSize(cs.GridAutoRows),
+		GridAutoFlow:        mapGridAutoFlow(cs.GridAutoFlow),
+
+		GridColumnStart: mapGridPlacement(cs.GridColumnStart),
+		GridColumnEnd:   mapGridPlacement(cs.GridColumnEnd),
+		GridRowStart:    mapGridPlacement(cs.GridRowStart),
+		GridRowEnd:      mapGridPlacement(cs.GridRowEnd),
 	}
 }
 
@@ -117,9 +128,58 @@ func mapDisplay(d style.Display) Display {
 	switch d {
 	case style.DisplayNone:
 		return DisplayNone
+	case style.DisplayGrid:
+		return DisplayGrid
 	default:
 		return DisplayFlex
 	}
+}
+
+func mapTrackSize(t style.TrackSize) TrackSize {
+	kind := TrackAuto
+	switch t.Kind {
+	case style.TrackFixed:
+		kind = TrackFixed
+	case style.TrackFr:
+		kind = TrackFr
+	}
+	length := Undefined()
+	switch t.Length.Unit {
+	case style.UnitPx:
+		length = Pt(t.Length.Raw)
+	case style.UnitPercent:
+		length = Pct(t.Length.Raw)
+	case style.UnitAuto:
+		length = Auto()
+	}
+	return TrackSize{Kind: kind, Length: length, Fr: t.Fr}
+}
+
+func mapTrackList(l style.TrackList) TrackList {
+	if len(l.Tracks) == 0 {
+		return TrackList{}
+	}
+	out := make([]TrackSize, len(l.Tracks))
+	for i, t := range l.Tracks {
+		out[i] = mapTrackSize(t)
+	}
+	return TrackList{Tracks: out}
+}
+
+func mapGridAutoFlow(f style.GridAutoFlow) GridAutoFlow {
+	switch f {
+	case style.FlowColumn:
+		return FlowColumn
+	case style.FlowRowDense:
+		return FlowRowDense
+	case style.FlowColumnDense:
+		return FlowColumnDense
+	}
+	return FlowRow
+}
+
+func mapGridPlacement(p style.GridPlacement) GridPlacement {
+	return GridPlacement{Start: p.Start, End: p.End, Span: p.Span}
 }
 
 func mapPosition(p style.Position) Position {

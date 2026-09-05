@@ -94,6 +94,17 @@ type ComputedStyle struct {
 	ClipPath        string
 
 	BoxSizing BoxSizing
+
+	GridTemplateColumns TrackList
+	GridTemplateRows    TrackList
+	GridAutoColumns     TrackSize
+	GridAutoRows        TrackSize
+	GridAutoFlow        GridAutoFlow
+
+	GridColumnStart GridPlacement
+	GridColumnEnd   GridPlacement
+	GridRowStart    GridPlacement
+	GridRowEnd      GridPlacement
 }
 
 // NewComputedStyle returns a ComputedStyle with default values.
@@ -108,5 +119,8 @@ func NewComputedStyle() *ComputedStyle {
 		FlexBasis: none,
 		Opacity:   1,
 		FlexShrink: 1,
+
+		GridAutoRows:    TrackSize{Kind: TrackAuto},
+		GridAutoColumns: TrackSize{Kind: TrackAuto},
 	}
 }

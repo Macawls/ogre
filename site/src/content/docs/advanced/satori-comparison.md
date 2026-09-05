@@ -71,7 +71,7 @@ The remaining sub-2% differences are sub-pixel positioning that comes from the d
 - You are building a Go backend and want HTML→image without a Node process
 - You want PNG or JPEG directly, without piping SVG through resvg
 - You want one binary you can drop into a container, a CLI, or a Go `net/http` mux
-- You want built-in Tailwind (v3 or v4) with no build step
+- You want built-in Tailwind (v3 or v4) with no Tailwind CLI required
 - You want an HTTP server with caching, rate limiting, and templates that runs out of the box
 
 ## When to use Satori

@@ -49,7 +49,7 @@ Dynamic image generation (OG cards, social previews, certificates, invoices, pre
 - **One binary, three surfaces.** The same code is a Go library, a CLI, and an HTTP server. `go get` it, drop it into an existing `net/http` mux, run it as a subprocess, or deploy the Docker image.
 - **Low overhead.** No Chrome, no Node, no CGo — `CGO_ENABLED=0` produces a static binary that runs in single-digit megabytes of RAM instead of the hundreds a headless browser needs.
 - **Agent-friendly.** One-command install, JSON HTTP API, `llms.txt` + `llms-full.txt` served alongside the docs, and a [public instance](https://ogre-api.macawls.dev) for experiments. Feed HTML in, get bytes out — no browser fleet to manage.
-- **Tailwind built-in.** Utility classes resolve directly (v3 default, v4 opt-in). No build step, no Tailwind CLI.
+- **Tailwind built-in.** Utility classes resolve directly (v3 default, v4 opt-in). No Tailwind CLI required.
 
 See [Performance](/reference/performance/) for render times and memory numbers, or [Satori Comparison](/advanced/satori-comparison/) for a side-by-side with Satori.
 
@@ -57,7 +57,7 @@ See [Performance](/reference/performance/) for render times and memory numbers, 
 
 - **Pure Go.** No CGo, no external binaries. Single static binary with `CGO_ENABLED=0`.
 - **Output quality first.** The priority is correct, complete rendering — PNG/JPEG output, inline SVGs, box shadows, CSS filters, transforms, RTL text. Performance optimizations follow once output fidelity is solid.
-- **Tailwind built-in.** Resolves Tailwind v3 (default) or v4 utility classes directly. No build step needed.
+- **Tailwind built-in.** Resolves Tailwind v3 (default) or v4 utility classes directly. No Tailwind CLI required.
 - **Production-ready server.** Includes an HTTP server with LRU caching, rate limiting, and template support.
 
 ## Dependencies

@@ -8,6 +8,7 @@ const (
 	DisplayNone
 	DisplayBlock
 	DisplayContents
+	DisplayGrid
 )
 
 func (d Display) String() string {
@@ -20,6 +21,8 @@ func (d Display) String() string {
 		return "block"
 	case DisplayContents:
 		return "contents"
+	case DisplayGrid:
+		return "grid"
 	}
 	return "block"
 }
@@ -35,6 +38,8 @@ func ParseDisplay(s string) Display {
 		return DisplayBlock
 	case "contents":
 		return DisplayContents
+	case "grid":
+		return DisplayGrid
 	}
 	return DisplayBlock
 }

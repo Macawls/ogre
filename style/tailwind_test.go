@@ -117,13 +117,101 @@ func TestTailwindDisplay(t *testing.T) {
 		{"block", "block"},
 		{"inline", "flex"},
 		{"inline-flex", "flex"},
-		{"grid", "flex"},
+		{"grid", "grid"},
+		{"inline-grid", "grid"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.class, func(t *testing.T) {
 			result := ResolveTailwind([]string{tt.class}, TailwindV3)
 			if result["display"] != tt.value {
 				t.Errorf("display: got %q, want %q", result["display"], tt.value)
+			}
+		})
+	}
+}
+
+func TestTailwindGrid(t *testing.T) {
+	tests := []struct {
+		class string
+		prop  string
+		value string
+	}{
+		{"grid", "display", "grid"},
+		{"inline-grid", "display", "grid"},
+		{"grid-cols-3", "grid-template-columns", "repeat(3, minmax(0, 1fr))"},
+		{"grid-cols-12", "grid-template-columns", "repeat(12, minmax(0, 1fr))"},
+		{"grid-cols-none", "grid-template-columns", "none"},
+		{"grid-rows-4", "grid-template-rows", "repeat(4, minmax(0, 1fr))"},
+		{"col-span-2", "grid-column", "span 2 / span 2"},
+		{"row-span-3", "grid-row", "span 3 / span 3"},
+		{"col-span-full", "grid-column", "1 / -1"},
+		{"row-span-full", "grid-row", "1 / -1"},
+		{"col-start-4", "grid-column-start", "4"},
+		{"col-end-7", "grid-column-end", "7"},
+		{"row-start-2", "grid-row-start", "2"},
+		{"row-end-5", "grid-row-end", "5"},
+		{"grid-flow-col", "grid-auto-flow", "column"},
+		{"grid-flow-row-dense", "grid-auto-flow", "row dense"},
+		{"auto-cols-fr", "grid-auto-columns", "1fr"},
+		{"auto-rows-min", "grid-auto-rows", "min-content"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.class, func(t *testing.T) {
+			result := ResolveTailwind([]string{tt.class}, TailwindV3)
+			if got := result[tt.prop]; got != tt.value {
+				t.Errorf("%s: %s = %q, want %q", tt.class, tt.prop, got, tt.value)
+			}
+		})
+	}
+}
+
+func TestGridTrackListParsing(t *testing.T) {
+	l := ParseTrackList("100px 1fr auto 2fr")
+	if len(l.Tracks) != 4 {
+		t.Fatalf("expected 4 tracks, got %d", len(l.Tracks))
+	}
+	if l.Tracks[0].Kind != TrackFixed || l.Tracks[0].Length.Raw != 100 {
+		t.Errorf("track 0: %+v", l.Tracks[0])
+	}
+	if l.Tracks[1].Kind != TrackFr || l.Tracks[1].Fr != 1 {
+		t.Errorf("track 1: %+v", l.Tracks[1])
+	}
+	if l.Tracks[2].Kind != TrackAuto {
+		t.Errorf("track 2: %+v", l.Tracks[2])
+	}
+	if l.Tracks[3].Kind != TrackFr || l.Tracks[3].Fr != 2 {
+		t.Errorf("track 3: %+v", l.Tracks[3])
+	}
+}
+
+func TestGridTrackListRepeat(t *testing.T) {
+	l := ParseTrackList("repeat(3, 1fr)")
+	if len(l.Tracks) != 3 {
+		t.Fatalf("expected 3 tracks, got %d", len(l.Tracks))
+	}
+	for i, tr := range l.Tracks {
+		if tr.Kind != TrackFr || tr.Fr != 1 {
+			t.Errorf("track %d: %+v", i, tr)
+		}
+	}
+}
+
+func TestGridLineShorthand(t *testing.T) {
+	tests := []struct {
+		in    string
+		start GridPlacement
+		end   GridPlacement
+	}{
+		{"2 / 4", GridPlacement{Start: 2}, GridPlacement{Start: 4}},
+		{"span 3", GridPlacement{Span: 3}, GridPlacement{}},
+		{"1 / span 2", GridPlacement{Start: 1}, GridPlacement{Span: 2}},
+		{"auto", GridPlacement{}, GridPlacement{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			s, e := ParseGridLine(tt.in)
+			if s != tt.start || e != tt.end {
+				t.Errorf("ParseGridLine(%q) = (%+v, %+v), want (%+v, %+v)", tt.in, s, e, tt.start, tt.end)
 			}
 		})
 	}

@@ -95,6 +95,11 @@ func computeNode(node *Node, in layoutRun) {
 		return
 	}
 
+	if s.Display == DisplayGrid {
+		computeGrid(node, in, contentWidth, contentHeight)
+		return
+	}
+
 	isRow := s.Direction == Row || s.Direction == RowReverse
 	isReverse := s.Direction == RowReverse || s.Direction == ColumnReverse
 
