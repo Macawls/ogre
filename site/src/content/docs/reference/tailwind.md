@@ -3,7 +3,7 @@ title: Tailwind Classes Reference
 description: Complete list of supported Tailwind v3 and v4 utility classes.
 ---
 
-Ogre resolves Tailwind utility classes at render time with no build step. The tables below list v3 (default) mappings; the [v4 differences](#v4-differences) section at the bottom notes what changes when you pass `TailwindVersion: TailwindV4`.
+Ogre resolves Tailwind utility classes at render time. No Tailwind CLI required. The tables below list v3 (default) mappings; the [v4 differences](#v4-differences) section at the bottom notes what changes when you pass `TailwindVersion: TailwindV4`. Custom overrides via `TailwindConfig` (Go struct, Tailwind v4 `@theme` CSS, or JSON) are covered in the [Tailwind guide](/guides/tailwind/#custom-config).
 
 ## Layout
 
@@ -26,6 +26,34 @@ Ogre resolves Tailwind utility classes at render time with no build step. The ta
 | `block` | `display: block` |
 | `relative` | `position: relative` |
 | `absolute` | `position: absolute` |
+| `grid` | `display: grid` |
+| `inline-grid` | `display: grid` |
+
+## Grid
+
+See the [grid guide](/guides/grid/) for the layout algorithm and Phase A limitations.
+
+| Class | CSS |
+|-------|-----|
+| `grid-cols-{1..12}` | `grid-template-columns: repeat(N, minmax(0, 1fr))` |
+| `grid-cols-none` | `grid-template-columns: none` |
+| `grid-rows-{1..6}` | `grid-template-rows: repeat(N, minmax(0, 1fr))` |
+| `grid-rows-none` | `grid-template-rows: none` |
+| `col-span-{1..12}` | `grid-column: span N / span N` |
+| `col-span-full` | `grid-column: 1 / -1` |
+| `col-start-{1..13}` | `grid-column-start: N` |
+| `col-end-{1..13}` | `grid-column-end: N` |
+| `row-span-{1..6}` | `grid-row: span N / span N` |
+| `row-span-full` | `grid-row: 1 / -1` |
+| `row-start-{1..7}` | `grid-row-start: N` |
+| `row-end-{1..7}` | `grid-row-end: N` |
+| `grid-flow-row` | `grid-auto-flow: row` |
+| `grid-flow-col` | `grid-auto-flow: column` |
+| `grid-flow-dense` | `grid-auto-flow: dense` |
+| `grid-flow-row-dense` | `grid-auto-flow: row dense` |
+| `grid-flow-col-dense` | `grid-auto-flow: column dense` |
+| `auto-cols-{auto,min,max,fr}` | `grid-auto-columns: auto \| min-content \| max-content \| 1fr` |
+| `auto-rows-{auto,min,max,fr}` | `grid-auto-rows: auto \| min-content \| max-content \| 1fr` |
 
 ## Alignment
 

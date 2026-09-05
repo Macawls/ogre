@@ -25,8 +25,9 @@
 
 - HTML + inline CSS to SVG, PNG, or JPEG
 - Inline `<svg>` elements and SVG data URI rasterization
-- Tailwind CSS v3 (default) or v4 utility classes including gradients (no build step)
-- Flexbox layout engine (W3C spec)
+- Tailwind CSS v3 (default) or v4 utility classes including gradients (no Tailwind CLI required)
+- Flexbox layout engine (W3C spec) with CSS Grid support (fixed / percent / fr tracks, explicit placement, gap, span)
+- Custom Tailwind configs via Go struct, Tailwind v4 `@theme` CSS, or JSON
 - Complex script rendering via pure Go HarfBuzz port (Arabic, Hebrew, Devanagari, Thai)
 - RTL text support with Unicode bidi algorithm
 - Emoji rendering (Twemoji, OpenMoji, Noto) in SVG and PNG
@@ -306,11 +307,15 @@ Configurable via `CORS_ORIGIN` env var. Supports `*`, single origin, or comma-se
 
 ## Tailwind Support
 
-Ogre resolves Tailwind CSS utility classes directly. No build step or Tailwind CLI needed. Both v3 (default) and v4 are supported — set `Options.TailwindVersion = ogre.TailwindV4` to opt into v4 (renamed shadow/blur/radius scales, OKLCH palette, `bg-linear-to-*` gradients, `shrink`/`grow` utilities, `bg-(--var)` shortcut). See the [Tailwind reference](https://ogre.macawls.dev/reference/tailwind/) for the full class list and v3/v4 differences.
+Ogre resolves Tailwind CSS utility classes directly at render time. No Tailwind CLI required. Both v3 (default) and v4 are supported — set `Options.TailwindVersion = ogre.TailwindV4` to opt into v4 (renamed shadow/blur/radius scales, OKLCH palette, `bg-linear-to-*` gradients, `shrink`/`grow` utilities, `bg-(--var)` shortcut). See the [Tailwind reference](https://ogre.macawls.dev/reference/tailwind/) for the full class list and v3/v4 differences.
+
+Extend the palette, spacing scale, font stacks, or add custom classes via `Options.TailwindConfig` (Go struct), a Tailwind v4 `@theme` CSS file (`--tailwind-config theme.css`), or JSON. See the [Tailwind guide](https://ogre.macawls.dev/guides/tailwind/#custom-config).
 
 ### Supported Utility Categories
 
-**Layout**: `flex`, `flex-row`, `flex-col`, `flex-wrap`, `flex-nowrap`, `flex-1`, `flex-auto`, `flex-initial`, `flex-none`, `flex-grow`, `flex-grow-0`, `flex-shrink`, `flex-shrink-0`, `hidden`, `block`, `relative`, `absolute`
+**Layout**: `flex`, `flex-row`, `flex-col`, `flex-wrap`, `flex-nowrap`, `flex-1`, `flex-auto`, `flex-initial`, `flex-none`, `flex-grow`, `flex-grow-0`, `flex-shrink`, `flex-shrink-0`, `hidden`, `block`, `relative`, `absolute`, `grid`, `inline-grid`
+
+**Grid**: `grid-cols-{1..12}`, `grid-rows-{1..6}`, `grid-cols-none`, `col-span-{1..12}`, `col-span-full`, `col-start-{1..13}`, `col-end-{1..13}`, `row-span-{1..6}`, `row-span-full`, `row-start-{1..7}`, `row-end-{1..7}`, `grid-flow-{row,col,dense,row-dense,col-dense}`, `auto-cols-{auto,min,max,fr}`, `auto-rows-{auto,min,max,fr}`
 
 **Alignment**: `items-start`, `items-end`, `items-center`, `items-stretch`, `items-baseline`, `justify-start`, `justify-end`, `justify-center`, `justify-between`, `justify-around`, `justify-evenly`, `self-auto`, `self-start`, `self-end`, `self-center`, `self-stretch`, `content-start`, `content-end`, `content-center`, `content-between`, `content-around`, `content-stretch`
 

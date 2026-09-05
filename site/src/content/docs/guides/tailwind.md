@@ -3,7 +3,7 @@ title: Tailwind CSS
 description: Using Tailwind v3 and v4 utility classes in Ogre templates.
 ---
 
-Ogre resolves Tailwind CSS utility classes directly at render time. No Tailwind CLI, no build step, no configuration. Both Tailwind v3 (default) and v4 are supported — pick one via `Options.TailwindVersion`.
+Ogre resolves Tailwind CSS utility classes directly at render time. No Tailwind CLI required. Both Tailwind v3 (default) and v4 are supported — pick one via `Options.TailwindVersion`.
 
 ## Basic usage
 
@@ -40,6 +40,89 @@ CLI:
 ```bash
 ogre --tailwind-version v4 --html '...' --output og.png --format png
 ```
+
+## Custom config
+
+Extend the built-in palette, spacing scale, font families, or add arbitrary utility classes with a `TailwindConfig`. All fields are optional; nil means defaults.
+
+### As a Go struct
+
+```go
+cfg := &ogre.TailwindConfig{
+    Colors: map[string]map[int]string{
+        "brand": {500: "#ff00aa", 600: "#ee0099"},
+    },
+    Spacing: map[string]string{
+        "13":      "3.25rem",
+        "sidebar": "220px",
+    },
+    Fonts: map[string]string{
+        "display": `"Inter", sans-serif`,
+    },
+    Extend: map[string]map[string]string{
+        "card": {"background-color": "#123456", "border-radius": "8px", "padding": "16px"},
+    },
+}
+
+result, _ := ogre.Render(html, ogre.Options{
+    Width:          1200,
+    Height:         630,
+    TailwindConfig: cfg,
+})
+```
+
+Any class that would normally resolve against the built-in palette or spacing scale now consults `cfg` first. Missing keys fall back to defaults.
+
+### As Tailwind v4 CSS
+
+Ogre reads the same `@theme` block Tailwind v4 uses. Point `--tailwind-config` at a `.css` file:
+
+```css
+@theme {
+  --color-brand-500: #ff00aa;
+  --spacing-sidebar: 220px;
+  --font-display: "Inter", sans-serif;
+}
+```
+
+```bash
+ogre --tailwind-config theme.css --html '...' --output og.png --format png
+```
+
+Supported namespaces: `--color-<name>-<shade>`, `--spacing-<key>`, `--font-<key>`, `--breakpoint-<key>`. Multiple `@theme` blocks merge. Unnamespaced variables are ignored.
+
+### As JSON (HTTP or CLI)
+
+The JSON schema mirrors the struct:
+
+```json
+{
+  "html": "<div class=\"bg-brand-500 p-13\">...</div>",
+  "tailwindConfig": {
+    "colors": {"brand": {"500": "#ff00aa"}},
+    "spacing": {"13": "3.25rem"}
+  }
+}
+```
+
+Or send the CSS body directly:
+
+```json
+{
+  "html": "<div class=\"bg-brand-500\">...</div>",
+  "tailwindConfigCSS": "@theme { --color-brand-500: #ff00aa; }"
+}
+```
+
+CLI `.json` file works too — the extension picks the parser.
+
+### Rules and limits
+
+- **Precedence.** `Extend` is checked first (before arbitrary values and built-in classes), then colors/spacing/fonts overrides fall through to defaults on miss. Static utility classes (`font-bold`, `flex`, etc.) that don't take parameters still resolve through the built-in table and can only be overridden via `Extend`.
+- **Colors.** Palette name is everything before the last `-<integer>` in the class. `--color-brand-primary-500` → `Colors["brand-primary"][500]`; `bg-brand-primary-500` reads it back. Shade must be an integer; keyword names like `--color-brand-DEFAULT` are not currently parsed.
+- **Immutability.** A `TailwindConfig` must not be mutated after it has been passed to `Render`. The resolver caches lookups by content hash (`Key()`); mutating maps in place produces stale hits. Build the config fully before use, or call `Clone()`.
+- **Trust.** `TailwindConfig.Extend` copies property values verbatim into the computed style. Only accept configs from trusted sources; do not expose the config surface to end users without validation. Ogre's HTML sanitiser does not apply to CSS emitted this way.
+- **HTTP body limit.** The convenience `Renderer.Handler` caps request bodies at 10 MB. The full `server` package uses the same limit; set your own via middleware if you need more.
 
 ### Which name means what?
 
