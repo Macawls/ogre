@@ -43,10 +43,10 @@ func main() {
 
 const site = Astro.site?.toString().replace(/\/$/, '') ?? 'https://ogre.macawls.dev';
 const title = 'Ogre — Pure Go HTML/CSS to image renderer';
-const tagline = 'Render HTML and CSS to SVG, PNG, or JPEG in pure Go. OpenGraph images, social cards, and slides from one static binary — library, CLI, or HTTP server.';
+const tagline = 'Render HTML and CSS to SVG, PNG, or JPEG in pure Go — OG images, social cards, slides, or any dynamic image. One static binary: library, CLI, or HTTP server.';
 const description = tagline;
 const longDescription =
-	'Ogre is an open-source, pure Go renderer that turns HTML and CSS into SVG, PNG, or JPEG images. Designed for generating OpenGraph images, social cards, and presentation slides. Use it as a Go library, CLI, or HTTP server. Single static binary — no Chrome, no Node, no CGo. Tailwind v3 and v4 supported out of the box. Agent-friendly with llms.txt and a public HTTP instance.';
+	'Ogre is an open-source, pure Go renderer that turns HTML and CSS into SVG, PNG, or JPEG images. Generate OpenGraph images, social cards, presentation slides, certificates, invoices, or any dynamic image content from an HTML template. Use it as a Go library, CLI, or HTTP server. Single static binary — no Chrome, no Node, no CGo. Tailwind v3 and v4 supported out of the box. Agent-friendly with llms.txt and a public HTTP instance.';
 const ogImage = `${site}/og.png`;
 const canonical = `${site}/`;
 
@@ -170,9 +170,10 @@ const jsonLd = [
 					</h1>
 					<p class="lede">
 						Ogre turns HTML and CSS into <strong>SVG</strong>, <strong>PNG</strong>, or
-						<strong>JPEG</strong> — designed for OpenGraph images, social cards, and
-						presentation slides. Use it as a Go library, a standalone CLI, or a
-						self-hosted HTTP server. Single static binary. No Chrome, no Node, no CGo.
+						<strong>JPEG</strong> — for OpenGraph images, social cards, presentation
+						slides, and any dynamic image content your app needs. Use it as a Go
+						library, a standalone CLI, or a self-hosted HTTP server. Single static
+						binary. No Chrome, no Node, no CGo.
 					</p>
 					<div class="cta">
 						<a class="btn primary" href="/docs/">Read the docs →</a>
@@ -198,52 +199,72 @@ const jsonLd = [
 				/>
 			</section>
 
-			<section class="features">
+			<section class="why">
+				<h2 class="section-heading">Why Ogre?</h2>
+				<p class="why-lead">
+					Dynamic image generation — OG cards, social previews, certificates,
+					invoices, presentation slides — usually pulls in a separate runtime:
+					a JavaScript service, or a headless browser fleet. Ogre keeps it inside
+					one Go binary.
+				</p>
+
 				<article>
-					<h2>Pure Go, single binary</h2>
+					<h3>One binary, three surfaces</h3>
+					<p>
+						The same rendering engine ships as a <a href="/guides/library/">Go library</a>,
+						a <a href="/guides/cli/">CLI</a>, and a
+						<a href="/guides/server/">production HTTP server</a> with LRU caching, rate
+						limiting, and <code>html/template</code> support.
+						<code>go get</code> it, drop it into an existing <code>net/http</code>
+						mux, run it as a subprocess, or deploy the <a href="/guides/docker/">Docker image</a>.
+					</p>
+				</article>
+
+				<article>
+					<h3>Low overhead</h3>
 					<p>
 						No headless Chrome, no Node.js runtime, no shared libraries. Ogre ships
 						as one static binary that runs in single-digit megabytes of RAM instead
-						of the hundreds a browser needs. Drop it into an
-						<code>http.Handler</code>, run it as a subprocess, or deploy the Docker
-						image. <a href="/reference/performance/">See performance numbers →</a>
+						of the hundreds a browser needs.
+						<a href="/reference/performance/">See render times and memory numbers →</a>
 					</p>
 				</article>
 
 				<article>
-					<h2>OpenGraph images from HTML templates</h2>
+					<h3>Agent-friendly</h3>
 					<p>
-						Write the card as HTML, pass it through Ogre, get an image back. Defaults
-						to <code>1200×630</code> (the OG standard) but any canvas size works —
-						<code>1920×1080</code> for HD slides, arbitrary sizes for invoices,
-						certificates, or repo cards.
-						<a href="/guides/library/">Library usage →</a>
+						One-command install, one JSON HTTP endpoint that takes HTML and returns
+						image bytes, and no browser fleet to manage. The docs serve
+						<a href="/llms.txt">llms.txt</a> and
+						<a href="/llms-full.txt">llms-full.txt</a> for retrieval, and there's a
+						<a href="https://ogre-api.macawls.dev" rel="noopener">public instance</a>
+						at <code>ogre-api.macawls.dev</code> so agents can experiment without
+						any setup.
 					</p>
 				</article>
 
 				<article>
-					<h2>Tailwind v3 &amp; v4 built in</h2>
+					<h3>Tailwind built-in</h3>
 					<p>
-						Utility classes resolve directly — no build step, no Tailwind CLI. v3 by
-						default; opt into v4 (OKLCH palette, renamed shadow/blur scales,
+						Utility classes resolve directly — no build step, no Tailwind CLI. v3
+						by default; opt into v4 (OKLCH palette, renamed shadow/blur scales,
 						<code>bg-linear-to-*</code> gradients) with one option.
 						<a href="/reference/tailwind/">Tailwind reference →</a>
 					</p>
 				</article>
 
 				<article>
-					<h2>Three surfaces, one codebase</h2>
+					<h3>Any canvas, any format</h3>
 					<p>
-						The same rendering engine ships as a <a href="/guides/library/">Go library</a>,
-						a <a href="/guides/cli/">CLI</a>, and a
-						<a href="/guides/server/">production HTTP server</a> with LRU caching, rate
-						limiting, and <code>html/template</code> support. Or run the
-						<a href="/guides/docker/">Docker image</a>.
+						Defaults to <code>1200×630</code> (the OG standard) but any size works —
+						<code>1920×1080</code> for HD slides, arbitrary dimensions for invoices,
+						certificates, or repo cards. Output as SVG, PNG, or JPEG.
+						<a href="/guides/library/">Library usage →</a>
 					</p>
 				</article>
 
 				<article>
-					<h2>Complex text, emoji, RTL</h2>
+					<h3>Complex text, emoji, RTL</h3>
 					<p>
 						Pure-Go HarfBuzz port for shaping. Arabic, Hebrew, Devanagari, and Thai
 						render correctly. Unicode bidi algorithm for RTL. Twemoji, OpenMoji, and
@@ -251,7 +272,6 @@ const jsonLd = [
 						<a href="/getting-started/emoji-and-rtl/">Emoji &amp; RTL →</a>
 					</p>
 				</article>
-
 			</section>
 
 			<section class="showcase">
@@ -275,24 +295,18 @@ const jsonLd = [
 							loading="lazy"
 						/>
 						<figcaption>
-							Rendered PNG · 1200×630 · ~11 ms per render
-							<a href="/reference/performance/">(benchmarks →)</a>
+							Rendered PNG · 1200×630
+							<a href="/reference/performance/">(render times →)</a>
 						</figcaption>
 					</figure>
 				</div>
 			</section>
 
 			<section class="agents">
-				<h2>Agent-friendly</h2>
+				<h2>Try it without installing</h2>
 				<p>
-					Ogre is designed to be trivial for coding agents (Claude, Cursor, Codex) to
-					pick up and drive. One-line install, one HTTP endpoint that takes JSON and
-					returns image bytes, and no browser fleet to manage. The docs site serves
-					<a href="/llms.txt">llms.txt</a> and
-					<a href="/llms-full.txt">llms-full.txt</a> for retrieval, and there's a
-					<a href="https://ogre-api.macawls.dev" rel="noopener">public HTTP instance</a>
-					at <code>ogre-api.macawls.dev</code> so agents can experiment without any
-					setup.
+					A public instance runs at <code>ogre-api.macawls.dev</code> — hand it HTML,
+					get PNG bytes back. Drop this straight into a prompt or a shell.
 				</p>
 				<div class="code-frame">
 					<div class="code-frame-header">
@@ -491,26 +505,41 @@ const jsonLd = [
 			.install { margin: 0 0 3.5rem; }
 			.install pre { font-size: 0.95rem; }
 
-			.features {
-				display: flex;
-				flex-direction: column;
-				gap: 2rem;
+			.why {
 				border-top: 1px solid var(--hairline);
 				padding-top: 3rem;
 			}
-			.features article h2 {
+			.section-heading {
+				font-size: 1.4rem;
+				font-weight: 700;
+				margin: 0 0 1rem;
+				letter-spacing: -0.02em;
+				color: var(--fg);
+			}
+			.why-lead {
+				font-size: 1.05rem;
+				color: var(--fg-muted);
+				margin: 0 0 2.5rem;
+				max-width: 62ch;
+			}
+			.why article {
+				margin-bottom: 2rem;
+			}
+			.why article:last-child { margin-bottom: 0; }
+			.why article h3 {
 				font-size: 1.15rem;
 				font-weight: 600;
 				margin: 0 0 0.5rem;
 				color: var(--fg);
 				letter-spacing: -0.01em;
 			}
-			.features article p {
+			.why article p {
 				margin: 0;
 				color: var(--fg-muted);
 				font-size: 1rem;
 			}
-			.features article p a { color: var(--accent); }
+			.why article p a { color: var(--accent); }
+			.why article p strong { color: var(--fg); font-weight: 600; }
 
 			.showcase,
 			.agents {
