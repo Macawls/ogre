@@ -10,6 +10,10 @@ import (
 // Parse parses an HTML fragment and returns the root Node.
 // Parse parses an HTML string into a node tree.
 func Parse(htmlStr string) (*Node, error) {
+	if body := parseDocumentBody(htmlStr); body != nil {
+		return body, nil
+	}
+
 	nodes, err := html.ParseFragment(strings.NewReader(htmlStr), &html.Node{
 		Type:     html.ElementNode,
 		Data:     "body",
@@ -39,6 +43,46 @@ func Parse(htmlStr string) (*Node, error) {
 		Style:    map[string]string{"display": "flex", "flex-direction": "column"},
 		Children: roots,
 	}, nil
+}
+
+// parseDocumentBody returns the converted <body> element when the input is a
+// full document that declares attributes on it, and nil otherwise.
+//
+// html.ParseFragment deliberately ignores <html>, <head> and <body> start tags
+// along with their attributes, so a document whose font, colour or background
+// live on <body> (every stylesheet-driven page, every email template) would
+// lose them without a trace. Parsing such input as a document keeps them.
+// Input that declares nothing on <body> keeps the fragment path unchanged.
+func parseDocumentBody(htmlStr string) *Node {
+	if !strings.Contains(strings.ToLower(htmlStr), "<body") {
+		return nil
+	}
+
+	doc, err := html.Parse(strings.NewReader(htmlStr))
+	if err != nil {
+		return nil
+	}
+
+	var bodyEl *html.Node
+	var walk func(*html.Node)
+	walk = func(n *html.Node) {
+		if bodyEl != nil {
+			return
+		}
+		if n.Type == html.ElementNode && n.Data == "body" {
+			bodyEl = n
+			return
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+	walk(doc)
+
+	if bodyEl == nil || len(bodyEl.Attr) == 0 {
+		return nil
+	}
+	return convertNode(bodyEl)
 }
 
 func convertNode(n *html.Node) *Node {
