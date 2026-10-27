@@ -70,6 +70,7 @@ type ComputedStyle struct {
 	FontVariationSettings []VariationAxis
 	Color               Color
 	LineHeight          float64
+	LineHeightFactor    float64
 	LetterSpacing       float64
 	Direction           string
 	TextAlign           TextAlign

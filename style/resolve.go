@@ -287,6 +287,7 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 		cs.FontFamily = "sans-serif"
 		cs.Color = Color{0, 0, 0, 1}
 		cs.LineHeight = 1.2 * defaultRootFontSize
+		cs.LineHeightFactor = 1.2
 	} else {
 		for prop := range inheritedProperties {
 			if _, explicit := props[prop]; !explicit {
@@ -324,8 +325,12 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 	}
 
 	if v, ok := props["line-height"]; ok {
-		cs.LineHeight = resolveLineHeight(v, cs.FontSize, ctx)
-	} else {
+		cs.LineHeight, cs.LineHeightFactor = resolveLineHeightValue(v, cs.FontSize, ctx)
+	} else if cs.LineHeightFactor > 0 {
+		// A unitless line-height inherits as a multiplier, not as the px value
+		// computed at the ancestor, so it tracks this element's own font-size.
+		cs.LineHeight = cs.LineHeightFactor * cs.FontSize
+	} else if cs.LineHeight == 0 {
 		cs.LineHeight = 1.2 * cs.FontSize
 	}
 
@@ -547,6 +552,7 @@ func inheritProperty(cs *ComputedStyle, parent *ComputedStyle, prop string) {
 		cs.FontVariationSettings = parent.FontVariationSettings
 	case "line-height":
 		cs.LineHeight = parent.LineHeight
+		cs.LineHeightFactor = parent.LineHeightFactor
 	case "letter-spacing":
 		cs.LetterSpacing = parent.LetterSpacing
 	case "text-align":
@@ -619,13 +625,22 @@ func resolveFontSize(v string, parentFontSize, rootFontSize, viewportWidth, view
 	return parsed.Resolve(ctx)
 }
 
-func resolveLineHeight(v string, fontSize float64, ctx ResolveContext) float64 {
-	if f, err := strconv.ParseFloat(v, 64); err == nil {
-		if !strings.ContainsAny(v, "pxemr%vwh") {
-			return f * fontSize
-		}
+// resolveLineHeightValue returns the resolved line height in px plus, for a
+// unitless declaration, the multiplier it came from (0 otherwise). The
+// multiplier has to survive inheritance: CSS inherits the number, so a child
+// with a different font-size recomputes instead of inheriting a stale px value.
+func resolveLineHeightValue(v string, fontSize float64, ctx ResolveContext) (float64, float64) {
+	trimmed := strings.TrimSpace(v)
+	if f, err := strconv.ParseFloat(trimmed, 64); err == nil {
+		return f * fontSize, f
 	}
-	return ParseValue(v).Resolve(ctx)
+	parsed := ParseValue(trimmed)
+	if parsed.Unit == UnitPercent {
+		// A percentage line-height is a share of the element's own font-size,
+		// not of the container, so it must not go through ContainerSize.
+		return parsed.Raw * fontSize / 100, 0
+	}
+	return parsed.Resolve(ctx), 0
 }
 
 func getOr(props map[string]string, key, fallback string) string {
