@@ -56,8 +56,18 @@ func buildNode(pn *parse.Node, styles map[*parse.Node]*style.ComputedStyle, meas
 func mapStyle(cs *style.ComputedStyle) Style {
 	direction := mapDirection(cs.FlexDirection)
 	alignItems := mapAlignItems(cs.AlignItems)
-	if cs.Display == style.DisplayBlock {
+	if cs.Display == style.DisplayBlock || cs.Display == style.DisplayTableRowGroup ||
+		cs.Display == style.DisplayTableCell {
 		direction = Column
+		if cs.AlignItems == style.AlignItemsAuto {
+			alignItems = AlignStretch
+		}
+	}
+	// A table row runs horizontally: its cells sit side by side. computeTable
+	// places them itself, but the intrinsic-size estimator walks the same tree and
+	// must see the row's main axis as horizontal or it sums the cells' heights.
+	if cs.Display == style.DisplayTableRow {
+		direction = Row
 		if cs.AlignItems == style.AlignItemsAuto {
 			alignItems = AlignStretch
 		}
@@ -130,6 +140,14 @@ func mapDisplay(d style.Display) Display {
 		return DisplayNone
 	case style.DisplayGrid:
 		return DisplayGrid
+	case style.DisplayTable:
+		return DisplayTable
+	case style.DisplayTableRow:
+		return DisplayTableRow
+	case style.DisplayTableRowGroup:
+		return DisplayTableRowGroup
+	case style.DisplayTableCell:
+		return DisplayTableCell
 	default:
 		return DisplayFlex
 	}

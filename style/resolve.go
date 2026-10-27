@@ -33,6 +33,28 @@ var tagDefaults = map[string]map[string]string{
 		"margin-top":    "1em",
 		"margin-bottom": "1em",
 	},
+	"table": {
+		"display": "table",
+	},
+	"thead": {
+		"display": "table-row-group",
+	},
+	"tbody": {
+		"display": "table-row-group",
+	},
+	"tfoot": {
+		"display": "table-row-group",
+	},
+	"tr": {
+		"display": "table-row",
+	},
+	"td": {
+		"display": "table-cell",
+	},
+	"th": {
+		"display": "table-cell",
+		"font-weight": "700",
+	},
 	"h1": {
 		"font-size":     "2em",
 		"font-weight":   "700",
