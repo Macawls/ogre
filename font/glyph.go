@@ -78,24 +78,35 @@ func ShapedTextToPath(mgr *Manager, text string, family string, weight int, styl
 }
 
 func ShapedTextToPathVariations(mgr *Manager, text string, family string, weight int, style string, size float64, rtl bool, vars []Variation) (string, float64) {
+	return ShapedTextToPathVariationsSpaced(mgr, text, family, weight, style, size, rtl, vars, 0)
+}
+
+// ShapedTextToPathVariationsSpaced is ShapedTextToPathVariations with letter
+// spacing applied between adjacent glyphs.
+func ShapedTextToPathVariationsSpaced(mgr *Manager, text string, family string, weight int, style string, size float64, rtl bool, vars []Variation, letterSpacing float64) (string, float64) {
 	face := mgr.Resolve(family, weight, style)
 	if face == nil || len(face.RawData) == 0 {
-		return TextToPathVariations(mgr, text, family, weight, style, size, vars)
+		return TextToPathVariationsSpaced(mgr, text, family, weight, style, size, vars, letterSpacing)
 	}
 
 	run, err := mgr.ShapeTextWithVariations(face, text, size, rtl, vars)
 	if err != nil || len(run.Glyphs) == 0 {
-		return TextToPathVariations(mgr, text, family, weight, style, size, vars)
+		return TextToPathVariationsSpaced(mgr, text, family, weight, style, size, vars, letterSpacing)
+	}
+
+	advance := run.Advance
+	if letterSpacing != 0 && len(run.Glyphs) > 1 {
+		advance += letterSpacing * float64(len(run.Glyphs)-1)
 	}
 
 	if face.Variable && len(vars) > 0 {
 		gtFace, err := face.shaperFace(vars)
 		if err == nil {
-			return shapedRunToPathVariations(gtFace, run, size), run.Advance
+			return shapedRunToPathVariationsSpaced(gtFace, run, size, letterSpacing), advance
 		}
 	}
-	path := ShapedRunToPath(face.Font, run, size)
-	return path, run.Advance
+	path := ShapedRunToPathSpaced(face.Font, run, size, letterSpacing)
+	return path, advance
 }
 
 func TextToPath(mgr *Manager, text string, family string, weight int, style string, size float64) (string, float64) {
@@ -103,16 +114,24 @@ func TextToPath(mgr *Manager, text string, family string, weight int, style stri
 }
 
 func TextToPathVariations(mgr *Manager, text string, family string, weight int, style string, size float64, vars []Variation) (string, float64) {
+	return TextToPathVariationsSpaced(mgr, text, family, weight, style, size, vars, 0)
+}
+
+// TextToPathVariationsSpaced renders text to a single path, inserting
+// letterSpacing between adjacent glyphs. The spacing convention matches
+// Measurer.StringWidth: spacing x (n-1), with no trailing spacing after the
+// last glyph, so measurement and rendering agree.
+func TextToPathVariationsSpaced(mgr *Manager, text string, family string, weight int, style string, size float64, vars []Variation, letterSpacing float64) (string, float64) {
 	face := mgr.Resolve(family, weight, style)
 	if face == nil {
 		return "", 0
 	}
 	if face.Variable && len(vars) > 0 {
-		if path, adv, ok := textToPathVariable(mgr, face, text, size, vars, 0); ok {
+		if path, adv, ok := textToPathVariable(mgr, face, text, size, vars, letterSpacing); ok {
 			return path, adv
 		}
 	}
-	return textToPathCached(mgr, face.Name, face.Font, text, size, 0)
+	return textToPathCached(mgr, face.Name, face.Font, text, size, letterSpacing)
 }
 
 func TextToPathWithFont(f *opentype.Font, text string, size float64, letterSpacing float64) (string, float64) {
@@ -268,14 +287,23 @@ func GlyphIDToPath(f *opentype.Font, gid sfnt.GlyphIndex, size float64) (GlyphPa
 }
 
 func ShapedRunToPath(f *opentype.Font, run *ShapedRun, size float64) string {
+	return ShapedRunToPathSpaced(f, run, size, 0)
+}
+
+// ShapedRunToPathSpaced is ShapedRunToPath with letter spacing inserted
+// between adjacent glyphs.
+func ShapedRunToPathSpaced(f *opentype.Font, run *ShapedRun, size float64, letterSpacing float64) string {
 	var combined strings.Builder
 	var cursor float64
 
-	for _, g := range run.Glyphs {
+	for i, g := range run.Glyphs {
 		gid := sfnt.GlyphIndex(g.GlyphID)
 		gp, err := GlyphIDToPath(f, gid, size)
 		if err != nil {
 			cursor += g.Advance
+			if letterSpacing != 0 && i < len(run.Glyphs)-1 {
+				cursor += letterSpacing
+			}
 			continue
 		}
 
@@ -287,6 +315,9 @@ func ShapedRunToPath(f *opentype.Font, run *ShapedRun, size float64) string {
 		}
 
 		cursor += g.Advance
+		if letterSpacing != 0 && i < len(run.Glyphs)-1 {
+			cursor += letterSpacing
+		}
 	}
 
 	return combined.String()
@@ -384,6 +415,12 @@ func glyphOutlineToPath(gtFace *gotextfont.Face, gid ot.GID, scale float64) (Gly
 }
 
 func shapedRunToPathVariations(gtFace *gotextfont.Face, run *ShapedRun, size float64) string {
+	return shapedRunToPathVariationsSpaced(gtFace, run, size, 0)
+}
+
+// shapedRunToPathVariationsSpaced is shapedRunToPathVariations with letter
+// spacing inserted between adjacent glyphs.
+func shapedRunToPathVariationsSpaced(gtFace *gotextfont.Face, run *ShapedRun, size float64, letterSpacing float64) string {
 	upem := float64(gtFace.Font.Upem())
 	if upem == 0 {
 		return ""
@@ -391,11 +428,14 @@ func shapedRunToPathVariations(gtFace *gotextfont.Face, run *ShapedRun, size flo
 	scale := size / upem
 	var combined strings.Builder
 	var cursor float64
-	for _, g := range run.Glyphs {
+	for i, g := range run.Glyphs {
 		gid := ot.GID(g.GlyphID)
 		gp, ok := glyphOutlineToPath(gtFace, gid, scale)
 		if !ok {
 			cursor += g.Advance
+			if letterSpacing != 0 && i < len(run.Glyphs)-1 {
+				cursor += letterSpacing
+			}
 			continue
 		}
 		x := cursor + g.XOffset
@@ -404,6 +444,9 @@ func shapedRunToPathVariations(gtFace *gotextfont.Face, run *ShapedRun, size flo
 			combined.WriteString(translatePath(gp.D, x, y))
 		}
 		cursor += g.Advance
+		if letterSpacing != 0 && i < len(run.Glyphs)-1 {
+			cursor += letterSpacing
+		}
 	}
 	return combined.String()
 }

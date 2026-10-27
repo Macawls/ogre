@@ -487,10 +487,10 @@ func (r *PNGRenderer) rasterizeShapedPath(dst draw.Image, src image.Image, text 
 		fstyle = "normal"
 	}
 	rtl := cs.Direction == "rtl"
-	if !rtl && !needsShaping(text) {
+	if !rtl && !needsShaping(text) && cs.LetterSpacing == 0 {
 		return false
 	}
-	pathD, _ := fontpkg.ShapedTextToPathVariations(r.fonts, text, family, cs.FontWeight, fstyle, size, rtl, toFontVariations(cs.FontVariationSettings))
+	pathD, _ := fontpkg.ShapedTextToPathVariationsSpaced(r.fonts, text, family, cs.FontWeight, fstyle, size, rtl, toFontVariations(cs.FontVariationSettings), cs.LetterSpacing)
 	if pathD == "" {
 		return false
 	}
