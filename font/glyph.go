@@ -142,7 +142,8 @@ func textToPathCached(mgr *Manager, fontName string, f *opentype.Font, text stri
 	var combined strings.Builder
 	var cursor float64
 
-	for i, r := range text {
+	runes := []rune(text)
+	for i, r := range runes {
 		var gp GlyphPath
 		var err error
 		if mgr != nil {
@@ -151,6 +152,10 @@ func textToPathCached(mgr *Manager, fontName string, f *opentype.Font, text stri
 			gp, err = GlyphToPath(f, r, size)
 		}
 		if err != nil {
+			// Measurer.StringWidth spaces every rune, drawable or not.
+			if i < len(runes)-1 {
+				cursor += letterSpacing
+			}
 			continue
 		}
 
@@ -162,7 +167,7 @@ func textToPathCached(mgr *Manager, fontName string, f *opentype.Font, text stri
 		}
 
 		cursor += gp.Advance
-		if i < len([]rune(text))-1 {
+		if i < len(runes)-1 {
 			cursor += letterSpacing
 		}
 	}

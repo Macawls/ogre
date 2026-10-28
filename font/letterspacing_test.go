@@ -156,3 +156,29 @@ func TestTextToPathVariationsSpaced_SingleCharUnaffected(t *testing.T) {
 		t.Error("a single character must not be shifted by letter-spacing")
 	}
 }
+
+// Multi-byte runes must each get their gap: a byte offset compared against the
+// rune count stops spacing partway through non-ASCII text.
+func TestTextToPathVariationsSpaced_NonASCII(t *testing.T) {
+	mgr := NewManager()
+	if err := mgr.LoadDefaults(); err != nil {
+		t.Fatalf("load defaults: %v", err)
+	}
+
+	const spacing = 10.0
+	for _, text := range []string{"ÀÉÎÕÜÀÉÎÕÜ", "ПРИВЕТМИРА"} {
+		plain, plainAdv := TextToPathVariations(mgr, text, "sans-serif", 400, "normal", 20, nil)
+		spaced, spacedAdv := TextToPathVariationsSpaced(mgr, text, "sans-serif", 400, "normal", 20, nil, spacing)
+
+		want := spacing * float64(len([]rune(text))-1)
+		if math.Abs(spacedAdv-plainAdv-want) > 0.01 {
+			t.Errorf("%s: advance grew by %.2f, want %.2f", text, spacedAdv-plainAdv, want)
+		}
+
+		plainMinX, plainMaxX := pathXRange(t, plain)
+		spacedMinX, spacedMaxX := pathXRange(t, spaced)
+		if grew := (spacedMaxX - spacedMinX) - (plainMaxX - plainMinX); math.Abs(grew-want) > 0.5 {
+			t.Errorf("%s: path grew by %.2f, want %.2f", text, grew, want)
+		}
+	}
+}
