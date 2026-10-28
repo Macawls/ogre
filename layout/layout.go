@@ -167,6 +167,10 @@ const (
 	DisplayFlex Display = iota
 	DisplayNone
 	DisplayGrid
+	DisplayTable
+	DisplayTableRow
+	DisplayTableRowGroup
+	DisplayTableCell
 )
 
 // TrackSizingKind categorizes a grid track's sizing function.

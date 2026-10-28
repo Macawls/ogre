@@ -9,6 +9,10 @@ const (
 	DisplayBlock
 	DisplayContents
 	DisplayGrid
+	DisplayTable
+	DisplayTableRow
+	DisplayTableRowGroup
+	DisplayTableCell
 )
 
 func (d Display) String() string {
@@ -23,6 +27,14 @@ func (d Display) String() string {
 		return "contents"
 	case DisplayGrid:
 		return "grid"
+	case DisplayTable:
+		return "table"
+	case DisplayTableRow:
+		return "table-row"
+	case DisplayTableRowGroup:
+		return "table-row-group"
+	case DisplayTableCell:
+		return "table-cell"
 	}
 	return "block"
 }
@@ -40,6 +52,14 @@ func ParseDisplay(s string) Display {
 		return DisplayContents
 	case "grid":
 		return DisplayGrid
+	case "table", "inline-table":
+		return DisplayTable
+	case "table-row":
+		return DisplayTableRow
+	case "table-row-group", "table-header-group", "table-footer-group":
+		return DisplayTableRowGroup
+	case "table-cell":
+		return DisplayTableCell
 	}
 	return DisplayBlock
 }
