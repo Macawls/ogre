@@ -158,7 +158,7 @@ func RenderTextWithIDGen(lines []font.TextLine, cs *style.ComputedStyle, boxX, b
 				if fontStyle == "" {
 					fontStyle = "normal"
 				}
-				pathD, _ := font.TextToPathVariations(fontMgr, text, family, weight, fontStyle, size, toFontVariations(cs.FontVariationSettings))
+				pathD, _ := font.TextToPathVariationsSpaced(fontMgr, text, family, weight, fontStyle, size, toFontVariations(cs.FontVariationSettings), cs.LetterSpacing)
 				if pathD != "" {
 					if s.Blur > 0 && idGen != nil {
 						filterID := idGen("tshadow")
@@ -360,9 +360,9 @@ func appendGlyphClip(b *strings.Builder, text string, x, y float64, family strin
 	vars := toFontVariations(cs.FontVariationSettings)
 	var pathD string
 	if rtl || needsShaping(text) {
-		pathD, _ = font.ShapedTextToPathVariations(fontMgr, text, family, weight, fontStyle, size, rtl, vars)
+		pathD, _ = font.ShapedTextToPathVariationsSpaced(fontMgr, text, family, weight, fontStyle, size, rtl, vars, cs.LetterSpacing)
 	} else {
-		pathD, _ = font.TextToPathVariations(fontMgr, text, family, weight, fontStyle, size, vars)
+		pathD, _ = font.TextToPathVariationsSpaced(fontMgr, text, family, weight, fontStyle, size, vars, cs.LetterSpacing)
 	}
 	if pathD != "" {
 		fmt.Fprintf(b, `<path d="%s" transform="translate(%.4g,%.4g)"/>`, pathD, x, y)
@@ -380,9 +380,9 @@ func renderTextSegment(content *strings.Builder, text string, x, y float64, fami
 		vars := toFontVariations(cs.FontVariationSettings)
 		var pathD string
 		if rtl || needsShaping(text) {
-			pathD, _ = font.ShapedTextToPathVariations(fontMgr, text, family, weight, fontStyle, size, rtl, vars)
+			pathD, _ = font.ShapedTextToPathVariationsSpaced(fontMgr, text, family, weight, fontStyle, size, rtl, vars, cs.LetterSpacing)
 		} else {
-			pathD, _ = font.TextToPathVariations(fontMgr, text, family, weight, fontStyle, size, vars)
+			pathD, _ = font.TextToPathVariationsSpaced(fontMgr, text, family, weight, fontStyle, size, vars, cs.LetterSpacing)
 		}
 		if pathD != "" {
 			fmt.Fprintf(content, `<path d="%s" fill="%s" transform="translate(%.4g,%.4g)"/>`,

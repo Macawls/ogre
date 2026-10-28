@@ -296,9 +296,9 @@ func renderTextAt(b *strings.Builder, l layout.Layout, pn *parse.Node, cs *style
 		vars := toFontVariations(cs.FontVariationSettings)
 		var pathD string
 		if rtl || needsShaping(pn.Text) {
-			pathD, _ = font.ShapedTextToPathVariations(fontMgr, pn.Text, family, weight, fontStyle, size, rtl, vars)
+			pathD, _ = font.ShapedTextToPathVariationsSpaced(fontMgr, pn.Text, family, weight, fontStyle, size, rtl, vars, cs.LetterSpacing)
 		} else {
-			pathD, _ = font.TextToPathVariations(fontMgr, pn.Text, family, weight, fontStyle, size, vars)
+			pathD, _ = font.TextToPathVariationsSpaced(fontMgr, pn.Text, family, weight, fontStyle, size, vars, cs.LetterSpacing)
 		}
 		if pathD != "" {
 			fmt.Fprintf(b, `<path d="%s" fill="%s" transform="translate(%.4g,%.4g)"/>`,
