@@ -257,6 +257,22 @@ Configurable via `CORS_ORIGIN` env var. Supports `*`, single origin, or comma-se
 
 ## Supported CSS Properties
 
+### Differences from CSS
+
+One default differs from the browser, deliberately:
+
+| Property | Ogre default | CSS default | Why |
+|---|---|---|---|
+| `box-sizing` | `border-box` | `content-box` | Keeps the same input rendering the same here as in Satori, which is the behaviour this engine is built to match. |
+
+With `border-box`, `width` and `height` are outer dimensions: padding and border are drawn
+inside them. `<div style="width:200px;padding:0 50px">` is 200px wide here and 300px wide
+in a browser.
+
+To get the CSS behaviour, declare `box-sizing: content-box` explicitly — layout support
+for the explicit value is tracked in [#26](https://github.com/macawls/ogre/pull/26).
+Background and measurement: [#38](https://github.com/macawls/ogre/issues/38).
+
 ### Layout
 
 - `display`: flex, none, block, contents
@@ -265,7 +281,7 @@ Configurable via `CORS_ORIGIN` env var. Supports `*`, single origin, or comma-se
 - `width`, `height`, `min-width`, `min-height`, `max-width`, `max-height`
 - `aspect-ratio`
 - `overflow`: visible, hidden
-- `box-sizing`: content-box, border-box
+- `box-sizing`: content-box, border-box — **defaults to `border-box`, unlike CSS** (see [Differences from CSS](#differences-from-css))
 
 ### Flexbox
 
