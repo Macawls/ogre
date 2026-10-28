@@ -1,6 +1,38 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [3.4.1] - 2026-10-28
+
+### Bug Fixes
+
+- Apply letter-spacing to every rune of non-ASCII text
+- Pass letter-spacing through to the glyph path builder (#25)
+
+### CI
+
+- Self-contained Dockerfile + nginx for Dokploy deploys
+
+### Documentation
+
+- CLI-first framing for agent-friendly + demo section
+- Mirror docs 'Why this exists' framing on the landing
+
+### Features
+
+- Tighten SEO meta and expand agentic discovery signals
+
+## [3.4.0] - 2026-09-05
+
+### Documentation
+
+- Expand mascot alt text and document OG card regen
+- Update changelog for v3.3.0
+
+### Features
+
+- Custom Tailwind configs and CSS Grid Level 1 (#18)
+- Landing page at / with SEO and OG card
+
 ## [3.3.0] - 2026-08-27
 
 ### Documentation
