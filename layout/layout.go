@@ -148,6 +148,12 @@ type Style struct {
 
 	AspectRatio float64
 
+	// ContentBox makes Width/Height describe the content area instead of the
+	// border box. It is a bool on purpose: the zero value must mean the engine
+	// default (border-box, Satori-compatible), and an enum would make
+	// content-box the implicit default for every Style{} literal.
+	ContentBox bool
+
 	GridTemplateColumns TrackList
 	GridTemplateRows    TrackList
 	GridAutoColumns     TrackSize

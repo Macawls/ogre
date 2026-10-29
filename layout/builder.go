@@ -110,6 +110,7 @@ func mapStyle(cs *style.ComputedStyle) Style {
 		Left:   mapDimension(cs.Left),
 
 		AspectRatio: cs.AspectRatio,
+		ContentBox:  cs.BoxSizing == style.BoxSizingContentBox,
 
 		GridTemplateColumns: mapTrackList(cs.GridTemplateColumns),
 		GridTemplateRows:    mapTrackList(cs.GridTemplateRows),

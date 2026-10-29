@@ -562,3 +562,162 @@ func TestAspectRatio(t *testing.T) {
 
 	assertLayout(t, child, "child", 0, 0, 100, 50)
 }
+
+func TestBoxSizingContentBoxAddsPadding(t *testing.T) {
+	// content-box: the declared 200px is the content area, so the border box
+	// grows by the padding (2 x 50) to 300. Chromium reports 300 for this case.
+	child := NewNode(Style{
+		Width:        Pt(200),
+		Height:       Pt(40),
+		PaddingLeft:  Pt(50),
+		PaddingRight: Pt(50),
+		ContentBox:   true,
+	})
+	root := NewNode(Style{
+		Width:     Pt(400),
+		Height:    Pt(300),
+		Direction: Column,
+	}, child)
+
+	Compute(root, 400, 300)
+
+	assertLayout(t, child, "child", 0, 0, 300, 40)
+}
+
+func TestBoxSizingBorderBoxKeepsDeclaredWidth(t *testing.T) {
+	// border-box is the default: 200px covers padding, content shrinks to 100.
+	child := NewNode(Style{
+		Width:        Pt(200),
+		Height:       Pt(40),
+		PaddingLeft:  Pt(50),
+		PaddingRight: Pt(50),
+		ContentBox:   false,
+	})
+	root := NewNode(Style{
+		Width:     Pt(400),
+		Height:    Pt(300),
+		Direction: Column,
+	}, child)
+
+	Compute(root, 400, 300)
+
+	assertLayout(t, child, "child", 0, 0, 200, 40)
+}
+
+func TestBoxSizingContentBoxAddsBorders(t *testing.T) {
+	// Borders count too: 200 + 2 x 50 padding + 2 x 5 border = 310.
+	child := NewNode(Style{
+		Width:        Pt(200),
+		Height:       Pt(40),
+		PaddingLeft:  Pt(50),
+		PaddingRight: Pt(50),
+		BorderLeft:   5,
+		BorderRight:  5,
+		ContentBox:   true,
+	})
+	root := NewNode(Style{
+		Width:     Pt(400),
+		Height:    Pt(300),
+		Direction: Column,
+	}, child)
+
+	Compute(root, 400, 300)
+
+	assertLayout(t, child, "child", 0, 0, 310, 40)
+}
+
+func TestBoxSizingContentBoxWithoutPadding(t *testing.T) {
+	// No padding, no border: content-box and border-box agree on the size.
+	child := NewNode(Style{
+		Width:      Pt(200),
+		Height:     Pt(40),
+		ContentBox: true,
+	})
+	root := NewNode(Style{
+		Width:     Pt(400),
+		Height:    Pt(300),
+		Direction: Column,
+	}, child)
+
+	Compute(root, 400, 300)
+
+	assertLayout(t, child, "child", 0, 0, 200, 40)
+}
+
+func TestBoxSizingContentBoxFlexBaseSize(t *testing.T) {
+	// The declared 200px is content, so the flex line must account for 300px
+	// and place the sibling after it instead of over it. This is the flex pass
+	// reading Style.Width directly, which the review on #26 named.
+	item := NewNode(Style{
+		Width:        Pt(200),
+		ContentBox:   true,
+		PaddingLeft:  Pt(50),
+		PaddingRight: Pt(50),
+	})
+	sib := NewNode(Style{Width: Pt(100)})
+	root := NewNode(Style{Width: Pt(500), Height: Pt(100), Direction: Row}, item, sib)
+
+	Compute(root, 500, 100)
+
+	assertLayout(t, item, "item", 0, 0, 300, 100)
+	assertLayout(t, sib, "sib", 300, 0, 100, 100)
+}
+
+func TestBoxSizingContentBoxFlexCrossSize(t *testing.T) {
+	// Same conversion on the cross axis: a 100px content-box height with 25px
+	// of top and bottom padding is a 150px border box, so the sibling starts
+	// at 150.
+	item := NewNode(Style{
+		Height:        Pt(100),
+		ContentBox:    true,
+		PaddingTop:    Pt(25),
+		PaddingBottom: Pt(25),
+	})
+	sib := NewNode(Style{Height: Pt(50)})
+	root := NewNode(Style{Width: Pt(200), Height: Pt(400), Direction: Column}, item, sib)
+
+	Compute(root, 200, 400)
+
+	assertLayout(t, item, "item", 0, 0, 200, 150)
+	assertLayout(t, sib, "sib", 0, 150, 200, 50)
+}
+
+func TestBoxSizingContentBoxAbsolute(t *testing.T) {
+	// An absolutely positioned content-box child anchored to the right edge has
+	// to offset by its border-box width, padding included.
+	child := NewNode(Style{
+		Position:     Absolute,
+		Width:        Pt(100),
+		Height:       Pt(40),
+		Right:        Pt(0),
+		ContentBox:   true,
+		PaddingLeft:  Pt(10),
+		PaddingRight: Pt(10),
+	})
+	root := NewNode(Style{Width: Pt(400), Height: Pt(300)}, child)
+
+	Compute(root, 400, 300)
+
+	assertLayout(t, child, "abs", 280, 0, 120, 40)
+}
+
+func TestBoxSizingContentBoxAspectRatio(t *testing.T) {
+	// aspect-ratio describes the content box under content-box: 200x100 of
+	// content plus 50px of side padding is a 300x100 border box.
+	child := NewNode(Style{
+		Width:        Pt(200),
+		ContentBox:   true,
+		PaddingLeft:  Pt(50),
+		PaddingRight: Pt(50),
+		AspectRatio:  2,
+	})
+	root := NewNode(Style{
+		Width:      Pt(400),
+		Height:     Pt(300),
+		AlignItems: AlignStart,
+	}, child)
+
+	Compute(root, 400, 300)
+
+	assertLayout(t, child, "child", 0, 0, 300, 100)
+}
