@@ -52,7 +52,7 @@ func convertNode(n *html.Node) *Node {
 
 	case html.ElementNode:
 		if n.Data == "br" {
-			return &Node{Type: TextNode, Text: "\n"}
+			return &Node{Type: TextNode, Text: "\n", LineBreak: true}
 		}
 
 		node := &Node{

@@ -41,8 +41,18 @@ func buildNode(pn *parse.Node, styles map[*parse.Node]*style.ComputedStyle, meas
 	}
 
 	var children []*Node
-	for _, child := range pn.Children {
-		cn := buildNode(child, styles, measureText, nodeMap)
+	for i, child := range pn.Children {
+		var cn *Node
+		if child.Type == parse.TextNode && child.LineBreak {
+			// A <br> ends the current line, and the line box itself comes from
+			// the text that follows, so the break normally contributes no
+			// height. It does open one when nothing follows it on that line: a
+			// trailing break, or one immediately followed by another break,
+			// leaves an empty line, exactly as the browser does.
+			cn = buildBreakNode(child, styles, measureText, nodeMap, opensLineBox(pn.Children, i, styles))
+		} else {
+			cn = buildNode(child, styles, measureText, nodeMap)
+		}
 		if cn != nil {
 			children = append(children, cn)
 		}
@@ -51,6 +61,46 @@ func buildNode(pn *parse.Node, styles map[*parse.Node]*style.ComputedStyle, meas
 	ln := NewNode(s, children...)
 	nodeMap[pn] = ln
 	return ln
+}
+
+// buildBreakNode lays out a <br>. It occupies zero width and, unless it opens a
+// line box of its own, zero height: the next text leaf supplies the line box it
+// starts.
+func buildBreakNode(pn *parse.Node, styles map[*parse.Node]*style.ComputedStyle, measureText MeasureTextFunc, nodeMap map[*parse.Node]*Node, opensLine bool) *Node {
+	cs := styles[pn]
+	if cs == nil {
+		cs = &style.ComputedStyle{}
+	}
+	if cs.Display == style.DisplayNone {
+		return nil
+	}
+
+	s := mapStyle(cs)
+	ln := NewLeaf(s, func(maxWidth, maxHeight float64) (float64, float64) {
+		if !opensLine {
+			return 0, 0
+		}
+		_, h := measureText(pn, " ", cs, maxWidth)
+		return 0, h
+	})
+	nodeMap[pn] = ln
+	return ln
+}
+
+// opensLineBox reports whether the <br> at index i opens a line box rather than
+// only ending the current one. That is the case exactly when the next rendered
+// sibling is itself a break: the run's last break is followed by the text that
+// supplies the line it starts, and a trailing break opens nothing at all (the
+// browser drops the empty line box at the end of a block). So a run of N breaks
+// advances N-1 empty lines plus the line of whatever follows.
+func opensLineBox(children []*parse.Node, i int, styles map[*parse.Node]*style.ComputedStyle) bool {
+	for _, sib := range children[i+1:] {
+		if cs := styles[sib]; cs != nil && cs.Display == style.DisplayNone {
+			continue
+		}
+		return sib.Type == parse.TextNode && sib.LineBreak
+	}
+	return false
 }
 
 func mapStyle(cs *style.ComputedStyle) Style {
