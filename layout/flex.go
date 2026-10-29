@@ -60,11 +60,29 @@ func computeNode(node *Node, in layoutRun) {
 	containerWidth = clampSize(containerWidth, s.MinWidth, s.MaxWidth, in.ownerWidth)
 	containerHeight = clampSize(containerHeight, s.MinHeight, s.MaxHeight, in.ownerHeight)
 
+	// With content-box the declared width/height describe the content area, so
+	// the padding and border have to be added on top of it. The engine works in
+	// border-box internally, hence the conversion happens here, once.
+	if s.ContentBox {
+		if s.Width.IsDefined() {
+			containerWidth += bpW
+		}
+		if s.Height.IsDefined() {
+			containerHeight += bpH
+		}
+	}
+
 	if s.AspectRatio > 0 {
+		// The ratio describes the content box, so apply it there and add the
+		// padding and border back on the derived axis.
+		extraW, extraH := 0.0, 0.0
+		if s.ContentBox {
+			extraW, extraH = bpW, bpH
+		}
 		if s.Width.IsDefined() && !s.Height.IsDefined() {
-			containerHeight = containerWidth / s.AspectRatio
+			containerHeight = (containerWidth-extraW)/s.AspectRatio + extraH
 		} else if s.Height.IsDefined() && !s.Width.IsDefined() {
-			containerWidth = containerHeight * s.AspectRatio
+			containerWidth = (containerHeight-extraH)*s.AspectRatio + extraW
 		}
 	}
 
@@ -372,6 +390,27 @@ func resolveNodeSize(d Dimension, base float64) float64 {
 	return math.NaN()
 }
 
+// bp returns the padding plus border on one axis: the amount a content-box
+// declaration leaves out of its size.
+func (s *Style) bp(wantWidth bool, ownerWidth, ownerHeight float64) float64 {
+	if wantWidth {
+		return resolveOr0(s.PaddingLeft, ownerWidth) + resolveOr0(s.PaddingRight, ownerWidth) + s.BorderLeft + s.BorderRight
+	}
+	return resolveOr0(s.PaddingTop, ownerHeight) + resolveOr0(s.PaddingBottom, ownerHeight) + s.BorderTop + s.BorderBottom
+}
+
+// borderBoxSize resolves d and, for a content-box node, adds back the padding
+// and border the declared size excludes, so every caller works in the
+// border-box model the engine uses internally. Returns NaN when d is not
+// definite, leaving the caller's own fallback in charge.
+func borderBoxSize(s *Style, d Dimension, wantWidth bool, base, ownerWidth, ownerHeight float64) float64 {
+	v := resolveNodeSize(d, base)
+	if math.IsNaN(v) || !s.ContentBox {
+		return v
+	}
+	return v + s.bp(wantWidth, ownerWidth, ownerHeight)
+}
+
 func clampSize(size float64, minD, maxD Dimension, base float64) float64 {
 	if math.IsNaN(size) {
 		return size
@@ -399,6 +438,9 @@ func determineFlexBaseSize(child *Node, mainSize float64, isRow bool, containerW
 			} else {
 				minBP = resolveOr0(s.PaddingTop, containerH) + resolveOr0(s.PaddingBottom, containerH) + s.BorderTop + s.BorderBottom
 			}
+			if s.ContentBox {
+				v += minBP
+			}
 			if v < minBP {
 				v = minBP
 			}
@@ -416,7 +458,7 @@ func determineFlexBaseSize(child *Node, mainSize float64, isRow bool, containerW
 		base = containerH
 	}
 	if sizeD.IsDefined() {
-		v := sizeD.Resolve(base)
+		v := borderBoxSize(s, sizeD, isRow, base, containerW, containerH)
 		if !math.IsNaN(v) {
 			return v
 		}
@@ -451,7 +493,7 @@ func estimateSize(node *Node, wantWidth bool, containerW, containerH float64) fl
 		base = containerH
 	}
 	if sizeD.IsDefined() {
-		v := sizeD.Resolve(base)
+		v := borderBoxSize(s, sizeD, wantWidth, base, containerW, containerH)
 		if !math.IsNaN(v) {
 			return v
 		}
@@ -692,17 +734,24 @@ func determineCrossSize(item *flexItem, crossSize float64, isRow bool, container
 	}
 
 	if crossD.IsDefined() {
-		v := crossD.Resolve(base)
+		v := borderBoxSize(s, crossD, !isRow, base, containerW, containerH)
 		if !math.IsNaN(v) {
 			return v
 		}
 	}
 
 	if s.AspectRatio > 0 {
-		if isRow {
-			return item.mainSize / s.AspectRatio
+		// The ratio describes the content box, so strip the main-axis padding
+		// and border before applying it and add the cross-axis back after.
+		extraMain, extraCross := 0.0, 0.0
+		if s.ContentBox {
+			extraMain = s.bp(isRow, containerW, containerH)
+			extraCross = s.bp(!isRow, containerW, containerH)
 		}
-		return item.mainSize * s.AspectRatio
+		if isRow {
+			return (item.mainSize-extraMain)/s.AspectRatio + extraCross
+		}
+		return (item.mainSize-extraMain)*s.AspectRatio + extraCross
 	}
 
 	if item.node.Measure != nil {

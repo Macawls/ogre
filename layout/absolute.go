@@ -9,8 +9,8 @@ func computeAbsolute(child *Node, container *Node) {
 	paddingBoxW := cl.Width - cl.Border[1] - cl.Border[3]
 	paddingBoxH := cl.Height - cl.Border[0] - cl.Border[2]
 
-	w := resolveNodeSize(s.Width, paddingBoxW)
-	h := resolveNodeSize(s.Height, paddingBoxH)
+	w := borderBoxSize(s, s.Width, true, paddingBoxW, paddingBoxW, paddingBoxH)
+	h := borderBoxSize(s, s.Height, false, paddingBoxH, paddingBoxW, paddingBoxH)
 
 	w = clampSize(w, s.MinWidth, s.MaxWidth, paddingBoxW)
 	h = clampSize(h, s.MinHeight, s.MaxHeight, paddingBoxH)
@@ -37,10 +37,17 @@ func computeAbsolute(child *Node, container *Node) {
 	}
 
 	if s.AspectRatio > 0 {
+		// The ratio describes the content box, so apply it there and add the
+		// padding and border back on the derived axis.
+		extraW, extraH := 0.0, 0.0
+		if s.ContentBox {
+			extraW = s.bp(true, paddingBoxW, paddingBoxH)
+			extraH = s.bp(false, paddingBoxW, paddingBoxH)
+		}
 		if !math.IsNaN(w) && math.IsNaN(h) {
-			h = w / s.AspectRatio
+			h = (w-extraW)/s.AspectRatio + extraH
 		} else if !math.IsNaN(h) && math.IsNaN(w) {
-			w = h * s.AspectRatio
+			w = (h-extraH)*s.AspectRatio + extraW
 		}
 	}
 
