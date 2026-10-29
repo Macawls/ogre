@@ -633,13 +633,13 @@ func (r *PNGRenderer) renderLinearGradientPNG(g style.Gradient, rx, ry, rw, rh i
 		length = 1
 	}
 
-	linStops := toLinearStops(g.Stops)
+	srgbStops := toSrgbStops(g.Stops)
 
 	stripLen := int(math.Ceil(length)) + 1
 	if stripLen < 2 {
 		stripLen = 2
 	}
-	strip := buildGradientStrip(linStops, stripLen)
+	strip := buildGradientStrip(srgbStops, stripLen)
 
 	bounds := r.img.Bounds()
 	invLength := 1.0 / length
@@ -669,9 +669,11 @@ func (r *PNGRenderer) renderLinearGradientPNG(g style.Gradient, rx, ry, rw, rh i
 				s := strip[idx]
 				dither := bayerMatrix[py&3][px&3] - 0.5
 				off := rowOff + px*4
-				r.img.Pix[off] = uint8(clampF(math.Floor(s.sr*255+dither+0.5), 0, 255))
-				r.img.Pix[off+1] = uint8(clampF(math.Floor(s.sg*255+dither+0.5), 0, 255))
-				r.img.Pix[off+2] = uint8(clampF(math.Floor(s.sb*255+dither+0.5), 0, 255))
+				// image.RGBA stores premultiplied pixels, so scale by alpha.
+				af := float64(s.a) / 255
+				r.img.Pix[off] = uint8(clampF(math.Floor(s.sr*af*255+dither+0.5), 0, 255))
+				r.img.Pix[off+1] = uint8(clampF(math.Floor(s.sg*af*255+dither+0.5), 0, 255))
+				r.img.Pix[off+2] = uint8(clampF(math.Floor(s.sb*af*255+dither+0.5), 0, 255))
 				r.img.Pix[off+3] = s.a
 			}
 			t += rowStep
@@ -684,22 +686,26 @@ type stripEntry struct {
 	a          uint8
 }
 
-func buildGradientStrip(stops []linearStop, n int) []stripEntry {
+func buildGradientStrip(stops []colorStopF, n int) []stripEntry {
 	strip := make([]stripEntry, n)
 	for i := range n {
 		t := float64(i) / float64(n-1)
-		lr, lg, lb, la := interpolateLinear(stops, t)
+		sr, sg, sb, sa := interpolateStops(stops, t)
 		strip[i] = stripEntry{
-			sr: linearToSrgbF(clampF(lr, 0, 1)),
-			sg: linearToSrgbF(clampF(lg, 0, 1)),
-			sb: linearToSrgbF(clampF(lb, 0, 1)),
-			a:  uint8(math.Round(la * 255)),
+			sr: clampF(sr, 0, 1),
+			sg: clampF(sg, 0, 1),
+			sb: clampF(sb, 0, 1),
+			a:  uint8(math.Round(sa * 255)),
 		}
 	}
 	return strip
 }
 
-func interpolateLinear(stops []linearStop, t float64) (r, g, b, a float64) {
+// interpolateStops blends gradient stops at t. Stops are gamma-encoded sRGB and
+// are blended in premultiplied alpha, which is what CSS Images specifies and
+// what browsers implement: a fade to transparent keeps its hue instead of
+// darkening towards black.
+func interpolateStops(stops []colorStopF, t float64) (r, g, b, a float64) {
 	if len(stops) == 0 {
 		return 0, 0, 0, 1
 	}
@@ -719,10 +725,14 @@ func interpolateLinear(stops []linearStop, t float64) (r, g, b, a float64) {
 				return curr.R, curr.G, curr.B, curr.A
 			}
 			f := (t - prev.Position) / span
-			return prev.R + f*(curr.R-prev.R),
-				prev.G + f*(curr.G-prev.G),
-				prev.B + f*(curr.B-prev.B),
-				prev.A + f*(curr.A-prev.A)
+			a = prev.A + f*(curr.A-prev.A)
+			pr := prev.R*prev.A + f*(curr.R*curr.A-prev.R*prev.A)
+			pg := prev.G*prev.A + f*(curr.G*curr.A-prev.G*prev.A)
+			pb := prev.B*prev.A + f*(curr.B*curr.A-prev.B*prev.A)
+			if a > 0 {
+				return pr / a, pg / a, pb / a, a
+			}
+			return 0, 0, 0, 0
 		}
 	}
 	return last.R, last.G, last.B, last.A
@@ -755,13 +765,13 @@ func (r *PNGRenderer) renderRadialGradientPNG(g style.Gradient, rx, ry, rw, rh i
 		maxDist = 1
 	}
 
-	linStops := toLinearStops(g.Stops)
+	srgbStops := toSrgbStops(g.Stops)
 
 	stripLen := int(math.Ceil(maxDist)) + 1
 	if stripLen < 2 {
 		stripLen = 2
 	}
-	strip := buildGradientStrip(linStops, stripLen)
+	strip := buildGradientStrip(srgbStops, stripLen)
 
 	bounds := r.img.Bounds()
 	invMax := 1.0 / maxDist
@@ -791,61 +801,30 @@ func (r *PNGRenderer) renderRadialGradientPNG(g style.Gradient, rx, ry, rw, rh i
 			s := strip[idx]
 			dither := bayerMatrix[py&3][px&3] - 0.5
 			off := rowOff + px*4
-			r.img.Pix[off] = uint8(clampF(math.Floor(s.sr*255+dither+0.5), 0, 255))
-			r.img.Pix[off+1] = uint8(clampF(math.Floor(s.sg*255+dither+0.5), 0, 255))
-			r.img.Pix[off+2] = uint8(clampF(math.Floor(s.sb*255+dither+0.5), 0, 255))
+			// image.RGBA stores premultiplied pixels, so scale by alpha.
+			af := float64(s.a) / 255
+			r.img.Pix[off] = uint8(clampF(math.Floor(s.sr*af*255+dither+0.5), 0, 255))
+			r.img.Pix[off+1] = uint8(clampF(math.Floor(s.sg*af*255+dither+0.5), 0, 255))
+			r.img.Pix[off+2] = uint8(clampF(math.Floor(s.sb*af*255+dither+0.5), 0, 255))
 			r.img.Pix[off+3] = s.a
 		}
 	}
 }
 
-type linearStop struct {
+// colorStopF is a gradient stop with gamma-encoded sRGB components in 0..1.
+type colorStopF struct {
 	R, G, B, A float64
 	Position   float64
 }
 
-var srgbDecodeTable [256]float64
-var srgbEncodeTable [4096]float64
-
-func init() {
-	for i := range 256 {
-		c := float64(i) / 255
-		if c <= 0.04045 {
-			srgbDecodeTable[i] = c / 12.92
-		} else {
-			srgbDecodeTable[i] = math.Pow((c+0.055)/1.055, 2.4)
-		}
-	}
-	for i := range 4096 {
-		v := float64(i) / 4095
-		if v <= 0.0031308 {
-			srgbEncodeTable[i] = v * 12.92
-		} else {
-			srgbEncodeTable[i] = 1.055*math.Pow(v, 1.0/2.4) - 0.055
-		}
-	}
-}
-
-func srgbToLinear(v uint8) float64 {
-	return srgbDecodeTable[v]
-}
-
-func linearToSrgbF(v float64) float64 {
-	if v <= 0 {
-		return 0
-	}
-	if v >= 1 {
-		return 1
-	}
-	return srgbEncodeTable[int(v*4095+0.5)]
-}
-
-func toLinearStops(stops []style.ColorStop) []linearStop {
-	out := make([]linearStop, len(stops))
+// toSrgbStops converts gradient stops to gamma-encoded sRGB. CSS gradients are
+// interpolated in sRGB, not in linear-light RGB.
+func toSrgbStops(stops []style.ColorStop) []colorStopF {
+	out := make([]colorStopF, len(stops))
 	for i, s := range stops {
-		out[i] = linearStop{
-			R: srgbToLinear(s.Color.R), G: srgbToLinear(s.Color.G),
-			B: srgbToLinear(s.Color.B), A: s.Color.A,
+		out[i] = colorStopF{
+			R: float64(s.Color.R) / 255, G: float64(s.Color.G) / 255,
+			B: float64(s.Color.B) / 255, A: s.Color.A,
 			Position: s.Position,
 		}
 	}
