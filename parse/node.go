@@ -20,6 +20,12 @@ type Node struct {
 	Classes  []string
 	Children []*Node
 	Text     string
+
+	// LineBreak marks a text node produced by <br>: a hard line break that
+	// ends the current line without contributing a line box of its own. The
+	// distinction matters because source whitespace is trimmed away, so a
+	// newline inside Text can only mean a break.
+	LineBreak bool
 }
 
 // CountNodes returns the total number of nodes in the subtree rooted at n.
