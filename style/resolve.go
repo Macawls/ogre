@@ -255,6 +255,8 @@ func mergeProps(node *parse.Node, twVersion TailwindVersion, cfg *TailwindConfig
 
 	props["display"] = "block"
 	props["position"] = "relative"
+	// border-box is deliberate, not the CSS default (content-box): it matches
+	// Satori. See README "Differences from CSS" and issue #38.
 	props["box-sizing"] = "border-box"
 
 	if defaults, ok := tagDefaults[node.Tag]; ok {
@@ -331,6 +333,7 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 
 	cs.Display = ParseDisplay(getOr(props, "display", "block"))
 	cs.Position = ParsePosition(getOr(props, "position", "relative"))
+	// Fallback repeats the border-box default on purpose; see mergeProps above.
 	cs.BoxSizing = ParseBoxSizing(getOr(props, "box-sizing", "border-box"))
 
 	cs.FlexDirection = ParseFlexDirection(getOr(props, "flex-direction", "row"))
