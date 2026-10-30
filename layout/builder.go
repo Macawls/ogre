@@ -186,8 +186,10 @@ func mapPosition(p style.Position) Position {
 	switch p {
 	case style.PositionAbsolute:
 		return Absolute
+	case style.PositionRelative:
+		return PositionRelative
 	default:
-		return Relative
+		return Static
 	}
 }
 
