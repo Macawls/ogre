@@ -54,6 +54,13 @@ func convertNode(n *html.Node) *Node {
 		if n.Data == "br" {
 			return &Node{Type: TextNode, Text: "\n"}
 		}
+		if nonRendered[n.Data] {
+			// <style>, <script> and <title> carry text a browser never paints.
+			// Converting them made the CSS itself a text node, so a document
+			// with a <style> block in <head> rendered its own stylesheet
+			// across the top of the image.
+			return nil
+		}
 
 		node := &Node{
 			Type:  ElementNode,
@@ -105,6 +112,21 @@ func convertNode(n *html.Node) *Node {
 	default:
 		return nil
 	}
+}
+
+// nonRendered lists the elements whose content a browser never paints. Their
+// subtrees are dropped whole: text inside <style> is CSS, inside <script> is
+// code, and inside <title> is metadata.
+var nonRendered = map[string]bool{
+	"head":     true,
+	"style":    true,
+	"script":   true,
+	"title":    true,
+	"meta":     true,
+	"link":     true,
+	"base":     true,
+	"noscript": true,
+	"template": true,
 }
 
 func parseStyleAttr(style string, m map[string]string) {
