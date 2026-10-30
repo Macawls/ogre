@@ -184,7 +184,7 @@ func TestUnitResolutionEm(t *testing.T) {
 	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
-	if !approxEqual(cs.PaddingTop, 40, 0.01) {
+	if !approxEqual(cs.PaddingTop.Raw, 40, 0.01) {
 		t.Errorf("padding-top (2em at 20px): got %v, want 40", cs.PaddingTop)
 	}
 }
@@ -201,7 +201,7 @@ func TestUnitResolutionRem(t *testing.T) {
 	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
-	if !approxEqual(cs.PaddingTop, 32, 0.01) {
+	if !approxEqual(cs.PaddingTop.Raw, 32, 0.01) {
 		t.Errorf("padding-top (2rem, root=16px): got %v, want 32", cs.PaddingTop)
 	}
 }
@@ -365,7 +365,7 @@ func TestCSSVariableNested(t *testing.T) {
 	result := Resolve(root, 1200, 630, TailwindV3)
 	cs := result[root]
 
-	if !approxEqual(cs.PaddingTop, 20, 0.01) {
+	if !approxEqual(cs.PaddingTop.Raw, 20, 0.01) {
 		t.Errorf("var(--size) padding: got %v, want 20", cs.PaddingTop)
 	}
 }
@@ -447,7 +447,7 @@ func TestHTMLDefaultUL(t *testing.T) {
 	result := Resolve(root, 1200, 630, TailwindV3)
 	ul := result[root.Children[0]]
 
-	if !approxEqual(ul.PaddingLeft, 40, 0.01) {
+	if !approxEqual(ul.PaddingLeft.Raw, 40, 0.01) {
 		t.Errorf("ul padding-left: got %v, want 40", ul.PaddingLeft)
 	}
 }
@@ -517,5 +517,34 @@ func TestHTMLDefaultDel(t *testing.T) {
 
 	if del.TextDecorationLine != TextDecorationLineThrough {
 		t.Errorf("del text-decoration: got %v, want line-through", del.TextDecorationLine)
+	}
+}
+
+func TestPaddingPercentKeepsItsUnit(t *testing.T) {
+	// A percentage padding cannot be resolved at style time: CSS resolves it
+	// against the containing block's WIDTH, which layout does not know yet.
+	// Storing only a float silently turned 10% into 0.
+	root := &parse.Node{
+		Type: parse.ElementNode,
+		Tag:  "div",
+		Style: map[string]string{
+			"width":         "50%",
+			"padding-left":  "10%",
+			"padding-top":   "10%",
+			"padding-right": "5px",
+		},
+	}
+	result := Resolve(root, 400, 400, TailwindV3)
+	cs := result[root]
+
+	if cs.PaddingLeft.Unit != UnitPercent || cs.PaddingLeft.Raw != 10 {
+		t.Errorf("padding-left: got %+v, want 10%% kept for layout", cs.PaddingLeft)
+	}
+	if cs.PaddingTop.Unit != UnitPercent || cs.PaddingTop.Raw != 10 {
+		t.Errorf("padding-top: got %+v, want 10%% kept for layout", cs.PaddingTop)
+	}
+	// Lengths that are resolvable at style time stay resolved.
+	if cs.PaddingRight.Unit != UnitPx || !approxEqual(cs.PaddingRight.Raw, 5, 0.01) {
+		t.Errorf("padding-right: got %+v, want 5px", cs.PaddingRight)
 	}
 }

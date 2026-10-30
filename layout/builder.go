@@ -90,10 +90,10 @@ func mapStyle(cs *style.ComputedStyle) Style {
 		MarginBottom: mapDimension(cs.MarginBottom),
 		MarginLeft:   mapDimension(cs.MarginLeft),
 
-		PaddingTop:    Pt(cs.PaddingTop),
-		PaddingRight:  Pt(cs.PaddingRight),
-		PaddingBottom: Pt(cs.PaddingBottom),
-		PaddingLeft:   Pt(cs.PaddingLeft),
+		PaddingTop:    mapDimension(cs.PaddingTop),
+		PaddingRight:  mapDimension(cs.PaddingRight),
+		PaddingBottom: mapDimension(cs.PaddingBottom),
+		PaddingLeft:   mapDimension(cs.PaddingLeft),
 
 		BorderTop:    cs.BorderTopWidth,
 		BorderRight:  cs.BorderRightWidth,

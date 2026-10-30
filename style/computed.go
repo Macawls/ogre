@@ -34,10 +34,12 @@ type ComputedStyle struct {
 	MarginRight  Value
 	MarginBottom Value
 	MarginLeft   Value
-	PaddingTop    float64
-	PaddingRight  float64
-	PaddingBottom float64
-	PaddingLeft   float64
+	// Padding keeps its unit: a percentage resolves against the containing
+	// block's width, which is not known until layout.
+	PaddingTop    Value
+	PaddingRight  Value
+	PaddingBottom Value
+	PaddingLeft   Value
 	BorderTopWidth    float64
 	BorderRightWidth  float64
 	BorderBottomWidth float64

@@ -369,10 +369,10 @@ func resolveStyle(props map[string]string, parent *ComputedStyle, rootFontSize, 
 	cs.MarginBottom = resolveValue(props, "margin-bottom", ctx)
 	cs.MarginLeft = resolveValue(props, "margin-left", ctx)
 
-	cs.PaddingTop = resolveToFloat(props, "padding-top", ctx)
-	cs.PaddingRight = resolveToFloat(props, "padding-right", ctx)
-	cs.PaddingBottom = resolveToFloat(props, "padding-bottom", ctx)
-	cs.PaddingLeft = resolveToFloat(props, "padding-left", ctx)
+	cs.PaddingTop = resolveLength(props, "padding-top", ctx)
+	cs.PaddingRight = resolveLength(props, "padding-right", ctx)
+	cs.PaddingBottom = resolveLength(props, "padding-bottom", ctx)
+	cs.PaddingLeft = resolveLength(props, "padding-left", ctx)
 
 	cs.BorderTopWidth = resolveToFloat(props, "border-top-width", ctx)
 	cs.BorderRightWidth = resolveToFloat(props, "border-right-width", ctx)
@@ -583,6 +583,22 @@ func resolveValue(props map[string]string, prop string, ctx ResolveContext) Valu
 	}
 	resolved := parsed.Resolve(ctx)
 	return Value{Raw: resolved, Unit: UnitPx}
+}
+
+// resolveLength resolves a length at style time — except for a percentage,
+// which CSS resolves against the containing block's width. That width is not
+// known until layout, so the unit is carried through instead of collapsing to
+// zero.
+func resolveLength(props map[string]string, prop string, ctx ResolveContext) Value {
+	v, ok := props[prop]
+	if !ok {
+		return Value{}
+	}
+	val := ParseValue(v)
+	if val.Unit == UnitPercent {
+		return val
+	}
+	return Value{Raw: val.Resolve(ctx), Unit: UnitPx}
 }
 
 func resolveToFloat(props map[string]string, prop string, ctx ResolveContext) float64 {

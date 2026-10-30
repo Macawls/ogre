@@ -37,9 +37,11 @@ type layoutRun struct {
 func computeNode(node *Node, in layoutRun) {
 	s := &node.Style
 
-	paddingTop := resolveOr0(s.PaddingTop, in.ownerHeight)
+	// Every padding percentage resolves against the containing block's WIDTH,
+	// including top and bottom — that is what CSS does, unlike margins.
+	paddingTop := resolveOr0(s.PaddingTop, in.ownerWidth)
 	paddingRight := resolveOr0(s.PaddingRight, in.ownerWidth)
-	paddingBottom := resolveOr0(s.PaddingBottom, in.ownerHeight)
+	paddingBottom := resolveOr0(s.PaddingBottom, in.ownerWidth)
 	paddingLeft := resolveOr0(s.PaddingLeft, in.ownerWidth)
 
 	node.Layout.Padding = [4]float64{paddingTop, paddingRight, paddingBottom, paddingLeft}
