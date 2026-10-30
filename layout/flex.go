@@ -562,12 +562,13 @@ func resolveFlexibleLengths(line *flexLine, mainSize float64, gap float64) {
 		gs := flexGrow(item.node)
 		ss := flexShrink(item.node)
 
-		if growing && gs == 0 {
-			item.frozen = true
+		// CSS Flexbox §9.7 step 3 freezes an inflexible item at its HYPOTHETICAL
+		// main size, which §9.2.3 defines as the flex base size clamped by the
+		// used min and max main sizes — never the bare base size.
+		if (growing && gs == 0) || (!growing && ss == 0) {
 			item.mainSize = item.baseSize
-		} else if !growing && ss == 0 {
+			item.mainSize = applyMainMinMax(item)
 			item.frozen = true
-			item.mainSize = item.baseSize
 		}
 	}
 

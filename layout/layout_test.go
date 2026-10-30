@@ -562,3 +562,31 @@ func TestAspectRatio(t *testing.T) {
 
 	assertLayout(t, child, "child", 0, 0, 100, 50)
 }
+
+func TestMinWidthFlexItem(t *testing.T) {
+	// CSS Flexbox §9.7 step 3 freezes an inflexible item at its HYPOTHETICAL
+	// main size, which §9.2.3 defines as the flex base size clamped by the used
+	// min and max main sizes. Freezing at the bare base size drops min-width.
+
+	t.Run("alone", func(t *testing.T) {
+		// Control: with no sibling the item is measured through the ordinary
+		// sizing path, which does honour min-width.
+		item := NewNode(Style{Width: Pt(50), MinWidth: Pt(150)})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(100), Direction: Row}, item)
+
+		Compute(root, 400, 100)
+		assertLayout(t, item, "min-width item", 0, 0, 150, 100)
+	})
+
+	t.Run("with sibling", func(t *testing.T) {
+		// A flex-grow:0 item on a line that has free space takes the freeze
+		// path, and the sibling after it must start where the clamped item ends.
+		item := NewNode(Style{Width: Pt(50), MinWidth: Pt(150)})
+		sibling := NewNode(Style{Width: Pt(50)})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(100), Direction: Row}, item, sibling)
+
+		Compute(root, 400, 100)
+		assertLayout(t, item, "min-width item", 0, 0, 150, 100)
+		assertLayout(t, sibling, "sibling", 150, 0, 50, 100)
+	})
+}
