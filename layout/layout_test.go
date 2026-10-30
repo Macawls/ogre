@@ -562,3 +562,55 @@ func TestAspectRatio(t *testing.T) {
 
 	assertLayout(t, child, "child", 0, 0, 100, 50)
 }
+
+func TestMarginAuto(t *testing.T) {
+	// An auto margin absorbs free space. On the CROSS axis that is the whole
+	// point of `margin: 0 auto` in a block container: the item is centred
+	// instead of pinned to the start edge.
+
+	t.Run("both auto centre", func(t *testing.T) {
+		item := NewNode(Style{Width: Pt(100), Height: Pt(50), MarginLeft: Auto(), MarginRight: Auto()})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(100), Direction: Column}, item)
+
+		Compute(root, 400, 100)
+		assertLayout(t, item, "margin:0 auto", 150, 0, 100, 50)
+	})
+
+	t.Run("left auto pushes right", func(t *testing.T) {
+		item := NewNode(Style{Width: Pt(100), Height: Pt(50), MarginLeft: Auto()})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(100), Direction: Column}, item)
+
+		Compute(root, 400, 100)
+		assertLayout(t, item, "margin-left:auto", 300, 0, 100, 50)
+	})
+
+	t.Run("right auto keeps start", func(t *testing.T) {
+		item := NewNode(Style{Width: Pt(100), Height: Pt(50), MarginRight: Auto()})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(100), Direction: Column}, item)
+
+		Compute(root, 400, 100)
+		assertLayout(t, item, "margin-right:auto", 0, 0, 100, 50)
+	})
+
+	t.Run("auto cross margin is not stretched", func(t *testing.T) {
+		// An auto cross-axis margin cancels align-self:stretch, otherwise the
+		// item would fill the line and there would be no free space to absorb.
+		// The item keeps its content size (zero here) and the margins take the
+		// rest, so it sits centred — at x=200 with no width to paint, which is
+		// why Chromium shows this box as absent rather than misplaced.
+		item := NewNode(Style{MarginLeft: Auto(), MarginRight: Auto()})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(100), Direction: Column}, item)
+
+		Compute(root, 400, 100)
+		assertLayout(t, item, "auto margin item", 200, 0, 0, 0)
+	})
+
+	t.Run("row main axis auto still absorbs", func(t *testing.T) {
+		// Control: main-axis auto margins already worked, and must keep working.
+		item := NewNode(Style{Width: Pt(100), Height: Pt(50), MarginLeft: Auto()})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(100), Direction: Row}, item)
+
+		Compute(root, 400, 100)
+		assertLayout(t, item, "row margin-left:auto", 300, 0, 100, 50)
+	})
+}
