@@ -3,6 +3,9 @@ package layout
 import (
 	"math"
 	"testing"
+
+	"github.com/macawls/ogre/v3/parse"
+	"github.com/macawls/ogre/v3/style"
 )
 
 func assertLayout(t *testing.T, node *Node, name string, x, y, w, h float64) {
@@ -561,4 +564,45 @@ func TestAspectRatio(t *testing.T) {
 	Compute(root, 400, 300)
 
 	assertLayout(t, child, "child", 0, 0, 100, 50)
+}
+
+func TestPaddingPercentResolvesAgainstWidth(t *testing.T) {
+	// A padding percentage resolves against the containing block's WIDTH for
+	// all four sides. It cannot be resolved at style time, so the unit has to
+	// survive the style -> layout handoff; it used to be flattened to 0 there.
+	child := &parse.Node{Type: parse.ElementNode, Tag: "div"}
+	root := &parse.Node{
+		Type: parse.ElementNode,
+		Tag:  "div",
+		Style: map[string]string{
+			"display":      "flex",
+			"width":        "400px",
+			"height":       "400px",
+			"padding-left": "10%",
+			"padding-top":  "10%",
+		},
+		Children: []*parse.Node{child},
+	}
+
+	styles := style.Resolve(root, 400, 400, style.TailwindV3)
+	tree := ComputeLayout(root, styles, 400, 400, dummyMeasure)
+
+	rootNode := tree.NodeMap[root]
+	childNode := tree.NodeMap[child]
+
+	if rootNode == nil || childNode == nil {
+		t.Fatal("layout tree is missing nodes")
+	}
+	if got, want := rootNode.Layout.Padding[0], 40.0; math.Abs(got-want) > 0.1 {
+		t.Errorf("padding-top: got %v, want %v (10%% of the 400px containing block width)", got, want)
+	}
+	if got, want := rootNode.Layout.Padding[3], 40.0; math.Abs(got-want) > 0.1 {
+		t.Errorf("padding-left: got %v, want %v", got, want)
+	}
+	if got, want := childNode.Layout.X, 40.0; math.Abs(got-want) > 0.1 {
+		t.Errorf("child x: got %v, want %v — it must start inside the padding", got, want)
+	}
+	if got, want := childNode.Layout.Y, 40.0; math.Abs(got-want) > 0.1 {
+		t.Errorf("child y: got %v, want %v — a percentage padding-top is not zero", got, want)
+	}
 }

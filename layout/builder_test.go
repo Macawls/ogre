@@ -123,8 +123,8 @@ func TestMapStyleProperties(t *testing.T) {
 		FlexShrink:     0.5,
 		Width:          style.Value{Raw: 200, Unit: style.UnitPx},
 		Height:         style.Value{Raw: 50, Unit: style.UnitPercent},
-		PaddingTop:     10,
-		PaddingRight:   20,
+		PaddingTop:     style.Value{Raw: 10, Unit: style.UnitPx},
+		PaddingRight:   style.Value{Raw: 20, Unit: style.UnitPercent},
 		BorderTopWidth: 1,
 		Gap:            5,
 		AspectRatio:    1.5,
@@ -170,8 +170,9 @@ func TestMapStyleProperties(t *testing.T) {
 	if s.PaddingTop != Pt(10) {
 		t.Errorf("PaddingTop: got %+v, want Pt(10)", s.PaddingTop)
 	}
-	if s.PaddingRight != Pt(20) {
-		t.Errorf("PaddingRight: got %+v, want Pt(20)", s.PaddingRight)
+	// A percentage padding must reach layout still carrying its unit.
+	if s.PaddingRight != Pct(20) {
+		t.Errorf("PaddingRight: got %+v, want Pct(20)", s.PaddingRight)
 	}
 	if s.BorderTop != 1 {
 		t.Errorf("BorderTop: got %g, want 1", s.BorderTop)
