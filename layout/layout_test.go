@@ -562,3 +562,79 @@ func TestAspectRatio(t *testing.T) {
 
 	assertLayout(t, child, "child", 0, 0, 100, 50)
 }
+
+func TestRelativeOffset(t *testing.T) {
+	// position:relative shifts a box visually without moving its siblings and
+	// without changing what the parent reserves for it. Every descendant moves
+	// with it, because layout coordinates are parent-relative.
+
+	t.Run("offsets itself", func(t *testing.T) {
+		rel := NewNode(Style{
+			Position: PositionRelative,
+			Left:     Pt(50),
+			Top:      Pt(50),
+			Width:    Pt(100),
+			Height:   Pt(100),
+		})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(400), Direction: Row}, rel)
+
+		Compute(root, 400, 400)
+		assertLayout(t, rel, "relative box", 50, 50, 100, 100)
+	})
+
+	t.Run("sibling stays put", func(t *testing.T) {
+		rel := NewNode(Style{Position: PositionRelative, Left: Pt(50), Top: Pt(50), Width: Pt(100), Height: Pt(100)})
+		sibling := NewNode(Style{Width: Pt(100), Height: Pt(100)})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(400), Direction: Row}, rel, sibling)
+
+		Compute(root, 400, 400)
+		assertLayout(t, sibling, "sibling", 100, 0, 100, 100)
+	})
+
+	t.Run("subtree translates", func(t *testing.T) {
+		// The nested child keeps its own parent-relative origin, so the whole
+		// subtree shifts with the relative box instead of being re-laid out.
+		nested := NewNode(Style{Width: Pt(10), Height: Pt(10)})
+		abs := NewNode(Style{Position: Absolute, Left: Pt(0), Top: Pt(0), Width: Pt(20), Height: Pt(20)})
+		rel := NewNode(Style{Position: PositionRelative, Left: Pt(50), Top: Pt(50), Width: Pt(100), Height: Pt(100)}, nested, abs)
+		root := NewNode(Style{Width: Pt(400), Height: Pt(400), Direction: Row}, rel)
+
+		Compute(root, 400, 400)
+		assertLayout(t, rel, "relative box", 50, 50, 100, 100)
+		assertLayout(t, nested, "nested child", 0, 0, 10, 10)
+		assertLayout(t, abs, "absolute child", 0, 0, 20, 20)
+	})
+
+	t.Run("percentage resolves against the containing block", func(t *testing.T) {
+		rel := NewNode(Style{Position: PositionRelative, Left: Pct(25), Top: Pct(10), Width: Pt(100), Height: Pt(100)})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(400), Direction: Row}, rel)
+
+		Compute(root, 400, 400)
+		assertLayout(t, rel, "percentage box", 100, 40, 100, 100)
+	})
+
+	t.Run("right and bottom offset negatively", func(t *testing.T) {
+		rel := NewNode(Style{Position: PositionRelative, Right: Pt(30), Bottom: Pt(20), Width: Pt(100), Height: Pt(100)})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(400), Direction: Row}, rel)
+
+		Compute(root, 400, 400)
+		assertLayout(t, rel, "right/bottom box", -30, -20, 100, 100)
+	})
+
+	t.Run("left wins over right", func(t *testing.T) {
+		rel := NewNode(Style{Position: PositionRelative, Left: Pt(40), Right: Pt(30), Width: Pt(100), Height: Pt(100)})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(400), Direction: Row}, rel)
+
+		Compute(root, 400, 400)
+		assertLayout(t, rel, "both-sides box", 40, 0, 100, 100)
+	})
+
+	t.Run("static ignores offsets", func(t *testing.T) {
+		// A static box is in flow and left/top do not apply to it.
+		static := NewNode(Style{Position: Static, Left: Pt(50), Top: Pt(50), Width: Pt(100), Height: Pt(100)})
+		root := NewNode(Style{Width: Pt(400), Height: Pt(400), Direction: Row}, static)
+
+		Compute(root, 400, 400)
+		assertLayout(t, static, "static box", 0, 0, 100, 100)
+	})
+}

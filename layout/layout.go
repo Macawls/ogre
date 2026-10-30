@@ -46,12 +46,17 @@ const (
 	AlignBaseline
 )
 
-// Position specifies whether a node uses relative or absolute positioning.
+// Position specifies whether a node is in flow, in flow but visually offset,
+// or out of flow entirely.
 type Position int
 
 const (
-	// Relative positions the node relative to its normal flow position.
-	Relative Position = iota
+	// Static keeps the node in normal flow and ignores left/top/right/bottom.
+	Static Position = iota
+	// PositionRelative keeps the node in normal flow but shifts it, and its
+	// subtree, by left/right/top/bottom. Siblings are unaffected.
+	PositionRelative
+	// Absolute takes the node out of flow.
 	Absolute
 )
 
@@ -252,4 +257,5 @@ func Compute(root *Node, availableWidth, availableHeight float64) {
 		definiteWidth:   true,
 		definiteHeight:  true,
 	})
+	applyRelativeOffsets(root)
 }
