@@ -755,6 +755,11 @@ func applyAlignStretch(line *flexLine, alignItems Align, isRow bool, containerW,
 		if crossD.IsDefined() {
 			continue
 		}
+		// An auto cross margin cancels align-self:stretch: the item keeps its
+		// content size and the margin absorbs the rest.
+		if startAuto, endAuto := crossMarginAuto(item.node, isRow); startAuto || endAuto {
+			continue
+		}
 
 		mc := marginCross(item.node, line.crossSize, isRow)
 		item.crossSize = line.crossSize - mc
@@ -889,6 +894,24 @@ func crossAxisAlignment(lines []*flexLine, crossSize float64, alignItems Align, 
 			cme := crossMarginEnd(item, crossSize, isRow)
 			availCross := line.crossSize - cms - cme
 
+			// An auto cross margin absorbs the free space, and it wins over
+			// align-self — which is how `margin: 0 auto` centres a block.
+			if startAuto, endAuto := crossMarginAuto(item.node, isRow); startAuto || endAuto {
+				free := line.crossSize - item.crossSize
+				if free < 0 {
+					free = 0
+				}
+				switch {
+				case startAuto && endAuto:
+					item.crossOffset = line.crossOffset + free/2
+				case startAuto:
+					item.crossOffset = line.crossOffset + free
+				default:
+					item.crossOffset = line.crossOffset
+				}
+				continue
+			}
+
 			switch align {
 			case AlignStart:
 				item.crossOffset = line.crossOffset + cms
@@ -984,6 +1007,14 @@ func crossMarginEndNode(node *Node, crossSize float64, isRow bool) float64 {
 		return 0
 	}
 	return resolveOr0(d, crossSize)
+}
+
+// crossMarginAuto reports whether each cross-axis margin is auto.
+func crossMarginAuto(node *Node, isRow bool) (start, end bool) {
+	if isRow {
+		return node.Style.MarginTop.IsAuto(), node.Style.MarginBottom.IsAuto()
+	}
+	return node.Style.MarginLeft.IsAuto(), node.Style.MarginRight.IsAuto()
 }
 
 func crossMarginStart(item *flexItem, crossSize float64, isRow bool) float64 {
