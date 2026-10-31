@@ -562,3 +562,57 @@ func TestAspectRatio(t *testing.T) {
 
 	assertLayout(t, child, "child", 0, 0, 100, 50)
 }
+
+// Regression for #40. An absolutely positioned box whose size is auto was laid
+// out against a zero-sized box: a single bottom/right offset displaced the box
+// by its own size (the offset landed on the wrong edge), and Layout.Width and
+// Layout.Height stayed 0, so the box's own background and border painted
+// nothing while its content overflowed the empty box. The failure was silent.
+//
+// Every want below is Chromium's getBoundingClientRect() for the same
+// declarations on a 400x200 container, so the numbers come from the browser
+// rather than from this engine's own output.
+func TestAbsoluteAutoSize(t *testing.T) {
+	// text stands in for a 14px line of two digits: 18x16 in Chromium.
+	text := func(s Style) *Node {
+		s.Position = Absolute
+		return NewLeaf(s, func(maxW, maxH float64) (float64, float64) {
+			return 18, 16
+		})
+	}
+	// boxed stands in for an element with 4px padding wrapping a 40x30 child.
+	boxed := func(s Style) *Node {
+		s.Position = Absolute
+		s.PaddingTop, s.PaddingRight = Pt(4), Pt(4)
+		s.PaddingBottom, s.PaddingLeft = Pt(4), Pt(4)
+		return NewNode(s, NewNode(Style{Width: Pt(40), Height: Pt(30)}))
+	}
+
+	tests := []struct {
+		name  string
+		child *Node
+		want  [4]float64 // x, y, w, h
+	}{
+		{"bottom+left, auto size", text(Style{Left: Pt(20), Bottom: Pt(20)}), [4]float64{20, 164, 18, 16}},
+		{"bottom+left, auto height", text(Style{Left: Pt(20), Bottom: Pt(20), Width: Pt(60)}), [4]float64{20, 164, 60, 16}},
+		{"top+left, auto size", text(Style{Left: Pt(20), Top: Pt(20)}), [4]float64{20, 20, 18, 16}},
+		{"top+right, auto size", text(Style{Top: Pt(20), Right: Pt(20)}), [4]float64{362, 20, 18, 16}},
+		{"left+right+bottom, auto height", text(Style{Left: Pt(20), Right: Pt(20), Bottom: Pt(20)}), [4]float64{20, 164, 360, 16}},
+		{"bottom+padding, auto size", boxed(Style{Left: Pt(20), Bottom: Pt(20)}), [4]float64{20, 142, 48, 38}},
+		// Both offsets on an axis resolve the size, which already worked; only
+		// the auto axis was wrong. Kept so a fix cannot pass by breaking it.
+		{"top+bottom+left, auto width", text(Style{Top: Pt(20), Bottom: Pt(20), Left: Pt(20)}), [4]float64{20, 20, 18, 160}},
+		// Control: an explicit size already positioned correctly, which is why
+		// the only absolute fixture in the corpus never caught this defect.
+		{"explicit size, bottom+right", NewNode(Style{Position: Absolute, Right: Pt(10), Bottom: Pt(10), Width: Pt(100), Height: Pt(50)}), [4]float64{290, 140, 100, 50}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			root := NewNode(Style{Width: Pt(400), Height: Pt(200)}, tc.child)
+			Compute(root, 400, 200)
+
+			assertLayout(t, tc.child, tc.name, tc.want[0], tc.want[1], tc.want[2], tc.want[3])
+		})
+	}
+}

@@ -44,11 +44,47 @@ func computeAbsolute(child *Node, container *Node) {
 		}
 	}
 
-	if math.IsNaN(w) {
-		w = 0
+	// An auto size is shrink-to-fit against the space the declared offsets
+	// leave over, not against the whole padding box.
+	availW := absoluteAvailable(paddingBoxW, left, right)
+	availH := absoluteAvailable(paddingBoxH, top, bottom)
+
+	// Measure before positioning. A measured leaf reports its content size plus
+	// border and padding, which is its shrink-to-fit size; anything else is
+	// estimated from its children the same way flex estimates a base size.
+	if child.Measure != nil && (math.IsNaN(w) || math.IsNaN(h)) {
+		computeNode(child, layoutRun{
+			availableWidth:  availW,
+			availableHeight: availH,
+			ownerWidth:      paddingBoxW,
+			ownerHeight:     paddingBoxH,
+			definiteWidth:   true,
+			definiteHeight:  true,
+		})
 	}
+
+	if math.IsNaN(w) {
+		if child.Measure != nil {
+			w = child.Layout.Width
+		} else {
+			w = estimateSize(child, true, paddingBoxW, paddingBoxH)
+		}
+		if w > availW {
+			w = availW
+		}
+		w = clampSize(w, s.MinWidth, s.MaxWidth, paddingBoxW)
+	}
+
 	if math.IsNaN(h) {
-		h = 0
+		if child.Measure != nil {
+			h = child.Layout.Height
+		} else {
+			h = estimateSize(child, false, paddingBoxW, paddingBoxH)
+		}
+		if h > availH {
+			h = availH
+		}
+		h = clampSize(h, s.MinHeight, s.MaxHeight, paddingBoxH)
 	}
 
 	var x, y float64
@@ -85,4 +121,27 @@ func computeAbsolute(child *Node, container *Node) {
 		definiteWidth:   true,
 		definiteHeight:  true,
 	})
+
+	// computeNode measures a leaf and overwrites Layout.Width/Height with the
+	// content size, which is narrower and shorter than a size resolved from
+	// both offsets or from min/max. For an absolutely positioned box the
+	// resolved size is the one to keep.
+	child.Layout.Width = w
+	child.Layout.Height = h
+}
+
+// absoluteAvailable returns the space left on one axis once the declared
+// offsets are subtracted from the containing block's padding box.
+func absoluteAvailable(paddingBox, start, end float64) float64 {
+	avail := paddingBox
+	if !math.IsNaN(start) {
+		avail -= start
+	}
+	if !math.IsNaN(end) {
+		avail -= end
+	}
+	if avail < 0 {
+		avail = 0
+	}
+	return avail
 }
